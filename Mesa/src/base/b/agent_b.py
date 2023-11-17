@@ -7,6 +7,9 @@ HEALING_POTION = 20
 
 STRATEGY = 1
 
+exit_area = [[0,20], [0,20]]
+goal = [0,0]
+
 
 def set_agent_type_settings(agent, type):
     """Updates the agent's instance variables according to its type.
@@ -44,6 +47,7 @@ class FightingAgent(Agent):
         return f"{self.unique_id} -> {self.health}"
 
     def step(self) -> None:
+        global exit_area
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
@@ -65,6 +69,9 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
+        print(exit_area)
+        if (self.pos[0]>=exit_area[0][0] and self.pos[0]<=exit_area[0][1] and self.pos[1]>=exit_area[1][0] and self.pos[1]<=exit_area[1][1]):
+            self.dead = True
 
         self.move()
 
@@ -100,16 +107,17 @@ class FightingAgent(Agent):
         print(f'I attacked! and health left is {agentToAttack.health}') ## 맞았을 때 맞았다 말하고 남은 health 량 표시
 
     def move(self) -> None:
+        global goal
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
         or attacks other agent."""
 
-        should_take_potion = self.random.randint(0, 100)
-        if should_take_potion == 1: ## 1/100 확률로 포션 먹음
-            self.health += HEALING_POTION ## health 20 증가
-            print(f'Drinking my potion! and my health left is {self.health}')
-            return
+        # should_take_potion = self.random.randint(0, 100)
+        # if should_take_potion == 1: ## 1/100 확률로 포션 먹음
+        #     self.health += HEALING_POTION ## health 20 증가
+        #     print(f'Drinking my potion! and my health left is {self.health}')
+        #     return
 
         possible_steps = self.model.grid.get_neighborhood( ## 다음 step에서 갈 수 있는 곳은 이웃 grid
             self.pos, moore=True, include_center=False ##? 
@@ -131,5 +139,10 @@ class FightingAgent(Agent):
             else: ## 주변에 있는 애들 attack
                 self.attack(cells_with_agents)
         else: ## 주변에 agent 없으면
-            new_position = self.random.choice(possible_steps) ## 가능한 step으로 랜덤하게 이동할 위치 설정
+            print()
+            new_position = possible_steps[0]
+            for i in possible_steps:
+                distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
+                if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
+                    new_position = i
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
