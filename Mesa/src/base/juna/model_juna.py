@@ -4,7 +4,8 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.space import ContinuousSpace
 from mesa.datacollection import DataCollector
-
+import agent_juna
+from agent_juna import WallAgent
 
 class FightingModel(Model):
     """A model with some number of agents."""
@@ -34,6 +35,18 @@ class FightingModel(Model):
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(a, (x, y))
+
+        wall = [] ## wall list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
+        for i in range(0, agent_juna.exit_w + 1):
+            for j in range(0, agent_juna.exit_h + 1):
+                wall.append((i,j))
+        # print(wall)
+        # for pos in wall:
+        #     agent_type = 'wall' ### 이걸 이렇게 하지말고 agent color, shape ... 을 각각 해주는 형식으로 해봐야겠당
+        #     agent = agent_juna.WallAgent(pos, self, agent_type)
+        #     # self.grid.position_agent(agent, pos[0], pos[1])
+        #     self.grid.place_agent(agent, pos)
+        #     self.schedule.add(agent)
 
     def step(self):
         """Advance the model by one step."""

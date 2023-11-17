@@ -1,4 +1,5 @@
 from mesa import Agent
+# from agent import WallAgent
 import math
 
 ATTACK_DAMAGE = 50
@@ -6,10 +7,29 @@ INITIAL_HEALTH = 100
 HEALING_POTION = 20
 
 STRATEGY = 1
-
-exit_area = [[0,20], [0,20]]
+exit_w = 20
+exit_h = 20
+exit_area = [[0,exit_w], [0, exit_h]]
 goal = [0,0]
 
+
+class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
+    def __init__(self, pos, model, agent_type):
+        super().__init__(pos, model)
+        self.pos = pos
+        self.type = agent_type
+
+
+        # wall = [] ## wall list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
+        # for i in range(0, exit_w + 1):
+        #     for j in range(0, exit_h + 1):
+        #         wall.append((i,j))
+        # # print(wall)
+        # for pos in wall:
+        #     agent_type = 'wall'
+        #     agent = WallAgent(pos, self, agent_type)
+        #     self.grid.position_agent(agent, pos[0], pos[1])
+        #     self.schedule.add(agent)
 
 def set_agent_type_settings(agent, type):
     """Updates the agent's instance variables according to its type.
