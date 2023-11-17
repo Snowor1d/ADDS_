@@ -94,17 +94,17 @@ grid = CanvasGrid(
 chart_healthy = ChartModule(
     [
         {"Label": "Healthy Agents", "Color": "green"},
-        {"Label": "Non Healthy Agents", "Color": "red"},
+        #{"Label": "Non Healthy Agents", "Color": "red"}, ## 그래프 상에서 Non Healthy Agents 삭제
     ],
-    canvas_height=300,
-    data_collector_name="datacollector_currents",
+    canvas_height = 300,
+    data_collector_name = "datacollector_currents",
 )
 
 
 server = ModularServer(
     FightingModel,
     [grid, chart_healthy],
-    "Money Model",
+    "ADDS crowd system",
     simulation_params,
 )
 server.port = 8521  # The default

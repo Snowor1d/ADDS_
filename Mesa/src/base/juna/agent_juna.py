@@ -72,6 +72,7 @@ class FightingAgent(Agent):
         print(exit_area)
         if (self.pos[0]>=exit_area[0][0] and self.pos[0]<=exit_area[0][1] and self.pos[1]>=exit_area[1][0] and self.pos[1]<=exit_area[1][1]):
             self.dead = True
+            self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
 
         self.move()
 
@@ -141,8 +142,9 @@ class FightingAgent(Agent):
         else: ## 주변에 agent 없으면
             print()
             new_position = possible_steps[0]
+            print(possible_steps)
             for i in possible_steps:
                 distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
-                if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
+                if (distance_to_goal <  math.sqrt(pow(new_position[0] - goal[0],2) + pow(new_position[1] - goal[1],2))):
                     new_position = i
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동

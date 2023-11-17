@@ -2,6 +2,7 @@ from mesa import Model
 from agent_juna import FightingAgent
 from mesa.time import RandomActivation
 from mesa.space import MultiGrid
+from mesa.space import ContinuousSpace
 from mesa.datacollection import DataCollector
 
 
@@ -11,6 +12,7 @@ class FightingModel(Model):
     def __init__(self, number_agents: int, width: int, height: int):
         self.num_agents = number_agents
         self.grid = MultiGrid(width, height, False)
+        self.headingding = ContinuousSpace(width, height, False, 0, 0)
         self.schedule = RandomActivation(self)
         self.running = (
             True  # required by the MESA Model Class to start and stop the simulation
@@ -52,7 +54,8 @@ class FightingModel(Model):
         Returns:
             (Integer): Number of Agents.
         """
-        return sum([1 for agent in model.schedule.agents if agent.health > 0])
+        return sum([1 for agent in model.schedule.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
+                                                                               ### agent.py 에서 exit area 도착했을 때 health를 0으로 바꿈
 
     @staticmethod
     def current_non_healthy_agents(model) -> int:
