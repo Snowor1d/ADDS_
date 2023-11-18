@@ -1,4 +1,5 @@
 from mesa import Agent
+# from agent import WallAgent
 import math
 
 ATTACK_DAMAGE = 50
@@ -6,10 +7,29 @@ INITIAL_HEALTH = 100
 HEALING_POTION = 20
 
 STRATEGY = 1
-
-exit_area = [[0,20], [0,20]]
+exit_w = 20
+exit_h = 20
+exit_area = [[0,exit_w], [0, exit_h]]
 goal = [0,0]
 
+
+class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
+    def __init__(self, pos, model, agent_type):
+        super().__init__(pos, model)
+        self.pos = pos
+        self.type = agent_type
+
+
+        # wall = [] ## wall list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
+        # for i in range(0, exit_w + 1):
+        #     for j in range(0, exit_h + 1):
+        #         wall.append((i,j))
+        # # print(wall)
+        # for pos in wall:
+        #     agent_type = 'wall'
+        #     agent = WallAgent(pos, self, agent_type)
+        #     self.grid.position_agent(agent, pos[0], pos[1])
+        #     self.schedule.add(agent)
 
 def set_agent_type_settings(agent, type):
     """Updates the agent's instance variables according to its type.
@@ -72,6 +92,7 @@ class FightingAgent(Agent):
         print(exit_area)
         if (self.pos[0]>=exit_area[0][0] and self.pos[0]<=exit_area[0][1] and self.pos[1]>=exit_area[1][0] and self.pos[1]<=exit_area[1][1]):
             self.dead = True
+            self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
 
         self.move()
 
@@ -141,8 +162,9 @@ class FightingAgent(Agent):
         else: ## 주변에 agent 없으면
             print()
             new_position = possible_steps[0]
+            print(possible_steps)
             for i in possible_steps:
                 distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
-                if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
+                if (distance_to_goal <  math.sqrt(pow(new_position[0] - goal[0],2) + pow(new_position[1] - goal[1],2))):
                     new_position = i
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동

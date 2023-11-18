@@ -3,6 +3,7 @@ from mesa.visualization.UserParam import NumberInput
 
 from model_juna import FightingModel
 from mesa.visualization.modules import CanvasGrid, ChartModule
+##import agent_juna
 
 ## grid size
 NUMBER_OF_CELLS = 100 ## square
@@ -16,6 +17,16 @@ simulation_params = {
     "width": NUMBER_OF_CELLS,
     "height": NUMBER_OF_CELLS,
 }
+
+# def schelling_draw(agent): ### 탈출 사각형..을 만들고 싶었는디 어디에 생기는지는 안 쓰나?
+#     if agent is None:
+#         return
+#     portrayal = {"shape":"rect", "w":"agent_juna.exit_w", "h": "agent_juna.exit_h", "Filled":"true", "Layer":0}
+#     portrayal["Color"] = "Red"
+#     return portrayal
+
+# canvas_element = CanvasGrid(schelling_draw, agent_juna.exit_w, agent_juna.exit_h, 500, 500)
+
 
 
 def agent_portrayal(agent):
@@ -94,17 +105,17 @@ grid = CanvasGrid(
 chart_healthy = ChartModule(
     [
         {"Label": "Healthy Agents", "Color": "green"},
-        {"Label": "Non Healthy Agents", "Color": "red"},
+        #{"Label": "Non Healthy Agents", "Color": "red"}, ## 그래프 상에서 Non Healthy Agents 삭제
     ],
-    canvas_height=300,
-    data_collector_name="datacollector_currents",
+    canvas_height = 300,
+    data_collector_name = "datacollector_currents",
 )
 
 
 server = ModularServer(
     FightingModel,
     [grid, chart_healthy],
-    "Money Model",
+    "ADDS crowd system",
     simulation_params,
 )
 server.port = 8521  # The default
