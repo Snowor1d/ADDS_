@@ -9,7 +9,7 @@ exit_h = 20
 exit_area = [[0,exit_w], [0, exit_h]]
 STRATEGY = 1
 
-exit_area = [[0,20], [0,20]]
+exit_area = [[0,exit_w], [0,exit_h]]
 goal = [0,0]
 
 class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
@@ -51,6 +51,9 @@ def set_agent_type_settings(agent, type):
     if type == 10: ## 구분하려고 아무 숫자 함, exit_rec 채우는 agent type
         agent.health = 500 ## ''
         agent.attack_damage = 0 ## ''
+    if type == 11: ## 마찬가지.. 이건 wall list 채우는 agent의 type
+        agent.health = 500
+        agent.attack_damage = 0
 
 
 class FightingAgent(Agent):

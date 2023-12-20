@@ -1,6 +1,5 @@
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import NumberInput
-
 from model_juna import FightingModel
 from mesa.visualization.modules import CanvasGrid, ChartModule
 
@@ -53,6 +52,19 @@ def agent_portrayal(agent):
             "text_color": "black",
         }
         return portrayal
+    
+    if agent.type == 11: ## wall 채우는 agent 
+        portrayal = {
+            "Shape": "circle",
+            "Filled": "true",
+            "Color": "black", 
+            "r": 1,
+            "text": "",
+            "Layer": 0,
+            "text_color": "black",
+        }
+        return portrayal
+
 
     # the default config is a circle
     portrayal = {

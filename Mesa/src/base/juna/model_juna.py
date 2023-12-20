@@ -16,6 +16,7 @@ class FightingModel(Model):
         self.headingding = ContinuousSpace(width, height, False, 0, 0)
         self.schedule = RandomActivation(self)
         self.schedule_e = RandomActivation(self)
+        self.schedule_w = RandomActivation(self)
         self.running = (
             True  # required by the MESA Model Class to start and stop the simulation
         )
@@ -39,24 +40,35 @@ class FightingModel(Model):
 
 
         exit_rec = [] ## exit_rec list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
-        for i in range(0, agent_juna.exit_w + 1):
-            for j in range(0, agent_juna.exit_h + 1):
+        for i in range(0, agent_juna.exit_w):
+            for j in range(0, agent_juna.exit_h):
                 exit_rec.append((i,j))
 
         for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
             b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
             self.schedule_e.add(b)
             self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
+
+
+        wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+        from server_juna import NUMBER_OF_CELLS
+        for i in range(int(NUMBER_OF_CELLS*0.6)): ## 200*0.6=120
+            wall.append((int(NUMBER_OF_CELLS*0.4),NUMBER_OF_CELLS-i-1)) ##(80, 200-i)
+        for i in range(int(NUMBER_OF_CELLS*0.4)): ## 200*0.4 = 80
+            wall.append((int(NUMBER_OF_CELLS*0.4) + i, int(NUMBER_OF_CELLS*0.4))) ## (80+i, 80)
             
+        # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+        # for i in range(120): ## 200*0.6=120
+        #     wall.append((80,200-i-1)) ##(80, 200-i)
+        # for i in range(80): ## 200*0.4 = 80
+        #     wall.append((80+i, 80)) ## (80+i, 80)
+        
+        
+        for i in range(len(wall)):
+            c = FightingAgent(i, self, 11)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, wall[i])
 
-
-        # print(wall)
-        # for pos in wall:
-        #     agent_type = 'wall' ### 이걸 이렇게 하지말고 agent color, shape ... 을 각각 해주는 형식으로 해봐야겠당
-        #     agent = agent_juna.WallAgent(pos, self, agent_type)
-        #     # self.grid.position_agent(agent, pos[0], pos[1])
-        #     self.grid.place_agent(agent, pos)
-        #     self.schedule.add(agent)
 
     def step(self):
         """Advance the model by one step."""
