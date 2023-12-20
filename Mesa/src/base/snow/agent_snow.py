@@ -8,9 +8,11 @@ exit_w = 20
 exit_h = 20
 exit_area = [[0,exit_w], [0, exit_h]]
 STRATEGY = 1
+import numpy as np;
 
 exit_area = [[0,20], [0,20]]
 goal = [0,0]
+random_disperse = 1
 
 class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
     def __init__(self, pos, model, agent_type):
@@ -271,10 +273,10 @@ class FightingAgent(Agent):
                 continue    
 
             F = k * (valid_distance-d)
-            print("F : ", F)
-            if(d>0 and near_agent.dead == False):
-                F_x += (F*(d_x/d))
-                F_y += (F*(d_y/d))
+            # print("F : ", F)
+            # if(d>0 and near_agent.dead == False):
+            #     F_x += (F*(d_x/d))
+            #     F_y += (F*(d_y/d))
         print(self.xy[0], self.xy[1])
         goal_x = goal[0] - self.xy[0]
         goal_y = goal[1] - self.xy[1]
@@ -284,6 +286,17 @@ class FightingAgent(Agent):
           desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
           desired_force = [0, 0]
+        if(d!=0):
+            repulsive_force =  [k*np.exp(0.4/(d))*(d_x/d), k*np.exp(0.4/(d))*(d_y/d)]
+        else:
+            if(random_disperse):
+                repulsive_force = [50, -50]
+            else:
+                repulsive_force = [-50, 50]
+        F_x += repulsive_force[0]
+        F_y += repulsive_force[1]
+
+        
         
         #desried_force = intend_force(상수) * (가고자 했던 속도 - 현재 속도) 
         #가고자 했던 속도와 현재 속도가 차이가 많이 나면 #뛰어야겠지
