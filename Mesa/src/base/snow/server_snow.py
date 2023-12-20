@@ -5,7 +5,7 @@ from model_snow import FightingModel
 from mesa.visualization.modules import CanvasGrid, ChartModule
 
 ## grid size
-NUMBER_OF_CELLS = 100 ## square
+NUMBER_OF_CELLS = 200 ## square
 SIZE_OF_CANVAS_IN_PIXELS_X = 1000
 SIZE_OF_CANVAS_IN_PIXELS_Y = 1000
 
