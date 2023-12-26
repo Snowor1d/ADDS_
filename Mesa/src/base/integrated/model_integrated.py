@@ -50,18 +50,13 @@ class FightingModel(Model):
             self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
 
 
-        wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+        wall = [] ## wall list 에 (60, 200) ~ (60, 60), (60, 60)~(160, 60) 튜플 추가
         from server_integrated import NUMBER_OF_CELLS
-        for i in range(int(NUMBER_OF_CELLS*0.6)): ## 200*0.6=120
-            wall.append((int(NUMBER_OF_CELLS*0.4),NUMBER_OF_CELLS-i-1)) ##(80, 200-i)
-        for i in range(int(NUMBER_OF_CELLS*0.4)): ## 200*0.4 = 80
-            wall.append((int(NUMBER_OF_CELLS*0.4) + i, int(NUMBER_OF_CELLS*0.4))) ## (80+i, 80)
-            
-        # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
-        # for i in range(120): ## 200*0.6=120
-        #     wall.append((80,200-i-1)) ##(80, 200-i)
-        # for i in range(80): ## 200*0.4 = 80
-        #     wall.append((80+i, 80)) ## (80+i, 80)
+        for i in range(int(NUMBER_OF_CELLS*0.7)): ## 200*0.7=140
+            wall.append((int(NUMBER_OF_CELLS*0.3),NUMBER_OF_CELLS-i-1)) ##(60, 200-i)
+        for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
+            wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
+        
             
         # map side wall
         for i in range(int(NUMBER_OF_CELLS)):
