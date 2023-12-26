@@ -7,6 +7,10 @@ from mesa.datacollection import DataCollector
 import agent_integrated
 from agent_integrated import WallAgent
 
+goal_list = [[(80, 119), (79, 119), (78, 119), (77, 119)], #gate1 
+             [(198, 119), (197, 119), (196, 119)], #gate2
+             [(119, 19), (119, 20), (119, 21), (119, 22)]] #gate3 
+
 class FightingModel(Model):
     """A model with some number of agents."""
 
@@ -51,15 +55,22 @@ class FightingModel(Model):
 
 
         wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+        self.wall_matrix = list()
+        for i in range(200):
+            tmp = []
+            for j in range(200):
+                tmp.append(0)
+            self.wall_matrix.append(tmp)
+        
         from server_integrated import NUMBER_OF_CELLS
         # for i in range(int(NUMBER_OF_CELLS*0.6)): ## 200*0.6=120
         #     wall.append((int(NUMBER_OF_CELLS*0.4),NUMBER_OF_CELLS-i-1)) ##(80, 200-i)
         # for i in range(int(NUMBER_OF_CELLS*0.4)): ## 200*0.4 = 80
         #     wall.append((int(NUMBER_OF_CELLS*0.4) + i, int(NUMBER_OF_CELLS*0.4))) ## (80+i, 80)
-        for i in range(int(NUMBER_OF_CELLS*0.7)): ## 200*0.7=140
-            wall.append((int(NUMBER_OF_CELLS*0.3),NUMBER_OF_CELLS-i-1)) ##(60, 200-i)
-        for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
-            wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
+        # for i in range(int(NUMBER_OF_CELLS*0.7)): ## 200*0.7=140
+        #     wall.append((int(NUMBER_OF_CELLS*0.3),NUMBER_OF_CELLS-i-1)) ##(60, 200-i)
+        # for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
+        #     wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
         # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
         # for i in range(120): ## 200*0.6=120
         #     wall.append((80,200-i-1)) ##(80, 200-i)
@@ -72,8 +83,33 @@ class FightingModel(Model):
             wall.append((0, i))
             wall.append((i, int(NUMBER_OF_CELLS)-1))
             wall.append((int(NUMBER_OF_CELLS)-1, i))
-        
-        
+           
+            self.wall_matrix[i][0] = 1
+            self.wall_matrix[0][i] = 1
+            self.wall_matrix[i][int(NUMBER_OF_CELLS)-1] = 1
+            self.wall_matrix[int(NUMBER_OF_CELLS)-1][0] = 1
+
+        for i in range(int(80)):
+            wall.append((i, 119))
+            wall.append((79, int(NUMBER_OF_CELLS)-i-1))
+            wall.append((119, int(NUMBER_OF_CELLS)-i-1))
+            wall.append((119+i, 119))
+            wall.append((119, 79-i))
+            wall.append((119+i, 79))
+           
+            self.wall_matrix[i][119] = 1
+            self.wall_matrix[79][int(NUMBER_OF_CELLS)-i-1] = 1
+            self.wall_matrix[119][int(NUMBER_OF_CELLS)-i-1] = 1
+            self.wall_matrix[119+i][119] = 1
+            self.wall_matrix[119][79-i] = 1
+            self.wall_matrix[119+i][79] = 1
+
+        for i in goal_list:
+            for j in i:
+                if j in wall:    
+                    wall.remove(j)
+                    self.wall_matrix[j[0]][j[1]] = 0
+
         for i in range(len(wall)):
             c = FightingAgent(i, self, 11)
             self.schedule_w.add(c)

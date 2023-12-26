@@ -5,25 +5,58 @@ import numpy as np
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
 HEALING_POTION = 20
-exit_w = 20
-exit_h = 20
+exit_w = 5
+exit_h = 5
 exit_area = [[0,exit_w], [0, exit_h]]
 STRATEGY = 1
 random_disperse = 1
 
 exit_area = [[0,exit_w], [0,exit_h]]
-goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
-              ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
+
+
+goal_list = [[(80, 119), (79, 119), (78, 119), (77, 119)], #gate1
+             [(90, 120)], #gate2
+             [(198, 119), (197, 119), (196, 119)], #gate3
+             [(119, 90)], #gate4
+             [(119, 19), (119, 20), (119, 21), (119, 22)], #gate5 
+             [(0,0), (0,1), (1,0), (0,0)] ] #gate6 
+
+
+
+# goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
+#               ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
 #goal_list = [[(0,0), (0,1)]]
 
 def check_stage(pose):
-    stage_1 = [[60,200], [60,200]] #    60 < x범위 < 200
-                                   #    60 < y범위 < 200
-                                   # stage_2 는, else
+    # stage_1 = [[60,200], [60,200]] #    60 < x범위 < 200
+    #                                #    60 < y범위 < 200
+    #                                # stage_2 는, else
+    # if(pose[0]>stage_1[0][0] and pose[0]<stage_1[0][1] and pose[1]>stage_1[1][0] and pose[1]<stage_1[1][1]):
+    #     return 0
+    # else:
+    #     return 1
+
+    stage_1 = [[0, 80], [120, 200]]
+    stage_2 = [[80, 120], [120, 200]]
+    stage_3 = [[120, 200], [120, 200]]
+    stage_4 = [[120, 200], [80, 120]]
+    stage_5 = [[120, 200], [0, 80]]
+
+    x = pose[0]
+    y = pose[1]
+
     if(pose[0]>stage_1[0][0] and pose[0]<stage_1[0][1] and pose[1]>stage_1[1][0] and pose[1]<stage_1[1][1]):
         return 0
-    else:
+    elif(pose[0]>stage_2[0][0] and pose[0]<stage_2[0][1] and pose[1]>stage_2[1][0] and pose[1]<stage_2[1][1]):
         return 1
+    elif(pose[0]>stage_3[0][0] and pose[0]<stage_3[0][1] and pose[1]>stage_3[1][0] and pose[1]<stage_3[1][1]):
+        return 2
+    elif(pose[0]>stage_4[0][0] and pose[0]<stage_4[0][1] and pose[1]>stage_4[1][0] and pose[1]<stage_4[1][1]):
+        return 3
+    elif(pose[0]>stage_5[0][0] and pose[0]<stage_5[0][1] and pose[1]>stage_5[1][0] and pose[1]<stage_5[1][1]):
+        return 4
+    else:
+        return 5
 
 def central_of_goal(goals):
     real_goal = [0, 0]
@@ -36,7 +69,7 @@ def central_of_goal(goals):
 
 def check_departure(pose, goals):
     for i in goals:
-        if (i[0]==pose[0] and i[1]==pose[1]):
+        if (i[0]>pose[0] and i[1]>pose[1]):
             return True
     return False
 
@@ -142,9 +175,9 @@ class FightingAgent(Agent):
             self.dead = True
             self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
 
-        if (self.which_goal != (len(goal_list)-1)):
-            if(check_departure([self.xy[0], self.xy[1]], goal_list[self.which_goal])):
-                self.which_goal += 1
+        # if (self.which_goal != (len(goal_list)-1)):
+        #     if(check_departure([self.xy[0], self.xy[1]], goal_list[self.which_goal])):
+        #         self.which_goal += 1
 
         self.move()
 
@@ -249,11 +282,11 @@ class FightingAgent(Agent):
                 continue    
 
             F = k * (valid_distance - d) #각 agent와의 반발력
-            print("F : ", F)
+            #print("F : ", F)
             if(d > 0 and near_agent.dead == False): #죽은 agent는 빼고 더해준다(각각 힘)
                 F_x += (F*(d_x/d))
                 F_y += (F*(d_y/d))
-        print(self.xy[0], self.xy[1])
+        #print(self.xy[0], self.xy[1])
         goal_x = central_of_goal(goal_list[check_stage(self.xy[0])])[0] - self.xy[0]
         goal_y = central_of_goal(goal_list[check_stage(self.xy[1])])[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
@@ -277,10 +310,12 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y < 0):
             next_y = 0
-        print(F_x, F_y)
+        #print(F_x, F_y)
         return (next_x, next_y)
     
     def helbling_modeling(self):
+        from model_integrated import Model
+        global random_disperse
 
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
@@ -294,17 +329,18 @@ class FightingAgent(Agent):
             near_agents = self.model.grid.get_cell_list_contents([i])
             if len(near_agents):
                 for near_agent in near_agents:
-                    near_agents_list.append(near_agent)
+                    near_agents_list.append(near_agent) #kinetic 모델과 동일
 
         F_x = 0
         F_y = 0
         k = 1
         valid_distance = 3
         intend_force = 2.5
-        time_step = 0.5
-        desired_speed = 2
+        time_step = 0.5 # time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
+                        # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
+        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
-
+        obstacle_force = [0, 0]
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -319,22 +355,40 @@ class FightingAgent(Agent):
             # if(d>0 and near_agent.dead == False):
             #     F_x += (F*(d_x/d))
             #     F_y += (F*(d_y/d))
-            if(near_agent.dead == False):
+            if(near_agent.dead == True):
                 continue
                 
             if(d!=0):
-                repulsive_force[0] += k*np.exp(0.4/d)*(d_x/d)
+                repulsive_force[0] += k*np.exp(0.4/d)*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
                 repulsive_force[1] += k*np.exp(0.4/d)*(d_y/d)
             else :
                 if(random_disperse):
                     repulsive_force = [50, -50]
                     random_disperse = 0
                 else:
-                    repulsive_force = [-50, 50]
+                    repulsive_force = [-50, 50] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
                     random_disperse = 1
 
+        check_wall = [(x-1, y-1), (x-1, y), (x-1, y+1), (x, y+1), (x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1)]
+
+        for i in check_wall: 
+            print(len(self.model.wall_matrix))
+            o_x = self.xy[0] - i[0]
+            o_y = self.xy[1] - i[1]
+
+            o_d = math.sqrt(pow(o_x, 2) + pow(o_y, 2))    
+        
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+                #print(len(self.model.wall_matrix))
+                if(self.model.wall_matrix[i[0]][i[1]]): # agent 주위에 벽이 있으면..
+                    obstacle_force[0] += k*np.exp(0.6/o_d)*(o_x/o_d) #벽으로 부터 힘을 받겠지
+                    obstacle_force[1] += k*np.exp(0.6/o_d)*(o_y/o_d)
+                        
+                        
+
+             
                 
-        print(self.xy[0], self.xy[1])
+        #print(self.xy[0], self.xy[1])
         goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
         goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
@@ -357,6 +411,9 @@ class FightingAgent(Agent):
         F_x += desired_force[0]
         F_y += desired_force[1]
 
+        F_x += obstacle_force[0]
+        F_y += obstacle_force[1]
+
         self.acc[0] = F_x/self.mass
         self.acc[1] = F_y/self.mass
 
@@ -377,7 +434,7 @@ class FightingAgent(Agent):
             next_x = 199
         if(next_y>199):
             next_y = 199
-        print(F_x, F_y)
+        #print(F_x, F_y)
         return (next_x, next_y)
         
 

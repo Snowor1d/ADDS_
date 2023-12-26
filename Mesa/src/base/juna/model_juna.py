@@ -7,6 +7,10 @@ from mesa.datacollection import DataCollector
 import agent_juna
 from agent_juna import WallAgent
 
+#goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
+#             ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
+
+
 class FightingModel(Model):
     """A model with some number of agents."""
 
@@ -80,12 +84,12 @@ class FightingModel(Model):
 
         
 
-
+    
         for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
             b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
             self.schedule_e.add(b)
             self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
-        
+
         
         for i in range(len(wall)):
             c = FightingAgent(i, self, 11)
