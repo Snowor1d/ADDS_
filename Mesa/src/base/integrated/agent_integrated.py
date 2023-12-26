@@ -12,7 +12,36 @@ STRATEGY = 1
 random_disperse = 1
 
 exit_area = [[0,exit_w], [0,exit_h]]
-goal = [0,0]
+goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
+              ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
+#goal_list = [[(0,0), (0,1)]]
+
+def check_stage(pose):
+    stage_1 = [[60,200], [60,200]] #    60 < x범위 < 200
+                                   #    60 < y범위 < 200
+                                   # stage_2 는, else
+    if(pose[0]>stage_1[0][0] and pose[0]<stage_1[0][1] and pose[1]>stage_1[1][0] and pose[1]<stage_1[1][1]):
+        return 0
+    else:
+        return 1
+
+def central_of_goal(goals):
+    real_goal = [0, 0]
+    for i in goals:
+        real_goal[0] += i[0]
+        real_goal[1] += i[1]
+    real_goal[0] /= len(goals)
+    real_goal[1] /= len(goals) 
+    return real_goal
+
+def check_departure(pose, goals):
+    for i in goals:
+        if (i[0]==pose[0] and i[1]==pose[1]):
+            return True
+    return False
+
+ # goals의 가운데를 가져오는 함수
+ # 어디로 향하게 할 것인가? -> goals의 가운데 
 
 class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
     def __init__(self, pos, model, agent_type):
@@ -57,7 +86,6 @@ def set_agent_type_settings(agent, type):
         agent.health = 500
         agent.attack_damage = 0
 
-
 class FightingAgent(Agent):
     """An agent that fights."""
 
@@ -70,6 +98,7 @@ class FightingAgent(Agent):
         self.dead = False
         self.dead_count = 0
         self.buried = False
+        self.which_goal = 0
 
         self.xy = [0, 0]
         self.vel = [0, 0]
@@ -85,6 +114,8 @@ class FightingAgent(Agent):
 
     def step(self) -> None:
         global exit_area
+        global goal_list
+
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
@@ -107,9 +138,13 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
-        if (self.pos[0]>=exit_area[0][0] and self.pos[0]<=exit_area[0][1] and self.pos[1]>=exit_area[1][0] and self.pos[1]<=exit_area[1][1]):
+        if (check_departure([self.xy[0],self.xy[1]], goal_list[len(goal_list)-1])):
             self.dead = True
             self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
+
+        if (self.which_goal != (len(goal_list)-1)):
+            if(check_departure([self.xy[0], self.xy[1]], goal_list[self.which_goal])):
+                self.which_goal += 1
 
         self.move()
 
@@ -142,7 +177,7 @@ class FightingAgent(Agent):
             agentToAttack.dead = True
 
     def move(self) -> None:
-        global goal
+        global goal_list
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -219,8 +254,8 @@ class FightingAgent(Agent):
                 F_x += (F*(d_x/d))
                 F_y += (F*(d_y/d))
         print(self.xy[0], self.xy[1])
-        goal_x = goal[0] - self.xy[0]
-        goal_y = goal[1] - self.xy[1]
+        goal_x = central_of_goal(goal_list[check_stage(self.xy[0])])[0] - self.xy[0]
+        goal_y = central_of_goal(goal_list[check_stage(self.xy[1])])[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
         if(goal_d != 0): ## goal 까지 거리가 남아있으면
             F_x += intend_force * (goal_x/goal_d)
@@ -300,8 +335,8 @@ class FightingAgent(Agent):
 
                 
         print(self.xy[0], self.xy[1])
-        goal_x = goal[0] - self.xy[0]
-        goal_y = goal[1] - self.xy[1]
+        goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
+        goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
 
         if(goal_d != 0):
@@ -338,6 +373,10 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y<0):
             next_y = 0
+        if(next_x>199):
+            next_x = 199
+        if(next_y>199):
+            next_y = 199
         print(F_x, F_y)
         return (next_x, next_y)
         
