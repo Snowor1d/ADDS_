@@ -40,28 +40,51 @@ class FightingModel(Model):
 
 
         exit_rec = [] ## exit_rec list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
+
+        ## exit square of section 2
         for i in range(0, agent_juna.exit_w):
             for j in range(0, agent_juna.exit_h):
                 exit_rec.append((i,j))
 
-        for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
-            b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
-            self.schedule_e.add(b)
-            self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
+        # ## exit line of section 1
+        # from server_juna import NUMBER_OF_CELLS
+        # for i in range(int(NUMBER_OF_CELLS*0.2)):
+        #     exit_rec.append((int(NUMBER_OF_CELLS*0.8)+i, int(NUMBER_OF_CELLS*0.3))) ## (200*0.8+i, 200*0.3)
 
 
-        wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+
+        wall = [] ## wall list 에 (60, 200) ~ (60, 60), (60, 60)~(160, 60) 튜플 추가
         from server_juna import NUMBER_OF_CELLS
-        for i in range(int(NUMBER_OF_CELLS*0.6)): ## 200*0.6=120
-            wall.append((int(NUMBER_OF_CELLS*0.4),NUMBER_OF_CELLS-i-1)) ##(80, 200-i)
-        for i in range(int(NUMBER_OF_CELLS*0.4)): ## 200*0.4 = 80
-            wall.append((int(NUMBER_OF_CELLS*0.4) + i, int(NUMBER_OF_CELLS*0.4))) ## (80+i, 80)
-            
+
+        # section division wall
+        for i in range(int(NUMBER_OF_CELLS*0.7)): ## 200*0.7=140
+            wall.append((int(NUMBER_OF_CELLS*0.3),NUMBER_OF_CELLS-i-1)) ##(60, 200-i)
+        for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
+            wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
+        
+        # map side wall
+        for i in range(int(NUMBER_OF_CELLS)):
+            wall.append((i, 0))
+            wall.append((0, i))
+            wall.append((i, int(NUMBER_OF_CELLS)-1))
+            wall.append((int(NUMBER_OF_CELLS)-1, i))
+
+
+
         # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
         # for i in range(120): ## 200*0.6=120
         #     wall.append((80,200-i-1)) ##(80, 200-i)
         # for i in range(80): ## 200*0.4 = 80
         #     wall.append((80+i, 80)) ## (80+i, 80)
+            
+
+        
+
+
+        for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
+            b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
+            self.schedule_e.add(b)
+            self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
         
         
         for i in range(len(wall)):
