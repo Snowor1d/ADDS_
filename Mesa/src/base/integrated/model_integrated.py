@@ -27,7 +27,7 @@ class FightingModel(Model):
 
         self.datacollector_currents = DataCollector(
             {
-                "Healthy Agents": FightingModel.current_healthy_agents,
+                "Remained Agents": FightingModel.current_healthy_agents, ## Healthy Agents -> Remained Agents
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
@@ -106,8 +106,8 @@ class FightingModel(Model):
 
         for i in goal_list:
             for j in i:
-                if j in wall:    
-                    wall.remove(j)
+                if j in wall:
+                    wall.remove(j) ##??
                     self.wall_matrix[j[0]][j[1]] = 0
 
         for i in range(len(wall)):
