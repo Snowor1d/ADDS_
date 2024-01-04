@@ -1,19 +1,21 @@
 from mesa import Model
-from agent_integrated import FightingAgent
+from agent_test import FightingAgent
 from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.space import ContinuousSpace
 from mesa.datacollection import DataCollector
-import agent_integrated
-from agent_integrated import WallAgent
+import agent_test
+from agent_test import WallAgent
 
 # goal_list = [[(80, 119), (79, 119), (78, 119), (77, 119)], #gate1 
 #              [(198, 119), (197, 119), (196, 119)], #gate2
 #              [(119, 19), (119, 20), (119, 21), (119, 22)]] #gate3 
 
-goal_list = [[(79, 119), (78, 119)], #gate1 
-             [(198, 119), (197, 119)], #gate2
-             [(119, 19), (119, 20)]] #gate3 
+# goal_list = [[(79, 119), (78, 119)], #gate1 
+#              [(198, 119), (197, 119)], #gate2
+#              [(119, 19), (119, 20)]] #gate3 
+
+goal_list = [[0,50], [49, 50]]
 
 class FightingModel(Model):
     """A model with some number of agents."""
@@ -31,29 +33,39 @@ class FightingModel(Model):
 
         self.datacollector_currents = DataCollector(
             {
-                "Remained Agents": FightingModel.current_healthy_agents, ## Healthy Agents -> Remained Agents
+                "Healthy Agents": FightingModel.current_healthy_agents,
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
 
         # Create agents
-        for i in range(self.num_agents):
-            a = FightingAgent(i, self, self.random.randrange(4))
-            self.schedule.add(a)
+        # for i in range(self.num_agents):
+        #     a = FightingAgent(i, self, self.random.randrange(4))
+        #     self.schedule.add(a)
 
-            # Add the agent to a random grid cell ## TODO: to make wall obstacle
-            x = self.random.randrange(self.grid.width)
-            y = self.random.randrange(self.grid.height)
-            self.grid.place_agent(a, (x, y))
+        #     # Add the agent to a random grid cell ## TODO: to make wall obstacle
+            
+        #     x = self.random.randrange(self.grid.width)
+        #     y = self.random.randrange(self.grid.height)
+        #     self.grid.place_agent(a, (x, y))
+
+        # Create agents for test #두 aget가 서로 일직선 상으로 충돌하는 상황 
+        a = FightingAgent(0, self, [1,50], 0)
+        self.schedule.add(a)
+        self.grid.place_agent(a, (1, 50))
+
+        b = FightingAgent(1, self, [98, 50], 1)
+        self.schedule.add(b)
+        self.grid.place_agent(b, (98, 50))
 
 
         exit_rec = [] ## exit_rec list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
-        for i in range(0, agent_integrated.exit_w):
-            for j in range(0, agent_integrated.exit_h):
+        for i in range(0, agent_test.exit_w):
+            for j in range(0, agent_test.exit_h):
                 exit_rec.append((i,j))
 
         for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
-            b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
+            b = FightingAgent(i, self, [0,0], 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
             self.schedule_e.add(b)
             self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
 
@@ -66,7 +78,7 @@ class FightingModel(Model):
                 tmp.append(0)
             self.wall_matrix.append(tmp)
         
-        from server_integrated import NUMBER_OF_CELLS
+        from server_test import NUMBER_OF_CELLS
         # for i in range(int(NUMBER_OF_CELLS*0.6)): ## 200*0.6=120
         #     wall.append((int(NUMBER_OF_CELLS*0.4),NUMBER_OF_CELLS-i-1)) ##(80, 200-i)
         # for i in range(int(NUMBER_OF_CELLS*0.4)): ## 200*0.4 = 80
@@ -76,7 +88,7 @@ class FightingModel(Model):
         # for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
         #     wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
         # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
-        # for i in range(120): ## 200*0.6=120
+        # for i in range(120): ## 200*0.6=12
         #     wall.append((80,200-i-1)) ##(80, 200-i)
         # for i in range(80): ## 200*0.4 = 80
         #     wall.append((80+i, 80)) ## (80+i, 80)
@@ -93,29 +105,29 @@ class FightingModel(Model):
             self.wall_matrix[i][int(NUMBER_OF_CELLS)-1] = 1
             self.wall_matrix[int(NUMBER_OF_CELLS)-1][0] = 1
 
-        for i in range(int(80)):
-            wall.append((i, 119))
-            wall.append((79, int(NUMBER_OF_CELLS)-i-1))
-            wall.append((119, int(NUMBER_OF_CELLS)-i-1))
-            wall.append((119+i, 119))
-            wall.append((119, 79-i))
-            wall.append((119+i, 79))
+        # for i in range(int(80)):
+        #     wall.append((i, 119))
+        #     wall.append((79, int(NUMBER_OF_CELLS)-i-1))
+        #     wall.append((119, int(NUMBER_OF_CELLS)-i-1))
+        #     wall.append((119+i, 119))
+        #     wall.append((119, 79-i))
+        #     wall.append((119+i, 79))
            
-            self.wall_matrix[i][119] = 1
-            self.wall_matrix[79][int(NUMBER_OF_CELLS)-i-1] = 1
-            self.wall_matrix[119][int(NUMBER_OF_CELLS)-i-1] = 1
-            self.wall_matrix[119+i][119] = 1
-            self.wall_matrix[119][79-i] = 1
-            self.wall_matrix[119+i][79] = 1
+        #     self.wall_matrix[i][119] = 1
+        #     self.wall_matrix[79][int(NUMBER_OF_CELLS)-i-1] = 1
+        #     self.wall_matrix[119][int(NUMBER_OF_CELLS)-i-1] = 1
+        #     self.wall_matrix[119+i][119] = 1
+        #     self.wall_matrix[119][79-i] = 1
+        #     self.wall_matrix[119+i][79] = 1
 
         for i in goal_list:
             for j in i:
-                if j in wall:
-                    wall.remove(j) ##??
+                if j in wall:    
+                    wall.remove(j)
                     self.wall_matrix[j[0]][j[1]] = 0
 
         for i in range(len(wall)):
-            c = FightingAgent(i, self, 11)
+            c = FightingAgent(i, self, wall[i], 11)
             self.schedule_w.add(c)
             self.grid.place_agent(c, wall[i])
 

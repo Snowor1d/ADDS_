@@ -21,17 +21,19 @@ exit_area = [[0,exit_w], [0,exit_h]]
 #              [(119, 19), (119, 20), (119, 21), (119, 22)], #gate5 
 #              [(0,0), (0,1), (1,0), (0,0)] ] #gate6 
 
-goal_list = [[(79, 119), (78, 119)],
-               [(90, 120)], 
-             [(198, 119), (197, 119)],
-             [(119, 90)],
-             [(119, 19), (119, 20)],
-             [(0,0), (0,1), (1,0), (0,0)] 
-             ]
+# goal_list = [[(79, 119), (78, 119)],
+#                [(90, 120)], 
+#              [(198, 119), (197, 119)],
+#              [(119, 90)],
+#              [(119, 19), (119, 20)],
+#              [(0,0), (0,1), (1,0), (0,0)] 
+#              ]
 
 # goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
 #               ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
 #goal_list = [[(0,0), (0,1)]]
+goal_list = [[(98, 50)], [(1, 50)]]
+
 
 def check_stage(pose):
     # stage_1 = [[60,200], [60,200]] #    60 < x범위 < 200
@@ -128,7 +130,7 @@ def set_agent_type_settings(agent, type):
 class FightingAgent(Agent):
     """An agent that fights."""
 
-    def __init__(self, unique_id, model, type): 
+    def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         self.type = type
         self.health = INITIAL_HEALTH
@@ -139,12 +141,13 @@ class FightingAgent(Agent):
         self.buried = False
         self.which_goal = 0
 
-        self.xy = [0, 0]
+        self.xy = pos
         self.vel = [0, 0]
         self.acc = [0, 0]
         self.mass = 3
-        self.xy[0] = self.random.randrange(self.model.grid.width)
-        self.xy[1] = self.random.randrange(self.model.grid.height)
+
+        # self.xy[0] = self.random.randrange(self.model.grid.width)
+        # self.xy[1] = self.random.randrange(self.model.grid.height)
         
         set_agent_type_settings(self, type)
 
@@ -234,12 +237,12 @@ class FightingAgent(Agent):
 
         cells_with_agents = []
         # looking for agents in the cells around the agent
-        for cell in possible_steps:
-            otherAgents = self.model.grid.get_cell_list_contents([cell])
-            if len(otherAgents): ## 주변에 agent 있니?
-                for agent in otherAgents: ## 안 죽은 agent 들 cells_with_agents에 추가
-                    if not agent.dead:
-                        cells_with_agents.append(agent)
+        # for cell in possible_steps:
+        #     otherAgents = self.model.grid.get_cell_list_contents([cell])
+        #     if len(otherAgents): ## 주변에 agent 있니?
+        #         for agent in otherAgents: ## 안 죽은 agent 들 cells_with_agents에 추가
+        #             if not agent.dead:
+        #                 cells_with_agents.append(agent)
 
         # if there is some agent on the neighborhood
         # if len(cells_with_agents): ## 주변 agent 수 만큼
@@ -247,19 +250,20 @@ class FightingAgent(Agent):
         #         self.attackOrMove(cells_with_agents, possible_steps)
         #     else: ## 주변에 있는 애들 attack
         #         self.attack(cells_with_agents)
-        new_position = possible_steps[0]
+        # new_position = possible_steps[0]
         # for i in possible_steps:
         #     distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
         #     if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
         #         new_position = i
-        new_position = self.helbling_modeling()
+        new_position = self.test_modeling()
         self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
         # self.kinetic_modeling()
 
     def kinetic_modeling(self):
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
-        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # (x,y)에 있는 agent와 상호작용하는 위치의 집합
+        #temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # (x,y)에 있는 agent와 상호작용하는 위치의 집합
+        temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
             if(i[0] > 0 and i[1] > 0 and i[0] < self.model.grid.width and i[1] < self.model.grid.height): # temp_loc에 있는 위치 중 map 벗어나는 위치 빼기
@@ -318,10 +322,10 @@ class FightingAgent(Agent):
             next_y = 0
         #print(F_x, F_y)
         return (next_x, next_y)
-    
-    def helbling_modeling(self):
-        from model_integrated import Model
-        global random_disperse
+
+    def helbling_modeling(self):    
+        from model_test import Model
+        global random_disperse  
 
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
@@ -443,6 +447,144 @@ class FightingAgent(Agent):
         #print(F_x, F_y)
         return (next_x, next_y)
         
+    def test_modeling(self):
+        from model_test import Model
+        global random_disperse
+
+        x = int(round(self.xy[0]))
+        y = int(round(self.xy[1]))
+        temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        near_loc = []
+        for i in temp_loc:
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+                near_loc.append(i)
+        near_agents_list = []
+        for i in near_loc:
+            near_agents = self.model.grid.get_cell_list_contents([i])
+            if len(near_agents):
+                for near_agent in near_agents:
+                    near_agents_list.append(near_agent) #kinetic 모델과 동일
+        print(near_agents_list)
+
+        F_x = 0
+        F_y = 0
+        k = 2
+        valid_distance = 3
+        intend_force = 2.5
+        time_step = 0.2# time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
+                        # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
+        #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
+        #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
+        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
+        repulsive_force = [0, 0]
+        obstacle_force = [0, 0]
+        for near_agent in near_agents_list:
+            n_x = near_agent.xy[0]
+            n_y = near_agent.xy[1]
+            d_x = self.xy[0] - n_x
+            d_y = self.xy[1] - n_y
+            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
+            if(valid_distance<d):
+                continue    
+
+            F = k * (valid_distance-d)
+            # print("F : ", F)
+            # if(d>0 and near_agent.dead == False):
+            #     F_x += (F*(d_x/d))
+            #     F_y += (F*(d_y/d))
+            if(near_agent.dead == True):
+                continue
+                
+            if(d!=0):
+                repulsive_force[0] += k*np.exp(0.8/d)*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
+                repulsive_force[1] += k*np.exp(0.8/d)*(d_y/d)
+            else :
+                if(random_disperse):
+                    repulsive_force = [50, -50]
+                    random_disperse = 0
+                else:
+                    repulsive_force = [-50, 50] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
+                    random_disperse = 1
+
+        check_wall = [(x-1, y-1), (x-1, y), (x-1, y+1), (x, y+1), (x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1)]
+
+        for i in check_wall: 
+            o_x = self.xy[0] - i[0]
+            o_y = self.xy[1] - i[1]
+
+            o_d = math.sqrt(pow(o_x, 2) + pow(o_y, 2))    
+        
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+                #print(len(self.model.wall_matrix))
+                if(self.model.wall_matrix[i[0]][i[1]]): # agent 주위에 벽이 있으면..
+                    obstacle_force[0] += k*np.exp(0.7/o_d)*(o_x/o_d) #벽으로 부터 힘을 받겠지
+                    obstacle_force[1] += k*np.exp(0.7/o_d)*(o_y/o_d)
+                        
+                        
+
+             
+                
+        #print(self.xy[0], self.xy[1])
+        # goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
+        # goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
+        if(self.unique_id == 0):
+            goal_x = goal_list[0][0][0] - self.xy[0]
+            goal_y = goal_list[0][0][1] - self.xy[1]
+            goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        else:
+            goal_x = goal_list[1][0][0] - self.xy[0]
+            goal_y = goal_list[1][0][1] - self.xy[1]
+            goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+
+        if(goal_d != 0):
+          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+        else :
+          desired_force = [0, 0]
+        
+        
+        #desried_force = intend_force(상수) * (가고자 했던 속도 - 현재 속도) 
+        #가고자 했던 속도와 현재 속도가 차이가 많이 나면 #뛰어야겠지
+
+        
+
+        # if(goal_d != 0):
+        #     F_x += intend_force * (goal_x/goal_d)
+        #     F_y += intend_force * (goal_y/goal_d)
+
+        F_x += desired_force[0]
+        F_y += desired_force[1]
+
+        F_x += obstacle_force[0]
+        F_y += obstacle_force[1]
+        
+        F_x += repulsive_force[0]
+        F_y += repulsive_force[1]
+        
+        print(repulsive_force[0])
+        print(repulsive_force[1])
+
+        self.acc[0] = F_x/self.mass
+        self.acc[1] = F_y/self.mass
+
+        self.vel[0] = self.acc[0]
+        self.vel[1] = self.acc[1]
+
+        self.xy[0] += self.vel[0] * time_step
+        self.xy[1] += self.vel[1] * time_step
+        
+        next_x = int(round(self.xy[0]))
+        next_y = int(round(self.xy[1]))
+
+        if(next_x<0):
+            next_x = 0
+        if(next_y<0):
+            next_y = 0
+        if(next_x>199):
+            next_x = 199
+        if(next_y>199):
+            next_y = 199
+        #print(F_x, F_y)
+        return (next_x, next_y)
 
 
 
