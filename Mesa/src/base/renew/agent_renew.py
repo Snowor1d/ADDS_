@@ -32,7 +32,7 @@ exit_area = [[0,exit_w], [0,exit_h]]
 # goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
 #               ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
 #goal_list = [[(0,0), (0,1)]]
-goal_list = [[(98, 50)], [(1, 50)]]
+goal_list = [[(71, 52)], [(89, 52)]]
 
 
 def check_stage(pose):
@@ -44,8 +44,8 @@ def check_stage(pose):
     # else:
     #     return 1
 
-    stage_1 = [[0, 80], [120, 200]]
-    stage_2 = [[80, 120], [120, 200]]
+    stage_1 = [[40, 68], [20, 80]]
+    stage_2 = [[69, 120], [120, 200]]
     stage_3 = [[120, 200], [120, 200]]
     stage_4 = [[120, 200], [80, 120]]
     stage_5 = [[120, 200], [0, 80]]
@@ -55,16 +55,8 @@ def check_stage(pose):
 
     if(pose[0]>stage_1[0][0] and pose[0]<stage_1[0][1] and pose[1]>stage_1[1][0] and pose[1]<stage_1[1][1]):
         return 0
-    elif(pose[0]>stage_2[0][0] and pose[0]<stage_2[0][1] and pose[1]>stage_2[1][0] and pose[1]<stage_2[1][1]):
-        return 1
-    elif(pose[0]>stage_3[0][0] and pose[0]<stage_3[0][1] and pose[1]>stage_3[1][0] and pose[1]<stage_3[1][1]):
-        return 2
-    elif(pose[0]>stage_4[0][0] and pose[0]<stage_4[0][1] and pose[1]>stage_4[1][0] and pose[1]<stage_4[1][1]):
-        return 3
-    elif(pose[0]>stage_5[0][0] and pose[0]<stage_5[0][1] and pose[1]>stage_5[1][0] and pose[1]<stage_5[1][1]):
-        return 4
     else:
-        return 5
+        return 1
 
 def central_of_goal(goals):
     real_goal = [0, 0]
@@ -180,9 +172,9 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
-        if (check_departure([self.xy[0],self.xy[1]], goal_list[len(goal_list)-1])):
-            self.dead = True
-            self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
+        # if (check_departure([self.xy[0],self.xy[1]], goal_list[len(goal_list)-1])):
+        #     self.dead = True
+        #     self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
 
         # if (self.which_goal != (len(goal_list)-1)):
         #     if(check_departure([self.xy[0], self.xy[1]], goal_list[self.which_goal])):
@@ -324,7 +316,7 @@ class FightingAgent(Agent):
         return (next_x, next_y)
 
     def helbling_modeling(self):    
-        from model_test import Model
+        from model_renew import Model
         global random_disperse  
 
         x = int(round(self.xy[0]))
@@ -382,7 +374,6 @@ class FightingAgent(Agent):
         check_wall = [(x-1, y-1), (x-1, y), (x-1, y+1), (x, y+1), (x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1)]
 
         for i in check_wall: 
-            print(len(self.model.wall_matrix))
             o_x = self.xy[0] - i[0]
             o_y = self.xy[1] - i[1]
 
@@ -444,10 +435,10 @@ class FightingAgent(Agent):
             next_x = 199
         if(next_y>199):
             next_y = 199
-        #print(F_x, F_y)
         return (next_x, next_y)
+        
     def test_modeling(self):
-        from model_test import Model
+        from model_renew import Model
         global random_disperse
 
         x = int(round(self.xy[0]))
@@ -536,17 +527,17 @@ class FightingAgent(Agent):
              
                 
         print(self.xy[0], self.xy[1])
-        # goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
-        # goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
-        # goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-        if(self.unique_id == 0):
-            goal_x = goal_list[0][0][0] - self.xy[0]
-            goal_y = goal_list[0][0][1] - self.xy[1]
-            goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-        else:
-            goal_x = goal_list[1][0][0] - self.xy[0]
-            goal_y = goal_list[1][0][1] - self.xy[1]
-            goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
+        goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
+        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        # if(self.unique_id == 0):
+        #     goal_x = goal_list[0][0][0] - self.xy[0]
+        #     goal_y = goal_list[0][0][1] - self.xy[1]
+        #     goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        # else:
+        #     goal_x = goal_list[1][0][0] - self.xy[0]
+        #     goal_y = goal_list[1][0][1] - self.xy[1]
+        #     goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
 
         if(goal_d != 0):
           desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -595,147 +586,6 @@ class FightingAgent(Agent):
             next_y = 199
         #print(F_x, F_y)
         return (next_x, next_y)
-        
-    # def test_modeling(self):
-    #     from model_test import Model
-    #     global random_disperse
-
-    #     x = int(round(self.xy[0]))
-    #     y = int(round(self.xy[1]))
-    #     #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-    #     temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-    #     near_loc = []
-    #     for i in temp_loc:
-    #         if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
-    #             near_loc.append(i)
-    #     near_agents_list = []
-    #     for i in near_loc:
-    #         near_agents = self.model.grid.get_cell_list_contents([i])
-    #         if len(near_agents):
-    #             for near_agent in near_agents:
-    #                 near_agents_list.append(near_agent) #kinetic 모델과 동일
-    #     print(near_agents_list)
-
-    #     F_x = 0
-    #     F_y = 0
-    #     k = 10
-    #     r_0 = 0.3
-    #     valid_distance = 3
-    #     intend_force = 2.5
-    #     time_step = 0.1 #time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
-    #                     # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
-    #     #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
-    #     #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
-    #     desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
-    #     repulsive_force = [0, 0]
-    #     obstacle_force = [0, 0]
-    #     for near_agent in near_agents_list:
-    #         n_x = near_agent.xy[0]
-    #         n_y = near_agent.xy[1]
-    #         d_x = self.xy[0] - n_x
-    #         d_y = self.xy[1] - n_y
-    #         d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
-    #         if(valid_distance<d):
-    #             continue    
-
-    #         F = k * (valid_distance-d)
-    #         # print("F : ", F)
-    #         # if(d>0 and near_agent.dead == False):
-    #         #     F_x += (F*(d_x/d))
-    #         #     F_y += (F*(d_y/d))
-    #         if(near_agent.dead == True):
-    #             continue
-                
-    #         if(d!=0):
-    #             repulsive_force[0] += k*np.exp(-pow((r_0/d), 2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
-    #             repulsive_force[1] += k*np.exp(-pow((r_0/d), 2))*(d_y/d)
-    #         else :
-    #             if(random_disperse):
-    #                 repulsive_force = [50, -50]
-    #                 random_disperse = 0
-    #             else:
-    #                 repulsive_force = [-50, 50] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
-    #                 random_disperse = 1
-
-    #     check_wall = [(x-1, y-1), (x-1, y), (x-1, y+1), (x, y+1), (x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1)]
-
-    #     for i in check_wall: 
-    #         o_x = self.xy[0] - i[0]
-    #         o_y = self.xy[1] - i[1]
-
-    #         o_d = math.sqrt(pow(o_x, 2) + pow(o_y, 2))    
-        
-    #         if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
-    #             #print(len(self.model.wall_matrix))
-    #             if(self.model.wall_matrix[i[0]][i[1]]): # agent 주위에 벽이 있으면..
-    #                 obstacle_force[0] += k*np.exp(0.7/o_d)*(o_x/o_d) #벽으로 부터 힘을 받겠지
-    #                 obstacle_force[1] += k*np.exp(0.7/o_d)*(o_y/o_d)
-                        
-                        
-
-             
-                
-    #     #print(self.xy[0], self.xy[1])
-    #     # goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
-    #     # goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
-    #     if(self.unique_id == 0):
-    #         goal_x = goal_list[0][0][0] - self.xy[0]
-    #         goal_y = goal_list[0][0][1] - self.xy[1]
-    #         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-    #     else:
-    #         goal_x = goal_list[1][0][0] - self.xy[0]
-    #         goal_y = goal_list[1][0][1] - self.xy[1]
-    #         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-
-    #     if(goal_d != 0):
-    #       desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
-    #     else :
-    #       desired_force = [0, 0]
-        
-        
-    #     #desried_force = intend_force(상수) * (가고자 했던 속도 - 현재 속도) 
-    #     #가고자 했던 속도와 현재 속도가 차이가 많이 나면 #뛰어야겠지
-
-        
-
-    #     # if(goal_d != 0):
-    #     #     F_x += intend_force * (goal_x/goal_d)
-    #     #     F_y += intend_force * (goal_y/goal_d)
-
-    #     F_x += desired_force[0]
-    #     F_y += desired_force[1]
-
-    #     #F_x += obstacle_force[0]
-    #     #F_y += obstacle_force[1]
-        
-    #     F_x += repulsive_force[0]
-    #     F_y += repulsive_force[1]
-        
-    #     print(repulsive_force[0])
-    #     print(repulsive_force[1])
-
-    #     self.acc[0] = F_x/self.mass
-    #     self.acc[1] = F_y/self.mass
-
-    #     self.vel[0] = self.acc[0]
-    #     self.vel[1] = self.acc[1]
-
-    #     self.xy[0] += self.vel[0] * time_step
-    #     self.xy[1] += self.vel[1] * time_step
-        
-    #     next_x = int(round(self.xy[0]))
-    #     next_y = int(round(self.xy[1]))
-
-    #     if(next_x<0):
-    #         next_x = 0
-    #     if(next_y<0):
-    #         next_y = 0
-    #     if(next_x>199):
-    #         next_x = 199
-    #     if(next_y>199):
-    #         next_y = 199
-    #     #print(F_x, F_y)
-    #     return (next_x, next_y)
 
 
 
