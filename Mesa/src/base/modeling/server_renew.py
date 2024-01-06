@@ -64,6 +64,17 @@ def agent_portrayal(agent):
             "text_color": "black",
         }
         return portrayal
+    if agent.type == 12: ## for space visualization 
+        portrayal = {
+            "Shape": "circle",
+            "Filled": "true",
+            "Color": "blue", 
+            "r": 1,
+            "text": "",
+            "Layer": 0,
+            "text_color": "black",
+        }
+        return portrayal
     
         
 
@@ -92,6 +103,7 @@ def agent_portrayal(agent):
         portrayal["Color"] = "orange"
         portrayal["Layer"] = 1
         return portrayal
+
     portrayal["Color"] = "green"
     portrayal["Layer"] = 1
     return portrayal
