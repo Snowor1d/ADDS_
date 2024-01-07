@@ -76,6 +76,117 @@ def make_room(xy1, xy2):
     rooms = rooms + make_plane([x1, y2], [x2, y2])
 
     return rooms
+
+def make_door(xy1, xy2, door_size):
+    x1 = 0
+    y1 = 0
+    x2 = 0
+    y2 = 0
+
+    x1 = xy1[0]
+    y1 = xy1[1]
+    x2 = xy2[0]
+    y2 = xy2[1]
+    
+    door = []
+
+    if(xy1[0]>xy2[0]):
+        temp = x1
+        x1 = x2
+        x2 = temp
+    if(xy1[1]>xy2[1]):
+        temp = y1
+        y1 = y2
+        y2 = temp
+    if(x1 == x2):
+        if((y2-y1)<=door_size):
+            return door
+        door_start = random.randint(y1, y2-door_size)
+        for i in range(door_size):
+            door.append((x1, door_start+i))
+        return door 
+    elif(y1==y2):
+        if((x2-x1)<=door_size):
+            return door
+        door_start = random.randint(x1, x2-door_size)
+        for i in range(door_size):
+            door.append((door_start+i, y1))
+        return door
+def goal_average(xys):
+    middle_x = 0
+    middle_y = 0
+    for i in xys:
+        middle_x += i[0]
+        middle_y += i[1]
+    middle_x = middle_x/len(xys)
+    middle_y = middle_y/len(xys)
+    return [middle_x, middle_y]
+    
+def make_door2(xy1, xy2, door_size):
+    x1 = 0
+    y1 = 0
+    x2 = 0
+    y2 = 0
+
+    x1 = xy1[0]
+    y1 = xy1[1]
+    x2 = xy2[0]
+    y2 = xy2[1]
+    
+    door = []
+
+    if(xy1[0]>xy2[0]):
+        temp = x1
+        x1 = x2
+        x2 = temp
+    if(xy1[1]>xy2[1]):
+        temp = y1
+        y1 = y2
+        y2 = temp
+    if(x1 == x2):
+        if((y2-y1-2)<=door_size):
+            return door
+        door_start = random.randint(y1+1, y2-door_size-1)
+        for i in range(door_size):
+            door.append((x1, door_start+i))
+        return door 
+    elif(y1==y2):
+        if((x2-x1-2)<=door_size):
+            return door
+        door_start = random.randint(x1+1, x2-door_size-1)
+        for i in range(door_size):
+            door.append((door_start+i, y1))
+        return door 
+    
+def make_door_to_outdoor(door_list, space_list):
+    for i in space_list: #외부와 연결된 문 만들기
+        if(i[0][0] == 10 and i[0][1]==10):
+            x=random.randint(0,1)
+            if(x):
+                door_list = door_list + make_door(i[0], [i[0][0], i[1][1]], 4)
+            else:
+                door_list = door_list + make_door(i[0], [i[1][0], i[0][1]], 4)
+
+        elif (i[0][0] == 10):
+            door_list = door_list + make_door(i[0], [i[0][0], i[1][1]], 4)
+        elif (i[0][1] == 10):
+            door_list = door_list + make_door(i[0], [i[1][0], i[0][1]], 4)
+        elif(i[1][0] == 90 and i[1][1]==90):
+            x = random.randint(0,1)
+            if(x):
+                door_list = door_list + make_door([i[1][0], i[0][1]], i[1], 4)
+            else:
+                door_list = door_list + make_door([i[0][0], i[1][1]], i[1], 4)
+
+        elif (i[1][0] == 90):
+            door_list = door_list + make_door([i[1][0], i[0][1]], i[1], 4)
+        elif (i[1][1] == 90):
+            door_list = door_list + make_door([i[0][0], i[1][1]], i[1], 4) 
+
+# class space_graph():
+#     def __init__(self, space_list):
+
+
     
 
 
@@ -126,12 +237,14 @@ class FightingModel(Model):
         space = []
         self.wall_matrix = list()
         self.only_one_wall = list()
+        self.indoor_connect = list() # 방과 방 사이를 연결하는 문을 만들기 위한 리스트 
         for i in range(100):
             tmp = []
             for j in range(100):
                 tmp.append(0)
             self.wall_matrix.append(tmp)
             self.only_one_wall.append(tmp)
+            self.indoor_connect.append(tmp)
         
         from server_renew import NUMBER_OF_CELLS
 
@@ -149,20 +262,178 @@ class FightingModel(Model):
         #wall = wall+self.random_map_generator2(3, 5, 2, 100)
         self.space_list = []
         self.room_list = []
+
+        self.room_goal_dict = {}
+        self.space_goal_dict = {} #각 space가 가지는 gaol을 표현하기 위함
+        self.space_index = {} #각 space의 index를 마크하기 위함 
+        self.space_graph = {} #각 space의 인접 space를 표현하기 위함
+
+        self.space_goal_dict[((0,0), (9,9))] = [[0,0]]
+        self.space_goal_dict[((0,9), (9, 99))] = [[0,0]]
+        self.space_goal_dict[((9,0), (99, 9))] = [[0,0]]
+        self.space_goal_dict[((9,89), (99, 99))] = [[5, 95]]
+        self.space_goal_dict[((89, 9), (99, 89))] = [[95, 5]] #외곽지대 골 설정
+        self.door_list = []
         self.map_recur_divider([[1, 1], [9, 9]], 10, 10, 0, self.space_list, self.room_list, 1)
+        
+        for j in self.space_list: 
+            self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = [] # 모든 space에 대한 goal을 설정할 것임
+
+        for i in self.room_list: #방과 방 사이에 문 만들기
+            left_down = i[0]
+            right_down = [i[1][0], i[0][1]]
+            left_up = [i[0][0], i[1][1]]
+            right_up = i[1]
+
+            x_len = i[1][0] - i[0][0]
+            y_len = i[1][1] - i[0][1]
+            target = []
+            for j in self.room_list:
+                left_down_j = j[0]
+                right_down_j = [j[1][0], j[0][1]]
+                left_up_j = [j[0][0], j[1][1]]
+                right_up_j = j[1]
+
+                x_len_j = j[1][0] - j[0][0]
+                y_len_j = j[1][1] - j[0][1]
+
+                if(right_down == left_down_j):
+                    if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
+                        target = [j[0], [j[0][0], j[1][1]]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(right_up == left_up_j):
+                    if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
+                        target = [j[0], [j[0][0], j[1][1]]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(right_up == right_down_j):
+                    if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
+                        target = [j[0], [j[1][0], j[0][1]]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(left_up == left_down_j):
+                    if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
+                        target = [j[0], [j[1][0], j[0][1]]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(left_up == right_up_j):
+                    if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
+                        target = [[j[1][0], j[0][1]], j[1]] #check
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(left_down == right_down_j):
+                    if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
+                        target = [[j[1][0], j[0][1]], j[1]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(left_down == left_up_j):
+                    if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
+                        target = [[j[0][0], j[1][1]], j[1]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+                elif(right_down == right_up_j):
+                    if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
+                        target = [[j[0][0], j[1][1]], j[1]]
+                        new_door_list = make_door2(target[0], target[1], 4)
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.door_list = self.door_list + new_door_list
+
+                
+                
+        door_to_outdoor = random.randint(1,3) #외부와 연결된 문 몇개 이하로 제한할건지 
+        now_door_to_outdoor = 0
+
+        for i in self.room_list: #외부와 연결된 문 만들기 (하나만 만들기)
+            if(now_door_to_outdoor == door_to_outdoor):
+                break
+
+            if(i[0][0] == 10 and i[0][1]==10):
+                x=random.randint(0,1)
+                if(x):
+                    new_door_list = make_door(i[0], [i[0][0], i[1][1]], 4)
+                    self.door_list = self.door_list + new_door_list
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                else:
+                    new_door_list = make_door(i[0], [i[1][0], i[0][1]], 4)
+                    self.door_list = self.door_list + new_door_list
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+
+            elif (i[0][0] == 10):
+                new_door_list = make_door(i[0], [i[0][0], i[1][1]], 4)
+                self.door_list = self.door_list + new_door_list
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+
+            elif (i[0][1] == 10):
+                new_door_list = make_door(i[0], [i[1][0], i[0][1]], 4)
+                self.door_list = self.door_list + new_door_list
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+    
+            elif(i[1][0] == 90 and i[1][1]==90):
+                x = random.randint(0,1)
+                if(x):
+                    new_door_list = make_door([i[1][0], i[0][1]], i[1], 4)
+                    self.door_list = self.door_list + new_door_list
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                else:
+                    new_door_list = make_door([i[0][0], i[1][1]], i[1], 4)
+                    self.door_list = self.door_list + new_door_list
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+
+            elif (i[1][0] == 90):
+                new_door_list = make_door([i[1][0], i[0][1]], i[1], 4)
+                self.door_list = self.door_list + new_door_list
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+
+            elif (i[1][1] == 90):
+                new_door_list = make_door([i[0][0], i[1][1]], i[1], 4)
+                self.door_list = self.door_list + new_door_list
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                now_door_to_outdoor = now_door_to_outdoor + 1
+
+        print(self.door_list)
+        print(self.space_goal_dict)
+                
         for i in self.room_list:
             wall = wall+make_room(i[0], i[1])
         for j in self.space_list:
             space = space+make_room(j[0], j[1])
         print(self.space_list)
         print(self.room_list)
+        print(len(self.door_list)/4)
 
-
+        set_transform = set(wall)
+        wall = list(set_transform)
         for i in goal_list:
             for j in i:
                 if j in wall:    
                     wall.remove(j)
                     self.wall_matrix[j[0]][j[1]] = 0
+    
+        for i in self.door_list:
+                if i in wall:    
+                    wall.remove(i)
+                    self.wall_matrix[i[0]][i[1]] = 0
 
         for i in range(len(wall)):
             if (self.only_one_wall[wall[i][0]][wall[i][1]] == 1 and wall[i][0]!=0 and wall[i][1]!=0 and wall[i][1]!=99):
@@ -171,13 +442,15 @@ class FightingModel(Model):
             self.schedule_w.add(c)
             self.grid.place_agent(c, wall[i])
             self.only_one_wall[wall[i][0]][wall[i][1]] = 1
-        for i in range(len(space)):
-            if (self.only_one_wall[space[i][0]][space[i][1]] == 1 and space[i][0]!=0 and space[i][1]!=0 and space[i][1]!=99):
-                continue
-            c = FightingAgent(10000+i, self, space[i], 12)
-            self.schedule_w.add(c)
-            self.grid.place_agent(c, space[i])
-            self.only_one_wall[space[i][0]][space[i][1]] = 1
+        # for i in range(len(space)):
+        #     if (self.only_one_wall[space[i][0]][space[i][1]] == 1 and space[i][0]!=0 and space[i][1]!=0 and space[i][1]!=99):
+        #         continue
+        #     c = FightingAgent(10000+i, self, space[i], 12)
+        #     self.schedule_w.add(c)
+        #     self.grid.place_agent(c, space[i])
+        #     self.only_one_wall[space[i][0]][space[i][1]] = 1
+
+
     def make_hazard(self, xy1, xy2, depth):
         new_plane = []
     
