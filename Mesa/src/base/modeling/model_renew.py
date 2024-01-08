@@ -7,6 +7,7 @@ from mesa.datacollection import DataCollector
 import agent_renew
 from agent_renew import WallAgent
 import random
+import copy
 
 # goal_list = [[(80, 119), (79, 119), (78, 119), (77, 119)], #gate1 
 #              [(198, 119), (197, 119), (196, 119)], #gate2
@@ -267,17 +268,111 @@ class FightingModel(Model):
         self.space_goal_dict = {} #각 space가 가지는 gaol을 표현하기 위함
         self.space_index = {} #각 space의 index를 마크하기 위함 
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
+        self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
-        self.space_goal_dict[((0,0), (9,9))] = [[0,0]]
-        self.space_goal_dict[((0,9), (9, 99))] = [[0,0]]
-        self.space_goal_dict[((9,0), (99, 9))] = [[0,0]]
-        self.space_goal_dict[((9,89), (99, 99))] = [[5, 95]]
-        self.space_goal_dict[((89, 9), (99, 89))] = [[95, 5]] #외곽지대 골 설정
+        # self.space_goal_dict[((0,0), (9,9))] = [[0,0]]
+        # self.space_index[((0,0), (9,9))] = 0
+
+        # self.space_goal_dict[((0,9), (9, 99))] = [[0,0]]
+        # self.space_index[((0,9), (9, 99))] = 1
+
+        # self.space_goal_dict[((9,0), (99, 9))] = [[0,0]]
+        # self.space_index[((9,0), (99, 9))] = 2
+
+        # self.space_goal_dict[((9,89), (99, 99))] = [[5, 95]]
+        # self.space_index[((9,89), (99, 99))] = 3
+
+        # self.space_goal_dict[((89, 9), (99, 89))] = [[95, 5]] #외곽지대 골 설정
+        # self.space_index[((89, 9), (99, 89))] = 4
+        self.space_goal_dict[((0,0), (10,10))] = [[0,0]]
+        self.space_type[((0,0), (10,10))] = 0
+        self.space_index[((0,0), (10,10))] = 0
+
+        self.space_goal_dict[((0,10), (10, 100))] = [[0,0]]
+        self.space_type[((0,10), (10, 100))] = 0
+        self.space_index[((0,10), (10, 100))] = 1
+
+        self.space_goal_dict[((10,0), (100, 10))] = [[0,0]]
+        self.space_type[((10,0), (100, 10))] = 0
+        self.space_index[((10,0), (100, 10))] = 2
+
+        self.space_goal_dict[((10,90), (100, 100))] = [[5, 95]]
+        self.space_type[((10,90), (100, 100))] = 0
+        self.space_index[((10,90), (100, 100))] = 3
+
+        self.space_goal_dict[((90, 10), (100, 90))] = [[95, 5]] #외곽지대 골 설정
+        self.space_type[((90, 10), (100, 90))] = 0
+        self.space_index[((90, 10), (100, 90))] = 4
+
         self.door_list = []
+        index = 5
         self.map_recur_divider([[1, 1], [9, 9]], 10, 10, 0, self.space_list, self.room_list, 1)
-        
+
         for j in self.space_list: 
             self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = [] # 모든 space에 대한 goal을 설정할 것임
+            self.space_index[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = index
+            index = index+1
+            self.space_graph[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = []
+        for k in self.room_list:
+            self.space_type[((k[0][0], k[0][1]), (k[1][0], k[1][1]))] = 1
+
+        check_connection = []
+        for i in range(100):
+            tmp = []
+            for j in range(100):
+                tmp.append(0)
+            check_connection.append(tmp)
+        print("!!!")
+        print(self.space_list)
+        print("!!!")
+
+        for space in self.space_list: #space끼리 연결 #space 그래프 만들기
+            check_connection = []
+            for i1 in range(100):
+                tmp = []
+            for j1 in range(100):
+                tmp.append(0)
+                check_connection.append(tmp)
+            
+            for y in range(space[0][1]+1, space[1][1]):
+                check_connection[space[0][0]][y] = 1 #left 
+            for y in range(space[0][1]+1, space[1][1]):
+                check_connection[space[1][0]][y] = 1 #right
+            for x in range(space[0][0]+1, space[1][0]):
+                check_connection[x][space[0][1]] = 1 #down
+            for x in range(space[0][0]+1, space[1][0]):
+                check_connection[x][space[1][1]] = 1 #up
+
+            for space2 in self.space_list:
+                check_connection2 = copy.deepcopy(check_connection)
+                checking = 0
+                if(space == space2):
+                    continue
+                for y2 in range(space2[0][1]+1, space2[1][1]):
+                    #check_connection2[space2[0][0]][y2] += 1 #left 
+                    if(check_connection2[space2[0][0]][y2] == 1):
+                        #print(space, space2, "가 LEFT에서 만남")
+                        checking = 1
+                for y3 in range(space2[0][1]+1, space2[1][1]):
+                    #check_connection2[space2[1][0]][y3] += 1 #right
+                    if(check_connection2[space2[1][0]][y3] == 1):
+                        #print(space, space2, "가 RIGHT에서 만남")
+                        checking = 1
+                for x2 in range(space2[0][0]+1, space2[1][0]):
+                    #check_connection2[x2][space2[0][1]] += 1 #down
+                    if(check_connection2[x2][space2[0][1]] == 1):
+                        #print(space, space2, "가 DOWN에서 만남")
+                        checking = 1
+                for x3 in range(space2[0][0]+1, space2[1][0]):
+                    #check_connection2[x3][space2[1][1]] += 1 #up
+                    if(check_connection2[x3][space2[1][1]] == 1):
+                        #print(space, space2, "가 UP에서 만남")
+                        checking = 1
+                if (checking==1 and space != space2):
+                    self.space_graph[((space[0][0], space[0][1]), (space[1][0], space[1][1]))].append(space2)
+        
+        print(self.space_graph)
+            
 
         for i in self.room_list: #방과 방 사이에 문 만들기
             left_down = i[0]
@@ -411,16 +506,16 @@ class FightingModel(Model):
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
                 now_door_to_outdoor = now_door_to_outdoor + 1
 
-        print(self.door_list)
-        print(self.space_goal_dict)
+        #print(self.door_list)
+        #print(self.space_goal_dict)
                 
         for i in self.room_list:
             wall = wall+make_room(i[0], i[1])
         for j in self.space_list:
             space = space+make_room(j[0], j[1])
-        print(self.space_list)
-        print(self.room_list)
-        print(len(self.door_list)/4)
+        #print(self.space_list)
+        #print(self.room_list)
+        #print(len(self.door_list)/4)
 
         set_transform = set(wall)
         wall = list(set_transform)
@@ -442,13 +537,13 @@ class FightingModel(Model):
             self.schedule_w.add(c)
             self.grid.place_agent(c, wall[i])
             self.only_one_wall[wall[i][0]][wall[i][1]] = 1
-        # for i in range(len(space)):
-        #     if (self.only_one_wall[space[i][0]][space[i][1]] == 1 and space[i][0]!=0 and space[i][1]!=0 and space[i][1]!=99):
-        #         continue
-        #     c = FightingAgent(10000+i, self, space[i], 12)
-        #     self.schedule_w.add(c)
-        #     self.grid.place_agent(c, space[i])
-        #     self.only_one_wall[space[i][0]][space[i][1]] = 1
+        for i in range(len(space)):
+            if (self.only_one_wall[space[i][0]][space[i][1]] == 1 and space[i][0]!=0 and space[i][1]!=0 and space[i][1]!=99):
+                continue
+            c = FightingAgent(10000+i, self, space[i], 12)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, space[i])
+            self.only_one_wall[space[i][0]][space[i][1]] = 1
 
 
     def make_hazard(self, xy1, xy2, depth):
@@ -771,8 +866,8 @@ class FightingModel(Model):
         while(num>0):
             x = random.randint(xy1[0]+1, xy2[0]-1)
             y = random.randint(xy1[1]+1, xy2[1]-1)
-            print(x, xy1[0])
-            print(y, xy1[1])
+            #print(x, xy1[0])
+            #print(y, xy1[1])
             while(check_list[x-xy1[0]][y-xy1[1]] == 1):
                 x = random.randint(xy1[0]+1, xy2[0]-1)
                 y = random.randint(xy1[1]+1, xy2[1]-1)
