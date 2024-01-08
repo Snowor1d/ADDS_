@@ -10,7 +10,7 @@ SIZE_OF_CANVAS_IN_PIXELS_Y = 1000
 
 simulation_params = {
     "number_agents": NumberInput(
-        "Hi, Juna(B). Choose how many agents to include in the model", value=NUMBER_OF_CELLS
+        "Hi, ADDS . Choose how many agents to include in the model", value=NUMBER_OF_CELLS
     ),
     "width": NUMBER_OF_CELLS,
     "height": NUMBER_OF_CELLS,
@@ -145,7 +145,7 @@ grid = CanvasGrid(
 
 chart_healthy = ChartModule(
     [
-        {"Label": "Healthy Agents", "Color": "green"},
+        {"Label": "Remained Agents", "Color": "green"},
         #{"Label": "Non Healthy Agents", "Color": "red"}, ## 그래프 상에서 Non Healthy Agents 삭제
     ],
     canvas_height = 300,
