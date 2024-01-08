@@ -208,6 +208,7 @@ class FightingModel(Model):
         self.running = (
             True  # required by the MESA Model Class to start and stop the simulation
         )
+        self.agent_id = 1000
 
         self.datacollector_currents = DataCollector(
             {
@@ -216,8 +217,8 @@ class FightingModel(Model):
             }
         )
 
-        self.agent_place((40,20), (70, 80), 100)
-        self.make_hazard((40,20), (70,80), 4)
+        # self.agent_place((40,20), (70, 80), 100)
+        # self.make_hazard((40,20), (70,80), 4)
 
 
 
@@ -306,6 +307,9 @@ class FightingModel(Model):
 
         print(self.space_graph)
 
+        self.random_agent_distribute(100)
+        self.random_hazard_placement(random.randint(1,3))
+
 
         # 이제 고립된 방들 문 만들어주기 
         
@@ -366,8 +370,74 @@ class FightingModel(Model):
         else:
             return 1            
         
+    def random_agent_distribute(self, agent_num):
+        case = random.randint(1,2) 
+        # case1 -> 방에 사람이 있는 경우
+        # case2 -> 밖에 주로 사람이 있는 경우
+        only_space = []
+        for sp in self.space_list:
+            if (not sp in self.room_list and sp != [[0,0], [10, 10]] and sp != [[]]):
+                only_space.append(sp)
+        space_num = len(only_space)
         
+        if(case==1 or space_num<7):
+            room_agent = random.randint(int(agent_num*7/10), int(agent_num*9/10))
+        else:
+            room_agent = random.randint(int(agent_num*1/10), int(agent_num*4/10))
+        
+        space_agent = agent_num-room_agent
 
+        room_num = len(self.room_list)
+  
+        random_list = [0] * room_num
+
+        # 총합이 room_agent가 되도록 할당
+        for i in range(room_num - 1):
+            random_num = random.randint(1, room_agent - sum(random_list) - (room_num - i - 1))
+            random_list[i] = random_num
+
+        # 마지막 숫자는 나머지 값으로 설정
+        random_list[-1] = room_agent - sum(random_list)
+
+        for j in range(len(self.room_list)):
+            self.agent_place(self.room_list[j][0], self.room_list[j][1], random_list[j])
+
+        space_random_list = [0] * space_num
+        print(only_space)
+
+        for k in range(space_num - 1):
+            if(only_space[k] == [[0,10], [10, 99]] or only_space[k] == [[10, 0], [99, 10]] or only_space[k] == [[10, 90], [99, 99]] or only_space[k] == [[90, 10], [99, 90]]):
+                random_space_num = random.randint(1,min(space_agent-sum(space_random_list)- (space_num-k-1), 5))
+
+            else:
+                random_space_num = random.randint(1, space_agent - sum(space_random_list) - (space_num - k - 1))
+            space_random_list[k] = random_space_num 
+        space_random_list[-1] = space_agent - sum(space_random_list)
+
+
+        for l in range(len(only_space)):
+            self.agent_place(only_space[l][0], only_space[l][1], space_random_list[l])
+
+    def random_hazard_placement(self, hazard_num):
+        min_size = 4
+        max_size = 5
+        only_space = [] #바깥쪽 비상탈출구 제외
+        for sp in self.space_list:
+            if (sp != [[0,0], [10, 10]] and sp != [[0,10], [10, 99]] and sp != [[10, 0], [99, 10]] and sp != [[10, 90], [99, 99]] and sp != [[90, 10], [99, 90]]):
+                only_space.append(sp)
+        hazard_num = min(hazard_num, len(only_space))
+
+        hazard_visited = [0] * len(only_space)
+
+        while(1):
+            hazard_index = random.randint(0, len(only_space)-1)
+            if(hazard_visited[hazard_index] == 1):
+                continue
+            hazard_visited[hazard_index] = 1
+            self.make_hazard(only_space[hazard_index][0], only_space[hazard_index][1], random.randint(min_size, max_size))
+            hazard_num = hazard_num - 1
+            if(hazard_num == 0):
+                break
 
     def init_outside(self): #외곽 탈출로 구현 
         self.space_goal_dict[((0,0), (10,10))] = [[0,0]]
@@ -375,24 +445,24 @@ class FightingModel(Model):
         self.space_index[((0,0), (10,10))] = 0
         self.space_list.append([[0,0], [10,10]])
 
-        self.space_goal_dict[((0,10), (10, 100))] = [[0,0]]
-        self.space_type[((0,10), (10, 100))] = 0
-        self.space_index[((0,10), (10, 100))] = 1
+        self.space_goal_dict[((0,10), (10, 99))] = [[0,0]]
+        self.space_type[((0,10), (10, 99))] = 0
+        self.space_index[((0,10), (10, 99))] = 1
         self.space_list.append([[0,10], [10,99]])
 
-        self.space_goal_dict[((10,0), (100, 10))] = [[0,0]]
-        self.space_type[((10,0), (100, 10))] = 0
-        self.space_index[((10,0), (100, 10))] = 2
+        self.space_goal_dict[((10,0), (99, 10))] = [[0,0]]
+        self.space_type[((10,0), (99, 10))] = 0
+        self.space_index[((10,0), (99, 10))] = 2
         self.space_list.append([[10, 0], [99, 10]]) 
 
-        self.space_goal_dict[((10,90), (100, 100))] = [[5, 95]]
-        self.space_type[((10,90), (100, 100))] = 0
-        self.space_index[((10,90), (100, 100))] = 3
+        self.space_goal_dict[((10,90), (99, 99))] = [[5, 95]]
+        self.space_type[((10,90), (99, 99))] = 0
+        self.space_index[((10,90), (99, 99))] = 3
         self.space_list.append([[10, 90], [99, 99]])
 
-        self.space_goal_dict[((90, 10), (100, 90))] = [[95, 5]] #외곽지대 골 설정
-        self.space_type[((90, 10), (100, 90))] = 0
-        self.space_index[((90, 10), (100, 90))] = 4
+        self.space_goal_dict[((90, 10), (99, 90))] = [[95, 5]] #외곽지대 골 설정
+        self.space_type[((90, 10), (99, 90))] = 0
+        self.space_index[((90, 10), (99, 90))] = 4
         self.space_list.append([[90, 10], [99, 90]])
 
     def connect_space(self):
@@ -913,7 +983,8 @@ class FightingModel(Model):
                 y = random.randint(xy1[1]+1, xy2[1]-1)
             check_list[x-xy1[0]][y-xy1[1]] = 1
             num = num-1
-            a = FightingAgent(num, self, [x,y], 0)
+            a = FightingAgent(self.agent_id, self, [x,y], 0)
+            self.agent_id = self.agent_id + 1
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
 
