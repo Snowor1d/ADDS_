@@ -1,6 +1,7 @@
 from mesa import Agent
 import math
 import numpy as np
+import random
 
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
@@ -124,6 +125,7 @@ class FightingAgent(Agent):
 
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
+        self.goal_init = 0
         self.type = type
         self.health = INITIAL_HEALTH
         self.attack_damage = ATTACK_DAMAGE
@@ -132,6 +134,8 @@ class FightingAgent(Agent):
         self.dead_count = 0
         self.buried = False
         self.which_goal = 0
+        self.previous_stage = []
+        self.now_goal = [0,0]
 
         self.xy = pos
         self.vel = [0, 0]
@@ -181,6 +185,34 @@ class FightingAgent(Agent):
         #         self.which_goal += 1
 
         self.move()
+
+    def check_stage_agent(self):
+        x = self.xy[0]
+        y = self.xy[1]
+        now_stage = []
+        for i in self.model.space_list:
+            if (x>i[0][0] and x<i[1][0] and y>i[0][1] and y<i[1][1]):
+                now_stage = i
+                break
+        now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
+        return now_stage
+
+    def which_goal_agent_want(self):
+        if(self.goal_init == 0):
+            now_stage = self.check_stage_agent()
+            goal_candiate = self.model.space_goal_dict[now_stage]
+            goal_index = random.randint(0, len(goal_candiate)-1)
+            self.now_goal = goal_candiate[goal_index]
+            self.goal_init = 1
+        now_stage = self.check_stage_agent()
+        if(self.previous_stage != self.check_stage_agent):
+            goal_candiate = self.model.space_goal_dict[now_stage]
+            goal_index = random.randint(0, len(goal_candiate)-1)
+            self.now_goal = goal_candiate[goal_index]
+            self.previous_stage = now_stage 
+
+            
+
 
     def attackOrMove(self, cells_with_agents, possible_steps) -> None:
         """Decides if the user is going to attack or just move.
@@ -525,10 +557,15 @@ class FightingAgent(Agent):
                         
 
              
-                
-        goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
-        goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
+        self.which_goal_agent_want()
+        # goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
+        # goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
+        # goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+
+        goal_x = self.now_goal[0]
+        goal_y = self.now_goal[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+
         # if(self.unique_id == 0):
         #     goal_x = goal_list[0][0][0] - self.xy[0]
         #     goal_y = goal_list[0][0][1] - self.xy[1]

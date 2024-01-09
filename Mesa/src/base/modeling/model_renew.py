@@ -264,7 +264,7 @@ class FightingModel(Model):
         #wall = wall+self.random_map_generator2(3, 5, 2, 100)
         self.space_list = []
         self.room_list = []
-
+        
         self.room_goal_dict = {}
         self.space_goal_dict = {} #각 space가 가지는 gaol을 표현하기 위함
         self.space_index = {} #각 space의 index를 마크하기 위함 
@@ -272,7 +272,7 @@ class FightingModel(Model):
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
         self.init_outside() #외곽지대 탈출로 구현 
-
+        
         self.door_list = []
         index = 5
         self.map_recur_divider([[1, 1], [9, 9]], 10, 10, 0, self.space_list, self.room_list, 1)
@@ -309,6 +309,13 @@ class FightingModel(Model):
 
         self.random_agent_distribute(100)
         self.random_hazard_placement(random.randint(1,3))
+
+        self.space_goal_dict[((0,0), (10,10))] = [[0,0]]
+        self.space_goal_dict[((0,10), (10, 99))] = [[0,0]]
+        self.space_goal_dict[((10,0), (99, 10))] = [[0,0]]
+        self.space_goal_dict[((10,90), (99, 99))] = [[5, 95]]
+        self.space_goal_dict[((90, 10), (99, 90))] = [[95, 5]]
+
         print(self.space_goal_dict)
 
 
@@ -321,8 +328,8 @@ class FightingModel(Model):
                 
         for i in self.room_list:
             wall = wall+make_room(i[0], i[1])
-        for j in self.space_list:
-             space = space+make_room(j[0], j[1])
+        # for j in self.space_list:
+        #      space = space+make_room(j[0], j[1])
         #print(self.space_list)
         #print(self.room_list)
         #print(len(self.door_list)/4)
