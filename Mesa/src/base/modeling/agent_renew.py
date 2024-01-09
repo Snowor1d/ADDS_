@@ -194,22 +194,49 @@ class FightingAgent(Agent):
             if (x>i[0][0] and x<i[1][0] and y>i[0][1] and y<i[1][1]):
                 now_stage = i
                 break
-        now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
+        if(len(now_stage) != 0):
+            now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
+        else:
+            now_stage = ((0,0), (10, 10))
         return now_stage
 
     def which_goal_agent_want(self):
+        
+
         if(self.goal_init == 0):
             now_stage = self.check_stage_agent()
             goal_candiate = self.model.space_goal_dict[now_stage]
             goal_index = random.randint(0, len(goal_candiate)-1)
             self.now_goal = goal_candiate[goal_index]
             self.goal_init = 1
+            self.previous_stage = now_stage
         now_stage = self.check_stage_agent()
-        if(self.previous_stage != self.check_stage_agent):
+        if(self.previous_stage != self.check_stage_agent()):
             goal_candiate = self.model.space_goal_dict[now_stage]
-            goal_index = random.randint(0, len(goal_candiate)-1)
-            self.now_goal = goal_candiate[goal_index]
-            self.previous_stage = now_stage 
+            goal_candiate2 = []
+            if(len(goal_candiate)>1):
+                min_d = 1000
+                min_i = goal_candiate[0]
+                for i in goal_candiate:
+                    d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
+                    if (d<min_d):
+                        min_d = d
+                        min_i = i #가장 가까운 골 찾기
+                for j in goal_candiate: 
+                    if (j==min_i): #goal 후보에서 빼버림
+                        print("!!!")
+                        continue
+                    else :
+                        goal_candiate2.append(j)
+                goal_index = random.randint(0, len(goal_candiate2)-1)
+                self.now_goal = goal_candiate2[goal_index]
+                self.previous_stage = now_stage
+                return
+            else :
+                goal_index = random.randint(0, len(goal_candiate)-1)
+                self.now_goal = goal_candiate[goal_index]
+                self.previous_stage = now_stage
+
 
             
 
@@ -490,11 +517,11 @@ class FightingAgent(Agent):
 
         F_x = 0
         F_y = 0
-        k = 10
+        k = 4
         r_0 = 0.3
         valid_distance = 3
         intend_force = 2
-        time_step = 0.1 #time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
+        time_step = 0.2 #time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
                         # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
         #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
         #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
@@ -530,8 +557,8 @@ class FightingAgent(Agent):
                     repulsive_force[0] += k*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
                     repulsive_force[1] += k*np.exp(-(d/2))*(d_y/d) 
                 else:
-                    repulsive_force[0] += 3*k*np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 3*k*np.exp(-(d/2))*(d_y/d)
+                    repulsive_force[0] += 2*k*np.exp(-(d/2))*(d_x/d)
+                    repulsive_force[1] += 2*k*np.exp(-(d/2))*(d_y/d)
             else :
                 if(random_disperse):
                     repulsive_force = [50, -50]
@@ -561,9 +588,8 @@ class FightingAgent(Agent):
         # goal_x = central_of_goal(goal_list[check_stage(self.xy)])[0] - self.xy[0]
         # goal_y = central_of_goal(goal_list[check_stage(self.xy)])[1] - self.xy[1]
         # goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-
-        goal_x = self.now_goal[0]
-        goal_y = self.now_goal[1]
+        goal_x = self.now_goal[0] - self.xy[0]
+        goal_y = self.now_goal[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
 
         # if(self.unique_id == 0):
@@ -593,8 +619,8 @@ class FightingAgent(Agent):
         F_x += desired_force[0]
         F_y += desired_force[1]
 
-        F_x += obstacle_force[0]
-        F_y += obstacle_force[1]
+        #F_x += obstacle_force[0]
+        #F_y += obstacle_force[1]
         
         F_x += repulsive_force[0]
         F_y += repulsive_force[1]
@@ -616,10 +642,10 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y<0):
             next_y = 0
-        if(next_x>199):
-            next_x = 199
-        if(next_y>199):
-            next_y = 199
+        if(next_x>99):
+            next_x = 99
+        if(next_y>99):
+            next_y = 99
         #print(F_x, F_y)
         return (next_x, next_y)
 

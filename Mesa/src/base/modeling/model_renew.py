@@ -8,6 +8,7 @@ import agent_renew
 from agent_renew import WallAgent
 import random
 import copy
+import math
 
 # goal_list = [[(80, 119), (79, 119), (78, 119), (77, 119)], #gate1 
 #              [(198, 119), (197, 119), (196, 119)], #gate2
@@ -159,6 +160,13 @@ def make_door2(xy1, xy2, door_size):
             door.append((door_start+i, y1))
         return door 
     
+def goal_extend(xy_space, goal):
+    xy = [0, 0]
+    xy[0] = (xy_space[0][0] + xy_space[1][0])/2
+    xy[1] = (xy_space[1][0] + xy_space[1][1])/2
+    d = math.sqrt(pow(goal[0]-xy[0],2) + pow(goal[1]-xy[1], 2))
+    return [goal[0] + 2*(goal[0]-xy[0])/d, goal[1] + 2*(goal[1]-xy[1])/d]
+    
 def make_door_to_outdoor(door_list, space_list):
     for i in space_list: #외부와 연결된 문 만들기
         if(i[0][0] == 10 and i[0][1]==10):
@@ -308,7 +316,7 @@ class FightingModel(Model):
         #print(self.space_graph)
 
         self.random_agent_distribute(100)
-        self.random_hazard_placement(random.randint(1,3))
+        #self.random_hazard_placement(random.randint(1,3))
 
         self.space_goal_dict[((0,0), (10,10))] = [[0,0]]
         self.space_goal_dict[((0,10), (10, 99))] = [[0,0]]
@@ -562,8 +570,8 @@ class FightingModel(Model):
                     second_left_goal = [0, 0]
                     second_left_goal[0] = (left_goal[0]/left_goal_num)
                     second_left_goal[1] = (left_goal[1]/left_goal_num)+3
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(first_left_goal)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(second_left_goal)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_left_goal))
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_left_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_left_goal)
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_left_goal)
                     
@@ -574,8 +582,8 @@ class FightingModel(Model):
                     second_right_goal = [0, 0]
                     second_right_goal[0] = (second_right_goal[0]/right_goal_num)
                     second_right_goal[1] = (right_goal[1]/right_goal_num)+3
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(first_right_goal)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(second_right_goal)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_right_goal))
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_right_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_right_goal)
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_right_goal)
 
@@ -586,8 +594,8 @@ class FightingModel(Model):
                     second_down_goal = [0, 0]
                     second_down_goal[0] = (down_goal[0]/down_goal_num)-3
                     second_down_goal[1] = (down_goal[1]/down_goal_num)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(first_down_goal)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(second_down_goal)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_down_goal))
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_down_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_down_goal)
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_down_goal)
 
@@ -598,8 +606,8 @@ class FightingModel(Model):
                     second_up_goal = [0, 0]
                     second_up_goal[0] = (up_goal[0]/up_goal_num)-3
                     second_up_goal[1] = (up_goal[1]/up_goal_num)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(first_up_goal)
-                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(second_up_goal)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_up_goal))
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_up_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_up_goal)
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_up_goal)
 
@@ -627,57 +635,57 @@ class FightingModel(Model):
                     if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
                         target = [j[0], [j[0][0], j[1][1]]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(right_up == left_up_j):
                     if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
                         target = [j[0], [j[0][0], j[1][1]]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(right_up == right_down_j):
                     if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
                         target = [j[0], [j[1][0], j[0][1]]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(left_up == left_down_j):
                     if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
                         target = [j[0], [j[1][0], j[0][1]]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(left_up == right_up_j):
                     if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
                         target = [[j[1][0], j[0][1]], j[1]] #check
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(left_down == right_down_j):
                     if(y_len>y_len_j or (y_len==y_len_j and i[0]>j[0])):
                         target = [[j[1][0], j[0][1]], j[1]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(left_down == left_up_j):
                     if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
                         target = [[j[0][0], j[1][1]], j[1]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
                 elif(right_down == right_up_j):
                     if(x_len>x_len_j or (x_len==x_len_j and i[0]>j[0])):
                         target = [[j[0][0], j[1][1]], j[1]]
                         new_door_list = make_door2(target[0], target[1], 4)
-                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list)) #새로운 goal 넣어주기 (문)
-                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_average(new_door_list))
+                        self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list))) #새로운 goal 넣어주기 (문)
+                        self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))].append(goal_extend(((j[0][0], j[0][1]), (j[1][0], j[1][1])), goal_average(new_door_list)))
                         self.door_list = self.door_list + new_door_list
 
     def make_door_to_outside(self):
@@ -701,23 +709,23 @@ class FightingModel(Model):
                 if(x):
                     new_door_list = make_door(i[0], [i[0][0], i[1][1]], 4)
                     self.door_list = self.door_list + new_door_list
-                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 else:
                     new_door_list = make_door(i[0], [i[1][0], i[0][1]], 4)
                     self.door_list = self.door_list + new_door_list
-                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
 
             elif (i[0][0] == 10):
                 new_door_list = make_door(i[0], [i[0][0], i[1][1]], 4)
                 self.door_list = self.door_list + new_door_list
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
 
             elif (i[0][1] == 10):
                 new_door_list = make_door(i[0], [i[1][0], i[0][1]], 4)
                 self.door_list = self.door_list + new_door_list
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
     
             elif(i[1][0] == 90 and i[1][1]==90):
@@ -725,23 +733,23 @@ class FightingModel(Model):
                 if(x):
                     new_door_list = make_door([i[1][0], i[0][1]], i[1], 4)
                     self.door_list = self.door_list + new_door_list
-                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 else:
                     new_door_list = make_door([i[0][0], i[1][1]], i[1], 4)
                     self.door_list = self.door_list + new_door_list
-                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                    self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
 
             elif (i[1][0] == 90):
                 new_door_list = make_door([i[1][0], i[0][1]], i[1], 4)
                 self.door_list = self.door_list + new_door_list
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
 
             elif (i[1][1] == 90):
                 new_door_list = make_door([i[0][0], i[1][1]], i[1], 4)
                 self.door_list = self.door_list + new_door_list
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_average(new_door_list))
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))].append(goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), goal_average(new_door_list)))
                 now_door_to_outdoor = now_door_to_outdoor + 1
     
     def make_one_door_in_room(self, r):
@@ -793,19 +801,19 @@ class FightingModel(Model):
         if (direction_list[random_door] == 0): #left
             new_door_list = make_door(r[0], [r[0][0], r[1][1]], 4)
             self.door_list = self.door_list + new_door_list
-            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_average(new_door_list))
+            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_extend(((r[0][0], r[0][1]), (r[1][0], r[1][1])), goal_average(new_door_list)))
         elif (direction_list[random_door] == 1): #right
             new_door_list = make_door([r[1][0], r[0][1]], r[1], 4)
             self.door_list = self.door_list + new_door_list
-            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_average(new_door_list))
+            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_extend(((r[0][0], r[0][1]), (r[1][0], r[1][1])), goal_average(new_door_list)))
         elif (direction_list[random_door] == 2): #down
             new_door_list = make_door(r[0], [r[1][0], r[0][1]], 4)
             self.door_list = self.door_list + new_door_list
-            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_average(new_door_list))
+            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_extend(((r[0][0], r[0][1]), (r[1][0], r[1][1])), goal_average(new_door_list)))
         else: #up
             new_door_list = make_door([r[0][0], r[1][1]], r[1], 4)
             self.door_list = self.door_list + new_door_list
-            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_average(new_door_list))
+            self.space_goal_dict[((r[0][0], r[0][1]), (r[1][0], r[1][1]))].append(goal_extend(((r[0][0], r[0][1]), (r[1][0], r[1][1])), goal_average(new_door_list)))
 
 
         # if(which_wall !=0 and which_wall != 1 and which_wall != 2 and which_wall !=3)
