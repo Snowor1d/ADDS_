@@ -141,6 +141,7 @@ class FightingAgent(Agent):
         self.vel = [0, 0]
         self.acc = [0, 0]
         self.mass = 3
+        self.previous_goal = [0,0]
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)
         # self.xy[1] = self.random.randrange(self.model.grid.height)
@@ -176,6 +177,22 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
+        
+        if (self.model.is_left_exit):
+            if (self.xy[0] > self.model.left_exit_area[0][0] and self.xy[0] < self.model.left_exit_area[1][0] and self.xy[1] > self.model.left_exit_area[0][1] and self.xy[1]<self.model.left_exit_area[1][1]):
+                self.dead = True 
+
+        if (self.model.is_right_exit):
+            if (self.xy[0] > self.model.right_exit_area[0][0] and self.xy[0] < self.model.right_exit_area[1][0] and self.xy[1] > self.model.right_exit_area[0][1] and self.xy[1]<self.model.right_exit_area[1][1]):
+                self.dead = True 
+        
+        if (self.model.is_up_exit):
+            if (self.xy[0] > self.model.up_exit_area[0][0] and self.xy[0] < self.model.up_exit_area[1][0] and self.xy[1] > self.model.up_exit_area[0][1] and self.xy[1]<self.model.up_exit_area[1][1]):
+                self.dead = True 
+        
+        if (self.model.is_down_exit):
+            if (self.xy[0] > self.model.down_exit_area[0][0] and self.xy[0] < self.model.down_exit_area[1][0] and self.xy[1] > self.model.down_exit_area[0][1] and self.xy[1]<self.model.down_exit_area[1][1]):
+                self.dead = True 
         # if (check_departure([self.xy[0],self.xy[1]], goal_list[len(goal_list)-1])):
         #     self.dead = True
         #     self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
@@ -197,7 +214,7 @@ class FightingAgent(Agent):
         if(len(now_stage) != 0):
             now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
         else:
-            now_stage = ((0,0), (10, 10))
+            now_stage = ((0,0), (5, 95))
         return now_stage
 
     def which_goal_agent_want(self):
@@ -206,13 +223,16 @@ class FightingAgent(Agent):
         if(self.goal_init == 0):
             now_stage = self.check_stage_agent()
             goal_candiate = self.model.space_goal_dict[now_stage]
-            goal_index = random.randint(0, len(goal_candiate)-1)
+            if(len(goal_candiate)==1):
+                goal_index = 0
+            else:
+                goal_index = random.randint(0, len(goal_candiate)-1)
             self.now_goal = goal_candiate[goal_index]
             self.goal_init = 1
             self.previous_stage = now_stage
-        now_stage = self.check_stage_agent()
+        now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 stage에
         if(self.previous_stage != self.check_stage_agent()):
-            goal_candiate = self.model.space_goal_dict[now_stage]
+            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]] 
             goal_candiate2 = []
             if(len(goal_candiate)>1):
                 min_d = 1000
@@ -224,18 +244,23 @@ class FightingAgent(Agent):
                         min_i = i #가장 가까운 골 찾기
                 for j in goal_candiate: 
                     if (j==min_i): #goal 후보에서 빼버림
-                        print("!!!")
                         continue
                     else :
                         goal_candiate2.append(j)
-                goal_index = random.randint(0, len(goal_candiate2)-1)
+                if(len(goal_candiate2)==1):
+                    goal_index = 0
+                else:
+                    goal_index = random.randint(0, len(goal_candiate2)-1)
                 self.now_goal = goal_candiate2[goal_index]
                 self.previous_stage = now_stage
                 return
+            elif(len(goal_candiate)==0):
+                self.now_goal = self.previous_goal
             else :
-                goal_index = random.randint(0, len(goal_candiate)-1)
+                goal_index = 0
                 self.now_goal = goal_candiate[goal_index]
                 self.previous_stage = now_stage
+            self.previous_goal = self.now_goal
 
 
             
@@ -517,7 +542,7 @@ class FightingAgent(Agent):
 
         F_x = 0
         F_y = 0
-        k = 4
+        k = 2
         r_0 = 0.3
         valid_distance = 3
         intend_force = 2
@@ -647,6 +672,11 @@ class FightingAgent(Agent):
         if(next_y>99):
             next_y = 99
         #print(F_x, F_y)
+            
+        if(self.dead != True):
+            print(self.now_goal)
+            #print(desired_force[0], desired_force[1])
+            #print(F_x, F_y)
         return (next_x, next_y)
 
 

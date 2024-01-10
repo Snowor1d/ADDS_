@@ -123,6 +123,99 @@ def goal_average(xys):
     middle_x = middle_x/len(xys)
     middle_y = middle_y/len(xys)
     return [middle_x, middle_y]
+
+def space_connected_linear(xy1, xy2):
+    check_connection = []
+    for i1 in range(101):
+        tmp = []
+        for j1 in range(101):
+            tmp.append(0)
+        check_connection.append(tmp)
+    
+    for y in range(xy1[0][1]+1, xy1[1][1]):
+        check_connection[xy1[0][0]][y] = 1 #left 
+    for y in range(xy1[0][1]+1, xy1[1][1]):
+        check_connection[xy1[1][0]][y] = 1 #right
+    for x in range(xy1[0][0]+1, xy1[1][0]):
+        check_connection[x][xy1[0][1]] = 1 #down
+    for x in range(xy1[0][0]+1, xy1[1][0]):
+        check_connection[x][xy1[1][1]] = 1 #up
+
+
+    check_connection2 = copy.deepcopy(check_connection)
+    checking = 0
+
+    left_goal = [0, 0]
+    left_goal_num = 0
+
+    right_goal = [0, 0]
+    right_goal_num = 0
+
+    down_goal = [0, 0]
+    down_goal_num = 0
+
+    up_goal = [0, 0]
+    up_goal_num = 0
+
+    for y2 in range(xy2[0][1]+1, xy2[1][1]):
+        check_connection2[xy2[0][0]][y2] += 1 #left 
+        if(check_connection2[xy2[0][0]][y2] == 2): #space와 space2는 접한다 
+            #print(space, space2, "가 LEFT에서 만남")
+            left_goal[0] += xy2[0][0]
+            left_goal[1] += y2
+            left_goal_num = left_goal_num + 1
+            checking = 1 #이을거다~ (space와 space2를 )
+    for y3 in range(xy2[0][1]+1, xy2[1][1]):
+        check_connection2[xy2[1][0]][y3] += 1 #right
+        if(check_connection2[xy2[1][0]][y3] == 2):
+            #print(space, space2, "가 RIGHT에서 만남")
+            right_goal[0] += xy2[1][0]
+            right_goal[1] += y3
+            right_goal_num = right_goal_num + 1
+            checking = 1
+    for x2 in range(xy2[0][0]+1, xy2[1][0]):
+        check_connection2[x2][xy2[0][1]] += 1 #down
+        if(check_connection2[x2][xy2[0][1]] == 2):
+            #print(space, space2, "가 DOWN에서 만남")
+            down_goal[0] += x2
+            down_goal[1] += xy2[0][1]
+            down_goal_num = down_goal_num + 1
+            checking = 1
+    for x3 in range(xy2[0][0]+1, xy2[1][0]):
+        check_connection2[x3][xy2[1][1]] += 1 #up
+        if(check_connection2[x3][xy2[1][1]] == 2):
+            #print(space, space2, "가 UP에서 만남")
+            up_goal[0] += x3
+            up_goal[1] += xy2[1][1]
+            up_goal_num = up_goal_num + 1
+            checking = 1
+
+    if(left_goal[0] != 0 and left_goal[1] != 0):
+        first_left_goal = [0, 0]
+        first_left_goal[0] = (left_goal[0]/left_goal_num)
+        first_left_goal[1] = (left_goal[1]/left_goal_num)
+        return first_left_goal
+        
+    elif(right_goal[0] != 0 and right_goal[1] != 0):
+        first_right_goal = [0, 0]
+        first_right_goal[0] = (right_goal[0]/right_goal_num)
+        first_right_goal[1] = (right_goal[1]/right_goal_num)
+        return first_right_goal
+    
+    elif(down_goal[0] != 0 and down_goal[1] != 0):
+        first_down_goal = [0, 0]
+        first_down_goal[0] = (down_goal[0]/down_goal_num)
+        first_down_goal[1] = (down_goal[1]/down_goal_num)
+        return first_down_goal
+ 
+
+    elif(up_goal[0] != 0 and up_goal[1] != 0):
+        first_up_goal = [0, 0]
+        first_up_goal[0] = (up_goal[0]/up_goal_num)
+        first_up_goal[1] = (up_goal[1]/up_goal_num)
+        return first_up_goal
+ 
+    
     
 def make_door2(xy1, xy2, door_size):
     x1 = 0
@@ -163,9 +256,11 @@ def make_door2(xy1, xy2, door_size):
 def goal_extend(xy_space, goal):
     xy = [0, 0]
     xy[0] = (xy_space[0][0] + xy_space[1][0])/2
-    xy[1] = (xy_space[1][0] + xy_space[1][1])/2
+    xy[1] = (xy_space[0][1] + xy_space[1][1])/2
     d = math.sqrt(pow(goal[0]-xy[0],2) + pow(goal[1]-xy[1], 2))
-    return [goal[0] + 2*(goal[0]-xy[0])/d, goal[1] + 2*(goal[1]-xy[1])/d]
+    if (d!=0):
+        return [goal[0] + 1*(goal[0]-xy[0])/d, goal[1] + 1*(goal[1]-xy[1])/d]
+    return [goal[0], goal[1]]
     
 def make_door_to_outdoor(door_list, space_list):
     for i in space_list: #외부와 연결된 문 만들기
@@ -282,6 +377,7 @@ class FightingModel(Model):
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
+
         self.init_outside() #외곽지대 탈출로 구현 
         
         self.door_list = []
@@ -296,7 +392,7 @@ class FightingModel(Model):
         for k in self.room_list:
             self.space_type[((k[0][0], k[0][1]), (k[1][0], k[1][1]))] = 1
 
-        self.connect_space() #space 그래프 연결 
+        self.connect_space_with_one_goal() #space 그래프 연결 
         
         if(self.simulation_type):
             self.make_door_between_room() #방 사이에 room 만들기
@@ -315,21 +411,34 @@ class FightingModel(Model):
 
         #print(self.space_graph)
 
-        #self.random_agent_distribute(100)
+        self.random_agent_distribute_outdoor(30)
         #self.random_hazard_placement(random.randint(1,3))
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 95))] = [self.left_exit_goal]
         else:
-            self.space_goal_dict[((0,0), (5, 95))]
-        self.space_goal_dict[((0,95), (5, 99))] = [[0,0]]
-        self.space_goal_dict[((95,5), (99, 99))] = [[5, 95]]
-        self.space_goal_dict[((5, 0), (99, 5))] = [[95, 99]]
+            self.space_goal_dict[((0,0), (5, 95))] = [[2.5, 97.5]]
+
+        if(self.is_up_exit):
+            self.space_goal_dict[((0,95), (99, 95))] = [self.up_exit_goal]
+        else:
+            self.space_goal_dict[((0,95), (99, 95))] = [[97.5, 97.5]]
+
+        if(self.is_right_exit):
+            self.space_goal_dict[((95,5), (99, 99))] = [self.right_exit_goal]
+        else :
+            self.space_goal_dict[((95,5), (99, 99))] = [[97.5, 2.5]]
+
+        if(self.is_down_exit):
+            self.space_goal_dict[((5,0), (99, 5))] = [self.down_exit_goal]
+        else:
+            self.space_goal_dict[((5,0), (99, 5))] = [[2.5, 2.5]]
+
+
 
         #print(self.space_goal_dict)
 
 
         # 이제 고립된 방들 문 만들어주기 
-        print(self.room_list)
 
 
         
@@ -337,8 +446,8 @@ class FightingModel(Model):
                 
         for i in self.room_list:
             wall = wall+make_room(i[0], i[1])
-        for j in self.space_list:
-             space = space+make_room(j[0], j[1])
+        # for j in self.space_list:
+        #      space = space+make_room(j[0], j[1])
         #print(self.space_list)
         #print(self.room_list)
         #print(len(self.door_list)/4)
@@ -370,31 +479,66 @@ class FightingModel(Model):
             self.schedule_w.add(c)
             self.grid.place_agent(c, space[i])
             self.only_one_wall[space[i][0]][space[i][1]] = 1
+        #print(self.space_graph)
+        
+
+        self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
+        if(self.is_left_exit):
+            self.space_goal_dict[((0,0), (5, 95))] = [self.left_exit_goal]
+        else:
+            self.space_goal_dict[((0,0), (5, 95))] = [[2.5, 97.5]]
+
+        if(self.is_up_exit):
+            self.space_goal_dict[((0,95), (95, 99))] = [self.up_exit_goal]
+        else:
+            self.space_goal_dict[((0,95), (95, 99))] = [[97.5, 97.5]]
+
+        if(self.is_right_exit):
+            self.space_goal_dict[((95,5), (99, 99))] = [self.right_exit_goal]
+        else :
+            self.space_goal_dict[((95,5), (99, 99))] = [[97.5, 2.5]]
+
+        if(self.is_down_exit):
+            self.space_goal_dict[((5,0), (99, 5))] = [self.down_exit_goal]
+        else:
+            self.space_goal_dict[((5,0), (99, 5))] = [[2.5, 2.5]]
+        print(self.space_goal_dict)
+        # id_increase = 0
+        # for goals in self.space_goal_dict.values():
+        #     if(id_increase==3):
+        #         break
+        #     for i in goals:
+        #         print(i)
+        #         c = FightingAgent(20000+id_increase, self, [int(i[0]), int(i[1])], 1)
+        #         id_increase = id_increase+1
+        #         self.schedule_w.add(c)
+        #         self.grid.place_agent(c, [int(i[0]), int(i[1])])
 
     def make_exit(self):
         exit_rec = []
         self.is_down_exit = random.randint(0,1)
-        self.is_left_exit = random.randint(0,1)
+        self.is_left_exit = random.randint(0,1) #0이면 출구없음 #1이면 출구있음
         self.is_up_exit = random.randint(0,1)
         self.is_right_exit = 0
         if (self.is_down_exit==0 and self.is_left_exit==0 and self.is_up_exit==0):
-            self.is_right_exit = 1 
+            self.is_right_exit = 1  #출구 넷 중에 하나 이상은 되게 한다~! 
         else:
             self.is_right_exit = 0
 
         left_exit_num = 0
         self.left_exit_goal = [0,0]
-        if(self.is_left_exit):
-            exit_size = random.randint(30, 70)
-            start_exit_cell = random.randint(0, 99-exit_size)
-            for i in range(0, 5):
-                for j in range(start_exit_cell, start_exit_cell+exit_size):
-                    exit_rec.append((i,j))
+        if(self.is_left_exit): #left에 존재하면?
+            exit_size = random.randint(30, 70) #출구 사이즈를 30~70 정한다 
+            start_exit_cell = random.randint(0, 99-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
+            for i in range(0, 5): 
+                for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
+                    exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
                     self.left_exit_goal[0] += i
                     self.left_exit_goal[1] += j
                     left_exit_num +=1
-            self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num
+            self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num #출구 좌표의 평균 
             self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
+            self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
 
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
@@ -409,6 +553,7 @@ class FightingModel(Model):
                     right_exit_num +=1
             self.right_exit_goal[0] = self.right_exit_goal[0]/right_exit_num
             self.right_exit_goal[1] = self.right_exit_goal[1]/right_exit_num
+            self.right_exit_area = [[95, start_exit_cell], [99, start_exit_cell+exit_size]]
 
         down_exit_num = 0    
         self.down_exit_goal = [0,0]
@@ -423,21 +568,24 @@ class FightingModel(Model):
                     down_exit_num +=1
             self.down_exit_goal[0] = self.down_exit_goal[0]/down_exit_num
             self.down_exit_goal[1] = self.down_exit_goal[1]/down_exit_num
+            self.down_exit_area = [[start_exit_cell, 0], [start_exit_cell+exit_size, 5]]
 
         up_exit_num = 0    
-        up_exit_goal = [0,0]
+        self.up_exit_goal = [0,0]
         if(self.is_up_exit):
             exit_size = random.randint(30, 70)
             start_exit_cell = random.randint(0, 99-exit_size)
             for i in range(start_exit_cell, start_exit_cell+exit_size):
                 for j in range(95, 100):
                     exit_rec.append((i,j))
-                    up_exit_goal[0] += i
-                    up_exit_goal[1] += j
+                    self.up_exit_goal[0] += i
+                    self.up_exit_goal[1] += j
                     up_exit_num +=1
-            up_exit_goal[0] = up_exit_goal[0]/up_exit_num
-            up_exit_goal[1] = up_exit_goal[1]/up_exit_num
+            self.up_exit_goal[0] = self.up_exit_goal[0]/up_exit_num
+            self.up_exit_goal[1] = self.up_exit_goal[1]/up_exit_num
+            self.up_exit_area = [[start_exit_cell, 95], [start_exit_cell+exit_size, 99]]
         return exit_rec
+
 
 
 
@@ -504,6 +652,50 @@ class FightingModel(Model):
 
         for l in range(len(only_space)):
             self.agent_place(only_space[l][0], only_space[l][1], space_random_list[l])
+    
+    def way_to_exit(self):
+        if(self.is_left_exit):
+            for i in self.space_graph[((0,0), (5, 95))]:
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 95]]))]
+        if(self.is_right_exit):
+            for i in self.space_graph[((0,95), (95, 99))]:
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,95], [95, 99]]))]
+        if(self.is_up_exit):
+            for i in self.space_graph[((95,5), (99, 99))]:
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[95,5], [99, 99]]))]
+        if(self.is_down_exit):
+            for i in self.space_graph[((5,0), (99, 5))]:
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[5,0], [99, 5]]))]
+
+    def random_agent_distribute_outdoor(self, agent_num):
+        case = random.randint(1,2) 
+        # case1 -> 방에 사람이 있는 경우
+        # case2 -> 밖에 주로 사람이 있는 경우
+        only_space = []
+        for sp in self.space_list:
+            if (not sp in self.room_list and sp != [[0,0], [5, 95]] and sp != [[0, 95], [95, 99]] and sp != [[95, 5], [99, 99]] and sp != [[5,0], [99,5]]):
+                only_space.append(sp)
+        space_num = len(only_space)
+        
+        
+        space_agent = agent_num
+
+        random_list = [0] * space_num
+
+        # 총합이 room_agent가 되도록 할당
+        for i in range(space_num - 1):
+            random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+            while(random_num>space_agent*(1/3)):
+                random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+
+            random_list[i] = random_num
+
+        # 마지막 숫자는 나머지 값으로 설정
+        random_list[-1] = space_agent - sum(random_list)
+
+        for j in range(len(only_space)):
+            self.agent_place(only_space[j][0], only_space[j][1], random_list[j])
+
 
     def random_hazard_placement(self, hazard_num):
         min_size = 4
@@ -533,10 +725,10 @@ class FightingModel(Model):
         self.space_index[((0,0), (5, 95))] = 1
         self.space_list.append([[0,0], [5,95]])
 
-        self.space_goal_dict[((0,95), (5, 99))] = [[0,0]]
-        self.space_type[((0,95), (5, 99))] = 0
-        self.space_index[((0,95), (5, 99))] = 2
-        self.space_list.append([[0, 95], [5, 99]]) 
+        self.space_goal_dict[((0,95), (95, 99))] = [[0,0]]
+        self.space_type[((0,95), (95, 99))] = 0
+        self.space_index[((0,95), (95, 99))] = 2
+        self.space_list.append([[0, 95], [95, 99]]) 
 
         self.space_goal_dict[((95,5), (99, 99))] = [[5, 95]]
         self.space_type[((95,5), (99, 99))] = 0
@@ -548,16 +740,17 @@ class FightingModel(Model):
         self.space_index[((5, 0), (99, 5))] = 4
         self.space_list.append([[5, 0], [99, 5]])
 
-    def connect_space(self):
+    def connect_space(self): #space끼리 이어주는 함수 
+                            #dict[(space_key)] = [space1, space2, space3 ] -> self.space_graph
         check_connection = []
         for i in range(101):
             tmp = []
             for j in range(101):
                 tmp.append(0)
-            check_connection.append(tmp)
+            check_connection.append(tmp) #이중 리스트로 겹치는지 확인할거임
 
         for space in self.space_list: #space끼리 연결 #space 그래프 만들기
-            if space in self.room_list:
+            if space in self.room_list: #방이면 건너뛰기
                 continue
             check_connection = []
             for i1 in range(101):
@@ -597,12 +790,12 @@ class FightingModel(Model):
 
                 for y2 in range(space2[0][1]+1, space2[1][1]):
                     check_connection2[space2[0][0]][y2] += 1 #left 
-                    if(check_connection2[space2[0][0]][y2] == 2):
+                    if(check_connection2[space2[0][0]][y2] == 2): #space와 space2는 접한다 
                         #print(space, space2, "가 LEFT에서 만남")
                         left_goal[0] += space2[0][0]
                         left_goal[1] += y2
                         left_goal_num = left_goal_num + 1
-                        checking = 1
+                        checking = 1 #이을거다~ (space와 space2를 )
                 for y3 in range(space2[0][1]+1, space2[1][1]):
                     check_connection2[space2[1][0]][y3] += 1 #right
                     if(check_connection2[space2[1][0]][y3] == 2):
@@ -629,26 +822,29 @@ class FightingModel(Model):
                         checking = 1
                 if (checking==1 and space != space2):
                     self.space_graph[((space[0][0], space[0][1]), (space[1][0], space[1][1]))].append(space2)
-                
+                                              #왼쪽아래모서리              #오른쪽위모서리
+                #위에까지가 space graph 만들기
+                    
+
                 if(left_goal[0] != 0 and left_goal[1] != 0):
                     first_left_goal = [0, 0]
                     first_left_goal[0] = (left_goal[0]/left_goal_num)
-                    first_left_goal[1] = (left_goal[1]/left_goal_num)-3
+                    first_left_goal[1] = (left_goal[1]/left_goal_num)-1.5
                     second_left_goal = [0, 0]
                     second_left_goal[0] = (left_goal[0]/left_goal_num)
-                    second_left_goal[1] = (left_goal[1]/left_goal_num)+3
+                    second_left_goal[1] = (left_goal[1]/left_goal_num)+1.5
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_left_goal))
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_left_goal))
-                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_left_goal)
-                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_left_goal)
+                    self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_left_goal)
+                    self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_left_goal)
                     
                 elif(right_goal[0] != 0 and right_goal[1] != 0):
                     first_right_goal = [0, 0]
                     first_right_goal[0] = (right_goal[0]/right_goal_num)
-                    first_right_goal[1] = (right_goal[1]/right_goal_num)-3
+                    first_right_goal[1] = (right_goal[1]/right_goal_num)-1.5
                     second_right_goal = [0, 0]
                     second_right_goal[0] = (second_right_goal[0]/right_goal_num)
-                    second_right_goal[1] = (right_goal[1]/right_goal_num)+3
+                    second_right_goal[1] = (right_goal[1]/right_goal_num)+1.5
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_right_goal))
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_right_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_right_goal)
@@ -656,10 +852,10 @@ class FightingModel(Model):
 
                 elif(down_goal[0] != 0 and down_goal[1] != 0):
                     first_down_goal = [0, 0]
-                    first_down_goal[0] = (down_goal[0]/down_goal_num)+3
+                    first_down_goal[0] = (down_goal[0]/down_goal_num)+1.5
                     first_down_goal[1] = (down_goal[1]/down_goal_num)
                     second_down_goal = [0, 0]
-                    second_down_goal[0] = (down_goal[0]/down_goal_num)-3
+                    second_down_goal[0] = (down_goal[0]/down_goal_num)-1.5
                     second_down_goal[1] = (down_goal[1]/down_goal_num)
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_down_goal))
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_down_goal))
@@ -668,13 +864,130 @@ class FightingModel(Model):
 
                 elif(up_goal[0] != 0 and up_goal[1] != 0):
                     first_up_goal = [0, 0]
-                    first_up_goal[0] = (up_goal[0]/up_goal_num)+3
+                    first_up_goal[0] = (up_goal[0]/up_goal_num)+1.5
                     first_up_goal[1] = (up_goal[1]/up_goal_num)
                     second_up_goal = [0, 0]
-                    second_up_goal[0] = (up_goal[0]/up_goal_num)-3
+                    second_up_goal[0] = (up_goal[0]/up_goal_num)-1.5
                     second_up_goal[1] = (up_goal[1]/up_goal_num)
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_up_goal))
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), second_up_goal))
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_up_goal)
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_up_goal)
+
+    def connect_space_with_one_goal(self): #space끼리 이어주는 함수 
+                            #dict[(space_key)] = [space1, space2, space3 ] -> self.space_graph
+        check_connection = []
+        for i in range(101):
+            tmp = []
+            for j in range(101):
+                tmp.append(0)
+            check_connection.append(tmp) #이중 리스트로 겹치는지 확인할거임
+
+        for space in self.space_list: #space끼리 연결 #space 그래프 만들기
+            if space in self.room_list: #방이면 건너뛰기
+                continue
+            check_connection = []
+            for i1 in range(101):
+                tmp = []
+                for j1 in range(101):
+                    tmp.append(0)
+                check_connection.append(tmp)
+            
+            for y in range(space[0][1]+1, space[1][1]):
+                check_connection[space[0][0]][y] = 1 #left 
+            for y in range(space[0][1]+1, space[1][1]):
+                check_connection[space[1][0]][y] = 1 #right
+            for x in range(space[0][0]+1, space[1][0]):
+                check_connection[x][space[0][1]] = 1 #down
+            for x in range(space[0][0]+1, space[1][0]):
+                check_connection[x][space[1][1]] = 1 #up
+
+            for space2 in self.space_list:
+                if space2 in self.room_list:
+                    continue
+                check_connection2 = copy.deepcopy(check_connection)
+                checking = 0
+                if(space == space2):
+                    continue
+
+                left_goal = [0, 0]
+                left_goal_num = 0
+
+                right_goal = [0, 0]
+                right_goal_num = 0
+
+                down_goal = [0, 0]
+                down_goal_num = 0
+
+                up_goal = [0, 0]
+                up_goal_num = 0
+
+                for y2 in range(space2[0][1]+1, space2[1][1]):
+                    check_connection2[space2[0][0]][y2] += 1 #left 
+                    if(check_connection2[space2[0][0]][y2] == 2): #space와 space2는 접한다 
+                        #print(space, space2, "가 LEFT에서 만남")
+                        left_goal[0] += space2[0][0]
+                        left_goal[1] += y2
+                        left_goal_num = left_goal_num + 1
+                        checking = 1 #이을거다~ (space와 space2를 )
+                for y3 in range(space2[0][1]+1, space2[1][1]):
+                    check_connection2[space2[1][0]][y3] += 1 #right
+                    if(check_connection2[space2[1][0]][y3] == 2):
+                        #print(space, space2, "가 RIGHT에서 만남")
+                        right_goal[0] += space2[1][0]
+                        right_goal[1] += y3
+                        right_goal_num = right_goal_num + 1
+                        checking = 1
+                for x2 in range(space2[0][0]+1, space2[1][0]):
+                    check_connection2[x2][space2[0][1]] += 1 #down
+                    if(check_connection2[x2][space2[0][1]] == 2):
+                        #print(space, space2, "가 DOWN에서 만남")
+                        down_goal[0] += x2
+                        down_goal[1] += space2[0][1]
+                        down_goal_num = down_goal_num + 1
+                        checking = 1
+                for x3 in range(space2[0][0]+1, space2[1][0]):
+                    check_connection2[x3][space2[1][1]] += 1 #up
+                    if(check_connection2[x3][space2[1][1]] == 2):
+                        #print(space, space2, "가 UP에서 만남")
+                        up_goal[0] += x3
+                        up_goal[1] += space2[1][1]
+                        up_goal_num = up_goal_num + 1
+                        checking = 1
+                if (checking==1 and space != space2):
+                    self.space_graph[((space[0][0], space[0][1]), (space[1][0], space[1][1]))].append(space2)
+                                              #왼쪽아래모서리              #오른쪽위모서리
+                #위에까지가 space graph 만들기
+                    
+
+                if(left_goal[0] != 0 and left_goal[1] != 0):
+                    first_left_goal = [0, 0]
+                    first_left_goal[0] = (left_goal[0]/left_goal_num)
+                    first_left_goal[1] = (left_goal[1]/left_goal_num)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_left_goal))
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(goal_extend(((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1])), first_left_goal))
+                    
+                elif(right_goal[0] != 0 and right_goal[1] != 0):
+                    first_right_goal = [0, 0]
+                    first_right_goal[0] = (right_goal[0]/right_goal_num)
+                    first_right_goal[1] = (right_goal[1]/right_goal_num)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_right_goal))
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(goal_extend(((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1])), first_right_goal))
+
+                elif(down_goal[0] != 0 and down_goal[1] != 0):
+                    first_down_goal = [0, 0]
+                    first_down_goal[0] = (down_goal[0]/down_goal_num)
+                    first_down_goal[1] = (down_goal[1]/down_goal_num)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_down_goal))
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(goal_extend(((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1])), first_down_goal))
+
+
+                elif(up_goal[0] != 0 and up_goal[1] != 0):
+                    first_up_goal = [0, 0]
+                    first_up_goal[0] = (up_goal[0]/up_goal_num)
+                    first_up_goal[1] = (up_goal[1]/up_goal_num)
+                    self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_up_goal))
+                    #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(goal_extend(((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1])), first_up_goal))
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(first_up_goal)
                     #self.space_goal_dict[((space2[0][0],space2[0][1]), (space2[1][0], space2[1][1]))].append(second_up_goal)
 
@@ -1123,7 +1436,6 @@ class FightingModel(Model):
     def map_recur_divider_fine(self, xy, x_unit, y_unit, num, space_list, room_list, is_room): # ex) xy = [[2,3], [4,5]]
         x_diff = xy[1][0] - xy[0][0]
         y_diff = xy[1][1] - xy[0][1]
-        print("num : ", num)
 
         real_xy =  [ [xy[0][0]*x_unit, xy[0][1]*y_unit], [xy[1][0]*x_unit, xy[1][1]*y_unit]]
         if(is_room==0):
@@ -1209,7 +1521,6 @@ class FightingModel(Model):
         #     self.map_recur_divider([[xy[0][0], xy[0][1]+int(y_diff*divide_num/6)+1], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room) 
         special_hallway = random.randint(1, 2)
         if(num<3):
-            print(num, "번째 쪼갭니다")
             if (num%2==0): #가로로 나눈다
                 left = int(x_diff*random.randint(1,3)/4)
                 hallway_size = random.randint(1,2)

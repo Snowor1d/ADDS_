@@ -45,7 +45,7 @@ def agent_portrayal(agent):
         portrayal = {
             "Shape": "circle",
             "Filled": "true",
-            "Color": "blue", 
+            "Color": "green", 
             "r": 1,
             "text": "",
             "Layer": 0,
@@ -104,7 +104,7 @@ def agent_portrayal(agent):
         portrayal["Layer"] = 1
         return portrayal
 
-    portrayal["Color"] = "green"
+    portrayal["Color"] = "blue"
     portrayal["Layer"] = 1
     return portrayal
 
