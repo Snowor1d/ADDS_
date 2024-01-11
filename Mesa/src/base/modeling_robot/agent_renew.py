@@ -226,7 +226,7 @@ class FightingAgent(Agent):
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         global robot_xy
-        robot_xy = [2,2]
+        robot_xy = pos
         self.goal_init = 0
         self.type = type
         self.health = INITIAL_HEALTH
@@ -667,6 +667,7 @@ class FightingAgent(Agent):
                                            #floyd_path[stage_x][stage_2] = stage_y 
                                            #floyd_path[stage_y][stage_2] = ste... 
                                            # s1 -> sx -> sy -> .. stage
+    
         
 
         self.robot_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])] #로봇이 어느 stage에 있는지 나온다 
@@ -676,7 +677,8 @@ class FightingAgent(Agent):
             agent_max = 0 #agent가 가장 많은 stage 
             for i in space_agent_num.keys(): 
                 if (space_agent_num[i]>agent_max):
-                    self.save_target = i #현재 가장 인구가 많이 있는 stage 
+                    self.save_target = i #현재 가장 인구가 많이 있는 stage
+                    agent_max = space_agent_num[self.save_target] 
             
             evacuation_points = []
             if(self.model.is_left_exit): 
@@ -704,14 +706,14 @@ class FightingAgent(Agent):
                 self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  #back path도 넣는다 
             self.mission_complete = 0 
         #print(self.robot_now_path)
-            
+        
         if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 
             robot_status = 1 #robot_status가 1일때 -> guide함, 로봇 색깔바뀜(빨간색), 로봇에 영향받는 agent 색깔 바뀜(주황색) 
             self.drag = 1 
         else:
             robot_status = 0
             self.drag = 0
-
+        print("현재 골 : ", self.robot_now_path[self.robot_waypoint_index])
         d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
         if (d<1):
             self.robot_waypoint_index = self.robot_waypoint_index + 1
@@ -729,9 +731,9 @@ class FightingAgent(Agent):
         desired_speed = 1.5
 
         if(self.drag == 0):
-            desired_speed = 8
+            desired_speed = 5
         else:
-            desired_speed = 1.5
+            desired_speed = 5
 
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -835,8 +837,8 @@ class FightingAgent(Agent):
             space_xy = self.model.grid_to_space[int((i.xy)[0])][int((i.xy)[1])]
             if(i.dead == False):
                 space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
-        for j in space_agent_num.keys():
-            print(j, "공간에 ", space_agent_num[j], "명이 있음")
+        #for j in space_agent_num.keys():
+            #print(j, "공간에 ", space_agent_num[j], "명이 있음")
         return space_agent_num
 
 
