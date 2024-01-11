@@ -387,7 +387,6 @@ class FightingAgent(Agent):
                 self.previous_stage = now_stage
             self.previous_goal = self.now_goal
 
-
             
 
 
@@ -462,7 +461,8 @@ class FightingAgent(Agent):
             return
 
         new_position = self.test_modeling()
-        self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+        if(self.type ==0 or self.type==1):
+            self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
         # self.kinetic_modeling()
 
     def kinetic_modeling(self):
@@ -661,72 +661,80 @@ class FightingAgent(Agent):
         global robot_ringing
         self.drag = 1
         robot_status = 1
-        space_agent_num = self.agents_in_each_space()
-        floyd_distance = self.model.floyd_distance
-        floyd_path = self.model.floyd_path
+        space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는지
+        floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
+        floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
+                                           #floyd_path[stage_x][stage_2] = stage_y 
+                                           #floyd_path[stage_y][stage_2] = ste... 
+                                           # s1 -> sx -> sy -> .. stage
         
 
-        self.robot_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])]
+        self.robot_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])] #로봇이 어느 stage에 있는지 나온다 
 
         if(self.mission_complete == 1): #새로운 탈출 path를 찾는다
-            self.robot_now_path = []
-            agent_max = 0
-            for i in space_agent_num.keys():
+            self.robot_now_path = [] # [[1,3], [4,5], [5,1]] 
+            agent_max = 0 #agent가 가장 많은 stage 
+            for i in space_agent_num.keys(): 
                 if (space_agent_num[i]>agent_max):
-                    self.save_target = i
+                    self.save_target = i #현재 가장 인구가 많이 있는 stage 
             
             evacuation_points = []
-            if(self.model.is_left_exit):
+            if(self.model.is_left_exit): 
                 evacuation_points.append(((0,0), (5, 95)))
             if(self.model.is_up_exit):
                 evacuation_points.append(((0,95), (95, 99)))
             if(self.model.is_right_exit):
                 evacuation_points.append(((95,5), (99, 99)))
             if(self.model.is_down_exit):
-                evacuation_points.append(((5,0), (99, 5)))
+                evacuation_points.append(((5,0), (99, 5))) #evacuation_points에 탈출구들 저장 
 
             min_distance = 1000
-            for i in evacuation_points:
+            for i in evacuation_points: #space_target에서 가장 가까운 탈출구를 찾기 
                 if(floyd_distance[self.save_target][i]<min_distance):
-                    self.save_point = i
-            go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target)
-            back_path = self.model.get_path(floyd_path, self.save_target, self.save_point)
-
-            self.go_path_num = len(go_path)
+                    self.save_point = i 
+            go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target) #로봇의 초기 위치 -> save_target까지 가는데 최단 경로 stage 리스트 
+            
+            back_path = self.model.get_path(floyd_path, self.save_target, self.save_point) # save_target(인구가 가장 많은 곳)에서 save_point(safe zone) 까지의 최단 경로 
+            self.go_path_num = len(go_path) #guide를 하기 위해서 ~ 
 
             for i in range(len(go_path)-1):
-                self.robot_now_path.append(space_connected_linear(go_path[i], go_path[i+1]))
-            self.robot_now_path.append([(self.save_target[0][0]+self.save_target[1][0])/2, (self.save_target[0][1]+self.save_target[1][1])/2])
+                self.robot_now_path.append(space_connected_linear(go_path[i], go_path[i+1])) #(stage1 stage2) -> 중간 goal을 알려준다  
+            self.robot_now_path.append([(self.save_target[0][0]+self.save_target[1][0])/2, (self.save_target[0][1]+self.save_target[1][1])/2]) #save target 중점까지 간다 
             for i in range(len(back_path)-1):
-                self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  
+                self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  #back path도 넣는다 
             self.mission_complete = 0 
         #print(self.robot_now_path)
             
-        if(self.robot_waypoint_index > self.go_path_num-1):
-            robot_status = 1
-            self.drag = 1
+        if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 
+            robot_status = 1 #robot_status가 1일때 -> guide함, 로봇 색깔바뀜(빨간색), 로봇에 영향받는 agent 색깔 바뀜(주황색) 
+            self.drag = 1 
         else:
             robot_status = 0
             self.drag = 0
 
-        d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2))
+        d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
         if (d<1):
             self.robot_waypoint_index = self.robot_waypoint_index + 1
 
         if(self.robot_waypoint_index == len(self.robot_now_path)):
-            self.mission_complete = 1
+            self.mission_complete = 1 #미션을 새로 만들어야해 (끝났으니까)
             self.robot_waypoint_index = 0
             return [int(robot_xy[0]), int(robot_xy[1])]
 
-        goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0]
+        goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0] #역학을 위한.. 
         goal_y = self.robot_now_path[self.robot_waypoint_index][1] - robot_xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
         
         intend_force = 2
         desired_speed = 1.5
 
+        if(self.drag == 0):
+            desired_speed = 8
+        else:
+            desired_speed = 1.5
+
         if(goal_d != 0):
-            desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+            desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
             desired_force = [0, 0]
     
@@ -763,10 +771,15 @@ class FightingAgent(Agent):
                 continue
                 
             if(d!=0):
-                if(near_agent.type != 11):
+                if(near_agent.type == 12): ## 가상 벽
+                    repulsive_force[0] += 0
+                    repulsive_force[1] += 0
+
+                elif(near_agent.type == 1): ## agents
                     repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
                     repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
-                else:
+
+                elif(near_agent.type == 11):## 검정벽 
                     repulsive_force[0] += 2*k*np.exp(-(d/2))*(d_x/d)
                     repulsive_force[1] += 2*k*np.exp(-(d/2))*(d_y/d)
             else :
@@ -888,10 +901,15 @@ class FightingAgent(Agent):
             #         repulsive_force[0] += 10*k*np.exp(-pow((r_0/d), 2))*(d_x/d)
             #         repulsive_force[1] += 10*k*np.exp(-pow((r_0/d), 2))*(d_y/d)
             if(d!=0):
-                if(near_agent.type != 11):
-                    repulsive_force[0] += k/2*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
-                    repulsive_force[1] += k/2*np.exp(-(d/2))*(d_y/d) 
-                else:
+                if(near_agent.type == 12): ## 가상 벽
+                    repulsive_force[0] += 0
+                    repulsive_force[1] += 0
+
+                elif(near_agent.type == 1): ## agents
+                    repulsive_force[0] += 1/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
+                    repulsive_force[1] += 1/4*np.exp(-(d/2))*(d_y/d) 
+
+                elif(near_agent.type == 11):## 검정벽 
                     repulsive_force[0] += 2*k*np.exp(-(d/2))*(d_x/d)
                     repulsive_force[1] += 2*k*np.exp(-(d/2))*(d_y/d)
             else :
@@ -949,7 +967,7 @@ class FightingAgent(Agent):
         #     goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
 
         if(goal_d != 0):
-          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
           desired_force = [0, 0]
         

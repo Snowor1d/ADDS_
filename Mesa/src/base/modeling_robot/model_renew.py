@@ -214,6 +214,8 @@ def space_connected_linear(xy1, xy2):
         first_up_goal[0] = (up_goal[0]/up_goal_num)
         first_up_goal[1] = (up_goal[1]/up_goal_num)
         return first_up_goal
+
+    return [0, 0]
  
     
     
@@ -474,9 +476,9 @@ class FightingModel(Model):
         #make wall
                 
         for i in self.room_list:
-            wall = wall+make_room(i[0], i[1])
-        # for j in self.space_list:
-        #      space = space+make_room(j[0], j[1])
+            wall = wall + make_room(i[0], i[1])
+        for j in self.space_list:
+             space = space + make_room(j[0], j[1])
         #print(self.space_list)
         #print(self.room_list)
         #print(len(self.door_list)/4)
@@ -557,11 +559,25 @@ class FightingModel(Model):
         #         self.grid.place_agent(c, [int(i[0]), int(i[1])])
         vertices = list(self.space_graph.keys())
         goal_matrix = {start: {end: float('infinity') for end in vertices} for start in vertices}
+        
+        # print("~~~~~~~~~~~~~~~" , vertices, "\n ~~~~~~~~~~~~~\n", goal_matrix, "\n\n")
+        
         for i in vertices:
             for j in vertices:
                 if (i==j):
                     continue
+                # print("@@ it's i in vertices : ", i, "it's j in vertices : ", j)
                 goal_matrix[i][j] = space_connected_linear(i, j)
+                
+                # if(goal_matrix[i][j][0] !=0 and goal_matrix[i][j][1]!=0):
+                #     goal = FightingAgent(self.agent_id+40000, self, [int(goal_matrix[i][j][0]),int(goal_matrix[i][j][1])], 2)
+                #     self.agent_id = self.agent_id + 1
+                # self.schedule.add(goal)
+                # if(goal_matrix[i][j][0] !=0 and goal_matrix[i][j][1]!=0):
+                #     self.grid.place_agent(goal, [int(goal_matrix[i][j][0]), int(goal_matrix[i][j][1])])
+                
+        print("~~~~~~~~~~~~~~~" , vertices, "\n ~~~~~~~~~~~~~\n", goal_matrix, "\n\n")
+        
     def make_exit(self):
         exit_rec = []
         self.is_down_exit = random.randint(0,1)

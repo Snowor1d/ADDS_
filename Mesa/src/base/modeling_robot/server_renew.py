@@ -68,7 +68,7 @@ def agent_portrayal(agent):
         portrayal = {
             "Shape": "circle",
             "Filled": "true",
-            "Color": "blue", 
+            "Color": "lightgrey", 
             "r": 1,
             "text": "",
             "Layer": 0,
@@ -99,13 +99,17 @@ def agent_portrayal(agent):
         return portrayal
     
     portrayal["r"] = 1
-    if agent.type == 1:
+    if agent.type == 1: #끌려가는 agent 
         portrayal["Color"] = "lightsalmon"
         portrayal["Layer"] = 1
         return portrayal
-    if agent.type == 3:
-        if agent.drag == 1:
-            portrayal["Color"] = "red"
+    if agent.type == 2: 
+        portrayal["Color"] = "magenta"
+        portrayal["Layer"] = 1
+        return portrayal
+    if agent.type == 3: #robot
+        if agent.drag == 1: #끌고갈때
+            portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
         else:
             portrayal["Color"] = "orange"
         portrayal["Layer"] = 1
