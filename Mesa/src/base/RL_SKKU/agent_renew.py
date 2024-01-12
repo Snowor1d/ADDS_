@@ -682,7 +682,7 @@ class FightingAgent(Agent):
             
             evacuation_points = []
             if(self.model.is_left_exit): 
-                evacuation_points.append(((0,0), (5, 195)))
+                evacuation_points.append(((0,0), (30, 100)))
             if(self.model.is_up_exit):
                 evacuation_points.append(((0,195), (195, 199)))
             if(self.model.is_right_exit):
@@ -715,7 +715,7 @@ class FightingAgent(Agent):
             self.drag = 0
         print("현재 골 : ", self.robot_now_path[self.robot_waypoint_index])
         d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
-        if (d<1):
+        if (d<3):
             self.robot_waypoint_index = self.robot_waypoint_index + 1
 
         if(self.robot_waypoint_index == len(self.robot_now_path)):
@@ -731,9 +731,9 @@ class FightingAgent(Agent):
         desired_speed = 1.5
 
         if(self.drag == 0):
-            desired_speed = 5
+            desired_speed = 20
         else:
-            desired_speed = 5
+            desired_speed = 20
 
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘

@@ -397,14 +397,16 @@ class FightingModel(Model):
             self.space_graph[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = []
         for k in self.room_list:
             self.space_type[((k[0][0], k[0][1]), (k[1][0], k[1][1]))] = 1
+        
 
         self.connect_space_with_one_goal() #space 그래프 연결  -- 있어야함 
-        
+        self.insa_goal_connect()
+        self.insa_door_to_door()
 
         #self.make_door_between_room() #방 사이에 문 만들기
         #self.make_door_to_outside()
-        # self.space_connect_via_door() -- 있어야 함 
-
+        #self.space_connect_via_door() 
+        self.random_agent_distribute_outdoor(100)
         # for r in self.room_list:
         #     result = self.check_bridge(r, ((0,0), (10,10))) #방이 고립되어 있지는 않은가 확인 
         #     if (result == 0):
@@ -421,16 +423,13 @@ class FightingModel(Model):
         #self.random_agent_distribute_outdoor(30)
         #self.random_hazard_placement(random.randint(1,3))
         if(self.is_left_exit):
-            self.space_goal_dict[((0,0), (5, 195))] = [self.left_exit_goal]
+            self.space_goal_dict[((0,0), (30, 100))] = [self.left_exit_goal]
 
         if(self.is_up_exit):
-            self.space_goal_dict[((0,195), (195, 199))] = [self.up_exit_goal]
-
-        if(self.is_right_exit):
-            self.space_goal_dict[((195,5), (199, 199))] = [self.right_exit_goal]
+            self.space_goal_dict[((30,195), (120, 199))] = [self.up_exit_goal]
 
         if(self.is_down_exit):
-            self.space_goal_dict[((5,0), (199, 5))] = [self.down_exit_goal]
+            self.space_goal_dict[((30,0), (195, 5))] = [self.down_exit_goal]
 
         self.space_agent_num = {}
         for i in self.space_list:
@@ -501,22 +500,18 @@ class FightingModel(Model):
             self.grid.place_agent(c, space[i])
             self.only_one_wall[space[i][0]][space[i][1]] = 1
         #print(self.space_graph)
-        print("6")
 
         self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
         if(self.is_left_exit):
-            self.space_goal_dict[((0,0), (5, 195))] = [self.left_exit_goal]
+            self.space_goal_dict[((0,0), (30, 100))] = [self.left_exit_goal]
 
         if(self.is_up_exit):
-            self.space_goal_dict[((0,195), (195, 199))] = [self.up_exit_goal]
-
-        if(self.is_right_exit):
-            self.space_goal_dict[((195,5), (199, 199))] = [self.right_exit_goal]
+            self.space_goal_dict[((30,195), (120, 199))] = [self.up_exit_goal]
 
         if(self.is_down_exit):
-            self.space_goal_dict[((5,0), (199, 5))] = [self.down_exit_goal]
+            self.space_goal_dict[((30,0), (195, 5))] = [self.down_exit_goal]
         
-        #self.robot_placement()
+        self.robot_placement()
 
         self.floyd_warshall_matrix = self.floyd_warshall()
         
@@ -527,13 +522,13 @@ class FightingModel(Model):
         from_space = ((from_space[0][0], from_space[0][1]), (from_space[1][0], from_space[1][1]))
         to_space = ((to_space[0][0], to_space[0][1]), (to_space[1][0], to_space[1][1]))
             
-        id_increase = 0
+        # id_increase = 0
         # for goals in self.space_goal_dict.values():
         #     if(id_increase==3):
         #         break
         #     for i in goals:
         #         print(i)
-        #         c = FightingAgent(20000+id_increase, self, [int(i[0]), int(i[1])], 1)
+        #         c = FightingAgent(25000+id_increase, self, [int(i[0]), int(i[1])], 1)
         #         id_increase = id_increase+1
         #         self.schedule_w.add(c)
         #         self.grid.place_agent(c, [int(i[0]), int(i[1])])
@@ -569,8 +564,8 @@ class FightingModel(Model):
                  ((110, 120), (130, 140)), #8
                  ((130, 120), (150, 140)), #9
                  ((55, 100), (135, 120)), #10
-                 ((5, 80), (80, 100)), #11
-                 ((5,5), (40, 80)), #12
+                 ((30, 80), (80, 100)), #11
+                 ((30,5), (40, 80)), #12
                  ((40, 40), (80, 80)), #13
                  ((40, 5), (80, 40)), #14
                  ((80, 55), (115, 100)), #15
@@ -590,17 +585,81 @@ class FightingModel(Model):
                 ]
         room_index = [3,4,10, 8, 19, 17, 13, 23, 25]
         for i in range(len(room_index)):
-            self.room_list.append(space[room_index[i]-1])
+            r = space[room_index[i]-1]
+            self.room_list.append([[r[0][0], r[0][1]], [r[1][0], r[1][1]]])
         for i in space:
             self.space_list.append([[i[0][0], i[0][1]], [i[1][0], i[1][1]]])
+        # door = [[[60, 175]],
+        #         [[80, 155]],
+        #         [[85, 100]],
+        #         [[135, 105]],
+        #         [[115, 60]],
+        #         [[135, 60]],
+        #         [[150, 145]],
+        #         [[125, 40]],
+        #         [[80, 45]]]
+        # door = [[60, 175],
+        #         [80, 155],
+        #         [85, 100],
+        #         [135, 105],
+        #         [115, 60],
+        #         [135, 60],
+        #         [150, 145],
+        #         [125, 40],
+        #         [80, 45]]
+        door = [(59, 175), (60, 175), (61, 175),
+                (80, 154), (80, 155), (80, 156),
+                (84, 100), (85, 100), (86, 100),
+                (135, 104), (135, 105), (135, 106),
+                (115, 59), (115, 60), (115, 61),
+                (135, 59), (135, 60), (135, 61),
+                (150, 44), (150, 45), (150, 46),
+                (124, 40), (125, 40), (126, 40),
+                (80, 44), (80, 45), (80, 46)]
+
+
+        for i in door:
+            self.door_list.append(i)
+
+    def insa_goal_connect(self):
+        self.space_goal_dict[((55,120), (80, 175))].append([60, 176])
+        self.space_goal_dict[((55,120), (80, 175))].append([80, 155])
+        self.space_goal_dict[((55,100), (135, 120))].append([85, 99])
+        self.space_goal_dict[((55,100), (135, 120))].append([136, 105])
+        self.space_goal_dict[((40,40), (80, 80))].append([81, 45])
+        self.space_goal_dict[((85,40), (140, 55))].append([125, 40])
+        self.space_goal_dict[((115,55), (135, 95))].append([114, 60])
+        self.space_goal_dict[((115,55), (135, 95))].append([136, 60])
+        self.space_goal_dict[((150,25), (170, 75))].append([149, 45])
         
+    def insa_door_to_door(self):
+        door = [ (60,164), (60, 165), (60, 166),
+                 (69,120), (70, 120), (71, 120),
+                 (119,120), (120, 120), (121, 120),
+                 (124,55), (125, 55), (126,55),
+                 (159,25), (160, 25), (161, 25)
+                ]
         
+        for i in door:
+            self.door_list.append(i)
+        
+        self.space_goal_dict[((80,160), (105, 175))].append([79, 165])
+        self.space_goal_dict[((55,120), (80, 175))].append([70, 119])
+        self.space_goal_dict[((110,120), (130, 140))].append([120, 119])
+        self.space_goal_dict[((85,40), (140, 55))].append([125, 56])
+        self.space_goal_dict[((115,55), (135, 95))].append([125, 54])
+        self.space_goal_dict[((150,25), (170, 75))].append([160, 24])
+                
+
+                
+
+
 
         
-        
+                
     def make_exit(self):
         exit_rec = []
-        only_one_exit = random.randint(1,3)
+        only_one_exit = 2
         
         self.is_down_exit = 0
         self.is_left_exit = 0
@@ -627,8 +686,8 @@ class FightingModel(Model):
         left_exit_num = 0
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
-            exit_size = random.randint(30, 70) #출구 사이즈를 30~70 정한다 
-            start_exit_cell = random.randint(0, 199-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
+            exit_size = 50 #출구 사이즈를 30~70 정한다 
+            start_exit_cell = 0 #출구가 어디부터 시작되는가? #넘어갈까봐
             for i in range(0, 30): 
                 for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
                     exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
@@ -637,7 +696,7 @@ class FightingModel(Model):
                     left_exit_num +=1
             self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num #출구 좌표의 평균 
             self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
-            self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
+            self.left_exit_area = [[0, start_exit_cell], [30, start_exit_cell+exit_size]]
 
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
@@ -700,7 +759,11 @@ class FightingModel(Model):
         for x1 in range(200):
             for y1 in range(200):
                 if(valid_matrix)[x1][y1] != 1:
-                    print(x1, y1, "좌표에 공간이 없는데요??")
+                    #print(x1, y1, "좌표에 공간이 없는데요??")
+                    c = FightingAgent(14000+self.agent_id, self, [x1, y1], 12)
+                    self.agent_id = self.agent_id + 1
+                    self.schedule_w.add(c)
+                    self.grid.place_agent(c, [x1, y1])
 
 
 
@@ -756,11 +819,11 @@ class FightingModel(Model):
         #print(only_space)
 
         for k in range(space_num - 1):
-            if(only_space[k] == [[0,5], [5, 199]] or only_space[k] == [[5, 0], [199, 5]] or only_space[k] == [[5, 195], [199, 199]] or only_space[k] == [[195, 5], [199, 195]]):
-                random_space_num = random.randint(1,max(min(space_agent-sum(space_random_list)- (space_num-k-1), 5),1))
+            # if(only_space[k] == [[0,5], [5, 199]] or only_space[k] == [[5, 0], [199, 5]] or only_space[k] == [[5, 195], [199, 199]] or only_space[k] == [[195, 5], [199, 195]]):
+            #     random_space_num = random.randint(1,max(min(space_agent-sum(space_random_list)- (space_num-k-1), 5),1))
 
-            else:
-                random_space_num = random.randint(1, space_agent - sum(space_random_list) - (space_num - k - 1))
+            
+            random_space_num = random.randint(1, space_agent - sum(space_random_list) - (space_num - k - 1))
             space_random_list[k] = random_space_num 
         space_random_list[-1] = space_agent - sum(space_random_list)
 
@@ -770,22 +833,22 @@ class FightingModel(Model):
     
     def way_to_exit(self):
         if(self.is_left_exit):
-            for i in self.space_graph[((0,0), (5, 195))]:
+            for i in self.space_graph[((0,0), (30, 100))]:
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 195]]))]
-        if(self.is_right_exit):
-            for i in self.space_graph[((195,5), (199, 199))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[195,5], [199, 199]]))]
+        #if(self.is_right_exit):
+            #for i in self.space_graph[((195,5), (199, 199))]:
+             #   self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[195,5], [199, 199]]))]
         if(self.is_up_exit):
-            for i in self.space_graph[((0,195), (195, 199))]:
+            for i in self.space_graph[((30,195), (120, 199))]:
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,195], [195, 199]]))]
         if(self.is_down_exit):
-            for i in self.space_graph[((5,0), (199, 5))]:
+            for i in self.space_graph[((30,0), (195, 5))]:
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[5,0], [199, 5]]))]
 
     def robot_placement(self):
         inner_space = []
         for i in self.outdoor_space:
-            if (i!=[[0,0], [5, 195]] and i!=[[195,5], [199, 199]] and i != [[0,195], [195, 199]] and i !=[[5,0], [199, 5]]):
+            if (i!=[[0,0], [30, 100]] and i!=[[195,5], [199, 199]] and i != [[0,195], [195, 199]] and i !=[[5,0], [199, 5]]):
                 inner_space.append(i)
         space_index = random.randint(0, len(inner_space)-1)
         xy = inner_space[space_index]
@@ -820,7 +883,7 @@ class FightingModel(Model):
         # case2 -> 밖에 주로 사람이 있는 경우
         only_space = []
         for sp in self.space_list:
-            if (not sp in self.room_list and sp != [[0,0], [5, 195]] and sp != [[0, 195], [195, 199]] and sp != [[195, 5], [199, 199]] and sp != [[5,0], [199,5]]):
+            if (not sp in self.room_list and sp != [[0,0], [30, 195]] and sp != [[0, 195], [195, 199]] and sp != [[195, 5], [199, 199]] and sp != [[5,0], [199,5]]):
                 only_space.append(sp)
         space_num = len(only_space)
         
@@ -869,24 +932,24 @@ class FightingModel(Model):
     def init_outside(self): #외곽 탈출로 구현 
 
         #self.space_goal_dict[((0,0), (5, 195))] = [[0,0]]
-        self.space_type[((0,0), (5, 195))] = 0
-        self.space_index[((0,0), (5, 195))] = 1
-        self.space_list.append([[0,0], [5,195]])
+        self.space_type[((0,0), (30, 100))] = 0
+        self.space_index[((0,0), (30, 100))] = 1
+        self.space_list.append([[0,0], [30,100]])
 
         #self.space_goal_dict[((0,195), (195, 199))] = [[0,0]]
-        self.space_type[((0,195), (195, 199))] = 0
-        self.space_index[((0,195), (195, 199))] = 2
-        self.space_list.append([[0, 195], [195, 199]]) 
+        self.space_type[((30,195), (120, 199))] = 0
+        self.space_index[((30,195), (120, 199))] = 2
+        self.space_list.append([[30, 195], [120, 199]]) 
 
-        #self.space_goal_dict[((195,5), (199, 199))] = [[5, 195]]
-        self.space_type[((195,5), (199, 199))] = 0
-        self.space_index[((195,5), (199, 199))] = 3
-        self.space_list.append([[195, 5], [199, 199]])
+        # #self.space_goal_dict[((195,5), (199, 199))] = [[5, 195]]
+        # self.space_type[((195,5), (199, 199))] = 0
+        # self.space_index[((195,5), (199, 199))] = 3
+        # self.space_list.append([[195, 5], [199, 199]])
 
         #self.space_goal_dict[((5, 0), (199, 5))] = [[195, 5]] #외곽지대 골 설정
-        self.space_type[((5, 0), (199, 5))] = 0
-        self.space_index[((5, 0), (199, 5))] = 4
-        self.space_list.append([[5, 0], [199, 5]])
+        self.space_type[((30, 0), (195, 5))] = 0
+        self.space_index[((30, 0), (195, 5))] = 4
+        self.space_list.append([[30, 0], [195, 5]])
 
     def connect_space(self): #space끼리 이어주는 함수 
                             #dict[(space_key)] = [space1, space2, space3 ] -> self.space_graph
