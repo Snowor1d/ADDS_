@@ -1,12 +1,10 @@
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import NumberInput
-
 from model_juna import FightingModel
 from mesa.visualization.modules import CanvasGrid, ChartModule
-##import agent_juna
 
 ## grid size
-NUMBER_OF_CELLS = 100 ## square
+NUMBER_OF_CELLS = 200 ## square
 SIZE_OF_CANVAS_IN_PIXELS_X = 1000
 SIZE_OF_CANVAS_IN_PIXELS_Y = 1000
 
@@ -42,6 +40,31 @@ def agent_portrayal(agent):
             "text_color": "black",
         }
         return portrayal
+    
+    if agent.type == 10: ## exit_rec 채우는 agent 
+        portrayal = {
+            "Shape": "circle",
+            "Filled": "true",
+            "Color": "blue", 
+            "r": 1,
+            "text": "",
+            "Layer": 0,
+            "text_color": "black",
+        }
+        return portrayal
+    
+    if agent.type == 11: ## wall 채우는 agent 
+        portrayal = {
+            "Shape": "circle",
+            "Filled": "true",
+            "Color": "black", 
+            "r": 1,
+            "text": "",
+            "Layer": 0,
+            "text_color": "black",
+        }
+        return portrayal
+
 
     # the default config is a circle
     portrayal = {

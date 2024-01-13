@@ -8,9 +8,11 @@ exit_w = 20
 exit_h = 20
 exit_area = [[0,exit_w], [0, exit_h]]
 STRATEGY = 1
+import numpy as np;
 
 exit_area = [[0,20], [0,20]]
 goal = [0,0]
+random_disperse = 1
 
 class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
     def __init__(self, pos, model, agent_type):
@@ -235,6 +237,117 @@ class FightingAgent(Agent):
             next_y = 0
         print(F_x, F_y)
         return (next_x, next_y)
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+    
+    def helbling_modeling(self):
+
+        x = int(round(self.xy[0]))
+        y = int(round(self.xy[1]))
+        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        near_loc = []
+        for i in temp_loc:
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+                near_loc.append(i)
+        near_agents_list = []
+        for i in near_loc:
+            near_agents = self.model.grid.get_cell_list_contents([i])
+            if len(near_agents):
+                for near_agent in near_agents:
+                    near_agents_list.append(near_agent)
+
+        F_x = 0
+        F_y = 0
+        k = 1
+        valid_distance = 3
+        intend_force = 2.5
+        time_step = 0.5
+        desired_speed = 2
+
+
+        for near_agent in near_agents_list:
+            n_x = near_agent.xy[0]
+            n_y = near_agent.xy[1]
+            d_x = self.xy[0] - n_x
+            d_y = self.xy[1] - n_y
+            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
+            if(valid_distance<d):
+                continue    
+
+            F = k * (valid_distance-d)
+<<<<<<< Updated upstream
+            # print("F : ", F)
+            # if(d>0 and near_agent.dead == False):
+            #     F_x += (F*(d_x/d))
+            #     F_y += (F*(d_y/d))
+=======
+            print("F : ", F)
+            if(d>0 and near_agent.dead == False):
+                F_x += (F*(d_x/d))
+                F_y += (F*(d_y/d))
+>>>>>>> Stashed changes
+        print(self.xy[0], self.xy[1])
+        goal_x = goal[0] - self.xy[0]
+        goal_y = goal[1] - self.xy[1]
+        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+
+        if(goal_d != 0):
+          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)-self.vel[0]), intend_force*(desired_speed*(goal_y/goal_d)-self.vel[1])]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+        else :
+          desired_force = [0, 0]
+<<<<<<< Updated upstream
+        if(d!=0):
+            repulsive_force =  [k*np.exp(0.4/(d))*(d_x/d), k*np.exp(0.4/(d))*(d_y/d)]
+        else:
+            if(random_disperse):
+                repulsive_force = [50, -50]
+            else:
+                repulsive_force = [-50, 50]
+        F_x += repulsive_force[0]
+        F_y += repulsive_force[1]
+
+        
+=======
+>>>>>>> Stashed changes
+        
+        #desried_force = intend_force(상수) * (가고자 했던 속도 - 현재 속도) 
+        #가고자 했던 속도와 현재 속도가 차이가 많이 나면 #뛰어야겠지
+
+        
+
+        # if(goal_d != 0):
+        #     F_x += intend_force * (goal_x/goal_d)
+        #     F_y += intend_force * (goal_y/goal_d)
+
+        F_x += desired_force[0]
+        F_y += desired_force[1]
+
+        self.acc[0] = F_x/self.mass
+        self.acc[1] = F_y/self.mass
+
+        self.vel[0] = self.acc[0]
+        self.vel[1] = self.acc[1]
+
+        self.xy[0] += self.vel[0] * time_step
+        self.xy[1] += self.vel[1] * time_step
+        
+        next_x = int(round(self.xy[0]))
+        next_y = int(round(self.xy[1]))
+
+        if(next_x<0):
+            next_x = 0
+        if(next_y<0):
+            next_y = 0
+        print(F_x, F_y)
+        return (next_x, next_y)
+        
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 
 

@@ -1,17 +1,16 @@
 from mesa import Agent
-# from agent import WallAgent
 import math
 
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
 HEALING_POTION = 20
-
-STRATEGY = 1
 exit_w = 20
 exit_h = 20
 exit_area = [[0,exit_w], [0, exit_h]]
-goal = [0,0]
+STRATEGY = 1
 
+exit_area = [[0,exit_w], [0,exit_h]]
+goal = [0,0]
 
 class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣어서 탈출구라는 것을 보여주고 싶었음.. 
     def __init__(self, pos, model, agent_type):
@@ -31,6 +30,8 @@ class WallAgent(Agent): ## wall .. 탈출구 범위 내에 agents를 채워넣�
         #     self.grid.position_agent(agent, pos[0], pos[1])
         #     self.schedule.add(agent)
 
+
+
 def set_agent_type_settings(agent, type):
     """Updates the agent's instance variables according to its type.
 
@@ -47,6 +48,12 @@ def set_agent_type_settings(agent, type):
     if type == 3:
         agent.health = math.ceil(INITIAL_HEALTH / 4) ## 25
         agent.attack_damage = ATTACK_DAMAGE * 4 ## 80
+    if type == 10: ## 구분하려고 아무 숫자 함, exit_rec 채우는 agent type
+        agent.health = 500 ## ''
+        agent.attack_damage = 0 ## ''
+    if type == 11: ## 마찬가지.. 이건 wall list 채우는 agent의 type
+        agent.health = 500
+        agent.attack_damage = 0
 
 
 class FightingAgent(Agent):
@@ -61,6 +68,14 @@ class FightingAgent(Agent):
         self.dead = False
         self.dead_count = 0
         self.buried = False
+
+        self.xy = [0, 0]
+        self.vel = [0, 0]
+        self.acc = [0, 0]
+        self.mass = 3
+        self.xy[0] = self.random.randrange(self.model.grid.width)
+        self.xy[1] = self.random.randrange(self.model.grid.height)
+        
         set_agent_type_settings(self, type)
 
     def __repr__(self) -> str:
@@ -71,6 +86,7 @@ class FightingAgent(Agent):
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
+
         # buried agents do not move (Do they???? :))
         if self.buried:
             return
@@ -89,7 +105,6 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
-        print(exit_area)
         if (self.pos[0]>=exit_area[0][0] and self.pos[0]<=exit_area[0][1] and self.pos[1]>=exit_area[1][0] and self.pos[1]<=exit_area[1][1]):
             self.dead = True
             self.health = 0 ## 이게 0이어야 current healthy agent 수에 포함이 안 됨 ~!
@@ -108,8 +123,6 @@ class FightingAgent(Agent):
         if should_attack:
             self.attack(cells_with_agents)
             return
-
-        print("I chose to not attack!") ## 안 때렸을 때에는 안 때렸다고 말함
         new_position = self.random.choice(possible_steps) ## 다음 step에 이동할 위치 설정
         self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
 
@@ -125,7 +138,6 @@ class FightingAgent(Agent):
         agentToAttack.attacked = True ## 맞은 애 attacked 됐다~ 
         if agentToAttack.health <= 0: ## health 가 0보다 작으면 dead
             agentToAttack.dead = True
-        print(f'I attacked! and health left is {agentToAttack.health}') ## 맞았을 때 맞았다 말하고 남은 health 량 표시
 
     def move(self) -> None:
         global goal
@@ -154,17 +166,82 @@ class FightingAgent(Agent):
                         cells_with_agents.append(agent)
 
         # if there is some agent on the neighborhood
-        if len(cells_with_agents): ## 주변 agent 수 만큼
-            if STRATEGY == 1: ## 언제 1 되냐???
-                self.attackOrMove(cells_with_agents, possible_steps)
-            else: ## 주변에 있는 애들 attack
-                self.attack(cells_with_agents)
-        else: ## 주변에 agent 없으면
-            print()
-            new_position = possible_steps[0]
-            print(possible_steps)
-            for i in possible_steps:
-                distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
-                if (distance_to_goal <  math.sqrt(pow(new_position[0] - goal[0],2) + pow(new_position[1] - goal[1],2))):
-                    new_position = i
-            self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+        # if len(cells_with_agents): ## 주변 agent 수 만큼
+        #     if STRATEGY == 1: ## 언제 1 되냐???
+        #         self.attackOrMove(cells_with_agents, possible_steps)
+        #     else: ## 주변에 있는 애들 attack
+        #         self.attack(cells_with_agents)
+        new_position = possible_steps[0]
+        # for i in possible_steps:
+        #     distance_to_goal = math.sqrt(pow(i[0]-goal[0],2)+pow(i[1]-goal[1],2))
+        #     if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
+        #         new_position = i
+        new_position = self.kinetic_modeling()
+        self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+        # self.kinetic_modeling()
+
+    def kinetic_modeling(self):
+        x = int(round(self.xy[0]))
+        y = int(round(self.xy[1]))
+        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # (x,y)에 있는 agent와 상호작용하는 위치의 집합
+        near_loc = []
+        for i in temp_loc:
+            if(i[0] > 0 and i[1] > 0 and i[0] < self.model.grid.width and i[1] < self.model.grid.height): # temp_loc에 있는 위치 중 map 벗어나는 위치 빼기
+                near_loc.append(i) 
+        near_agents_list = []
+        for i in near_loc: #i -> (x,y) near_loc 안에 있는 agent들 확인
+            near_agents = self.model.grid.get_cell_list_contents([i]) ## near_loc 에 존재하는 agents 모아
+            if len(near_agents): 
+                for near_agent in near_agents:
+                    near_agents_list.append(near_agent) # 주변에 있는 agents을 모은다
+
+        F_x = 0
+        F_y = 0
+        k = 1
+        valid_distance = 3 # valid_distance안에 있는 agents와의 상호작용만 고려
+        intend_force = 2.5 # 가고자 하는 힘
+        time_step = 0.5 # 이 정도가 적절했다
+
+        for near_agent in near_agents_list:
+            n_x = near_agent.xy[0]
+            n_y = near_agent.xy[1]
+            d_x = self.xy[0] - n_x
+            d_y = self.xy[1] - n_y
+            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2)) #각각 agent와의 거리
+            if(valid_distance < d):
+                continue    
+
+            F = k * (valid_distance - d) #각 agent와의 반발력
+            print("F : ", F)
+            if(d > 0 and near_agent.dead == False): #죽은 agent는 빼고 더해준다(각각 힘)
+                F_x += (F*(d_x/d))
+                F_y += (F*(d_y/d))
+        print(self.xy[0], self.xy[1])
+        goal_x = goal[0] - self.xy[0]
+        goal_y = goal[1] - self.xy[1]
+        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        if(goal_d != 0): ## goal 까지 거리가 남아있으면
+            F_x += intend_force * (goal_x/goal_d)
+            F_y += intend_force * (goal_y/goal_d) #intend force 분해
+
+        self.acc[0] = F_x/self.mass 
+        self.acc[1] = F_y/self.mass
+
+        self.vel[0] = self.acc[0] ## s = vt + 0.5at^2, v = v+at 로 하니까 이상했대
+        self.vel[1] = self.acc[1]
+
+        self.xy[0] += self.vel[0] * time_step #객체의 다음 위치
+        self.xy[1] += self.vel[1] * time_step
+        
+        next_x = int(round(self.xy[0])) #int 형변환
+        next_y = int(round(self.xy[1]))
+
+        if(next_x < 0): #아쉽다.. 고치길 바람 ## 밖에 있는 애들은 0에 있는 거라고 때려넣음..
+            next_x = 0
+        if(next_y < 0):
+            next_y = 0
+        print(F_x, F_y)
+        return (next_x, next_y)
+
+
+

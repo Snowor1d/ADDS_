@@ -7,6 +7,10 @@ from mesa.datacollection import DataCollector
 import agent_juna
 from agent_juna import WallAgent
 
+#goal_list = [[(198, 60), (199, 60), (197, 60), (196, 60), (195, 60), (194, 60)
+#             ,(198, 59), (199, 59), (197, 59)], [(0,0), (0,1), (1,0), (1,1)]]
+
+
 class FightingModel(Model):
     """A model with some number of agents."""
 
@@ -15,6 +19,8 @@ class FightingModel(Model):
         self.grid = MultiGrid(width, height, False)
         self.headingding = ContinuousSpace(width, height, False, 0, 0)
         self.schedule = RandomActivation(self)
+        self.schedule_e = RandomActivation(self)
+        self.schedule_w = RandomActivation(self)
         self.running = (
             True  # required by the MESA Model Class to start and stop the simulation
         )
@@ -31,22 +37,65 @@ class FightingModel(Model):
             a = FightingAgent(i, self, self.random.randrange(4))
             self.schedule.add(a)
 
-            # Add the agent to a random grid cell
+            # Add the agent to a random grid cell ## TODO: to make wall obstacle
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(a, (x, y))
 
-        wall = [] ## wall list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
-        for i in range(0, agent_juna.exit_w + 1):
-            for j in range(0, agent_juna.exit_h + 1):
-                wall.append((i,j))
-        # print(wall)
-        # for pos in wall:
-        #     agent_type = 'wall' ### 이걸 이렇게 하지말고 agent color, shape ... 을 각각 해주는 형식으로 해봐야겠당
-        #     agent = agent_juna.WallAgent(pos, self, agent_type)
-        #     # self.grid.position_agent(agent, pos[0], pos[1])
-        #     self.grid.place_agent(agent, pos)
-        #     self.schedule.add(agent)
+
+        exit_rec = [] ## exit_rec list : exit_w * exit_h 크기 안에 (0,0)~(exit_w, exit_h) 토플 채워짐
+
+        ## exit square of section 2
+        for i in range(0, agent_juna.exit_w):
+            for j in range(0, agent_juna.exit_h):
+                exit_rec.append((i,j))
+
+        # ## exit line of section 1
+        # from server_juna import NUMBER_OF_CELLS
+        # for i in range(int(NUMBER_OF_CELLS*0.2)):
+        #     exit_rec.append((int(NUMBER_OF_CELLS*0.8)+i, int(NUMBER_OF_CELLS*0.3))) ## (200*0.8+i, 200*0.3)
+
+
+
+        wall = [] ## wall list 에 (60, 200) ~ (60, 60), (60, 60)~(160, 60) 튜플 추가
+        from server_juna import NUMBER_OF_CELLS
+
+        # section division wall
+        for i in range(int(NUMBER_OF_CELLS*0.7)): ## 200*0.7=140
+            wall.append((int(NUMBER_OF_CELLS*0.3),NUMBER_OF_CELLS-i-1)) ##(60, 200-i)
+        for i in range(int(NUMBER_OF_CELLS*0.5)): ## 200*0.5 = 100
+            wall.append((int(NUMBER_OF_CELLS*0.3) + i, int(NUMBER_OF_CELLS*0.3))) ## (60+i, 60)
+        
+        # map side wall
+        for i in range(int(NUMBER_OF_CELLS)):
+            wall.append((i, 0))
+            wall.append((0, i))
+            wall.append((i, int(NUMBER_OF_CELLS)-1))
+            wall.append((int(NUMBER_OF_CELLS)-1, i))
+
+
+
+        # wall = [] ## wall list 에 (80, 200) ~ (80, 80), (80, 80)~(160, 80) 튜플 추가
+        # for i in range(120): ## 200*0.6=120
+        #     wall.append((80,200-i-1)) ##(80, 200-i)
+        # for i in range(80): ## 200*0.4 = 80
+        #     wall.append((80+i, 80)) ## (80+i, 80)
+            
+
+        
+
+    
+        for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
+            b = FightingAgent(i, self, 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
+            self.schedule_e.add(b)
+            self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
+
+        
+        for i in range(len(wall)):
+            c = FightingAgent(i, self, 11)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, wall[i])
+
 
     def step(self):
         """Advance the model by one step."""
@@ -54,7 +103,7 @@ class FightingModel(Model):
         self.datacollector_currents.collect(self)  # passing the model
 
         # Checking if there is a champion
-        if FightingModel.current_healthy_agents(self) == 1:
+        if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
 
     @staticmethod
