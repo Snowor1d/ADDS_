@@ -1,0 +1,5 @@
+results
+
+
+
+theta_1 : 1 theta_2 : 1theta_3 : 8
