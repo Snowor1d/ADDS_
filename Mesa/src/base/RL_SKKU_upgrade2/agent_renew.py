@@ -5,9 +5,9 @@ import numpy as np
 import random
 import copy
 
-theta_1 = random.randint(1,10)
-theta_2 = random.randint(1,10)
-theta_3 = random.randint(1,10)
+theta_1 = 1
+theta_2 = 10
+theta_3 = 10
 
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
@@ -367,6 +367,7 @@ class FightingAgent(Agent):
             now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
         else:
             now_stage = self.model.grid_to_space[int(x)][int(y)]
+            now_stage = ((now_stage[0][0], now_stage[0][1]), (now_stage[1][0], now_stage[1][1]))
         return now_stage
 
     def which_goal_agent_want(self):
@@ -1022,6 +1023,8 @@ class FightingAgent(Agent):
         desired_speed = 1.5
         now_space = ((self.robot_space[0][0], self.robot_space[0][1]), (self.robot_space[1][0], self.robot_space[1][1]))
         desired_speed = Multiple_linear_regression(floyd_distance[now_space][((0,0), (30,100))]/200, (200-dead_num)/200, now_affected/50, 9, 25)
+        if(self.drag==0):
+            desired_speed = 20
 
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
