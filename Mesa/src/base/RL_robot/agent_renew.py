@@ -1,3 +1,5 @@
+#this source code requires Mesa==2.2.1 
+#^__^
 from mesa import Agent
 import math
 import numpy as np

@@ -1,3 +1,5 @@
+#this source code requires Mesa==2.2.1 
+#^__^
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import NumberInput
 from model_renew import FightingModel
@@ -99,7 +101,7 @@ def agent_portrayal(agent):
         return portrayal
     
     portrayal["r"] = 1
-    if agent.type == 1: #끌려가는 agent 
+    if agent.type == 1: #끌려가는 agent  
         portrayal["Color"] = "lightsalmon"
         portrayal["Layer"] = 1
         return portrayal

@@ -1,3 +1,5 @@
+#this source code requires Mesa==2.2.1 
+#^__^
 from mesa import Model
 from agent_renew import FightingAgent
 from mesa.time import RandomActivation
@@ -333,7 +335,7 @@ class FightingModel(Model):
         # self.space_goal_dict[((95, 5), (99, 95))] = [[95, 5]]
 
         exit_rec = self.make_exit()
-        self.agents = []
+        #self.agents = []
 
     
 
@@ -1724,7 +1726,7 @@ class FightingModel(Model):
             self.agent_id = self.agent_id + 1
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
-            self.agents.append(a)
+            #self.agents.append(a)
 
 
     def step(self):
