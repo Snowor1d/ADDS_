@@ -117,7 +117,10 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state) 
         if len(legalActions)==0:
             return None 
-        if util.flipCoin(self.epsilon): # self.epsilon?? random action을 고를 지 best policy를 고를 지 선택하는 것 같은데 좀 더 찾아봐야 할 것  
+        if util.flipCoin(self.epsilon): # self.epsilon?? random action을 고를 지 best policy를 고를 지 선택하게 하는 것 
+            # greedy algorithm과 epsilon greedy algorithm이 있음. greedy algorithm은 미래를 생각하지 않고 각 단계에서 가장 최선의 선택을 하는 기법. 
+            # greedy algorithm은 exploration이 충분히 이루어지지 않았기 때문에 최상의 결과가 나올 것이라 확신할 수 없음 
+            # 이에 대한 보완책이 epsilon-greedy algorithm. 일정한 확률로 랜덤 선택을 해서 exploration을 하게 함 
             action = random.choice(legalActions)
         else:
             action = self.computeActionFromQValues(state)
@@ -185,41 +188,47 @@ class ApproximateQAgent(PacmanQAgent):
        and update.  All other QLearningAgent functions
        should work as is.
     """
+    # approximate Q-learning은 Q(s,a) 테이블을 모두 저장하지 않음. 현실과 비슷한 환경일 수록 변수가 많아지기 때문에 테이블을 모두 저장하는 것은 비효율적 
+    # 테이블을 모두 저장하는 대신, 이전의 경험을 기반으로 현재의 상황을 일반화하여 해석 ('Feature'와 'Weight' 사용 )
+    # pacman게임에서 feature이라 한다면, 가장 가까운 ghost와의 거리, 가장 가까운 food와의 거리, ghost의 수, 남은 food의 수 ~ 가 될 수 있을 것 
+    # weight는 각 feature에 대한 가중치 - 해당 특성이 얼마나 중요한가? 
+    # linear value function을 통해 가중치를 활용하여 Q(s,a), V(s)를 도출할 수 있다고 함 
+    # Q-learning이 Q_v 테이블을 업데이트 한다면, Approximate Q-learning은 가중치를 업데이트 함
+    # ㅋㅋㅋ 
+
     def __init__(self, extractor='IdentityExtractor', **args):
         self.featExtractor = util.lookup(extractor, globals())()
         PacmanQAgent.__init__(self, **args)
-        self.weights = util.Counter()
+        self.weights = util.Counter() # features에 대한 가중치 
 
     def getWeights(self):
         return self.weights
 
     def getQValue(self, state, action):
         """
-          Should return Q(state,action) = w * featureVector
+          Should return Q(state,action) = w * featureVector 
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
         w= self.getWeights()
-        featureVector = self.featExtractor.getFeatures(state,action)
+        featureVector = self.featExtractor.getFeatures(state,action) #features 추출 
 
-        return w *featureVector
-        
-        return w*featureVector
+        return w *featureVector 
         #util.raiseNotDefined()
 
-    def update(self, state, action, nextState, reward: float):
+    def update(self, state, action, nextState, reward: float): #학습하면서 가중치 업데이트 
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
         #util.raiseNotDefined()
         
-        featureVector = self.featExtractor.getFeatures(state,action)
+        featureVector = self.featExtractor.getFeatures(state,action) #현 state에서 action에 대한 features를 추출하고..
         
-        maxQFromNextState = self.computeValueFromQValues(nextState)
-        actionQValue = self.getQValue(state,action)
+        maxQFromNextState = self.computeValueFromQValues(nextState) # 다음 state에 대한 가치를 가져온다 
+        actionQValue = self.getQValue(state,action) # 또한 행동에 대한 가치도 가져온다 
 
-        for feature in featureVector:
+        for feature in featureVector: # 이것들을 이용해서 feature에 대한 가중치를 업데이트 한다 
             self.weights[feature] += self.alpha * (reward + self.discount * maxQFromNextState - actionQValue) * \
                                      featureVector[feature]
 
