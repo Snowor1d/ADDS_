@@ -16,7 +16,7 @@ from game import *
 from learningAgents import ReinforcementAgent
 from featureExtractors import *
 
-import gridworld
+import gridworld    
 
 import random,util,math
 import copy
@@ -59,7 +59,7 @@ class QLearningAgent(ReinforcementAgent):
         return self.qvalues[(state,action)]
         util.raiseNotDefined()
 
-    def computeValueFromQValues(self, state): # 행동 가치로부터 state의 가치 계산 
+    def computeValueFromQValues(self, state): # 행동 가치로부터 state의 가치 계산 # 어떤 state에서 가장 좋은 action의 value 찾기
         """
           Returns max_action Q(state,action)
           where the max is over legal actions.  Note that if
@@ -67,11 +67,11 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        actions = self.getLegalActions(state) # state로 부터 action을 얻는 것 같은데 legal이 뭐지?? 
+        actions = self.getLegalActions(state) # state로 부터 action을 얻는 것 같은데 legal이 뭐지??  # 어떤 state에서 할 수 있는 action을 뽑아주는 함수
         out = -float('inf') 
         for a in actions: # actions 중에 가장 좋은 action을 찾는 듯 ~ 
-            if self.getQValue(state,a)>=out:
-                out = self.getQValue(state, a)
+            if self.getQValue(state,a)>=out:  # getQValue는 어떤 state와 그 state에서의 action주어지면 그 QValue 뱉어주는 함수
+                out = self.getQValue(state, a) 
         
         return out if out!=(-float('inf'))else 0.0
         util.raiseNotDefined()
@@ -117,7 +117,7 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state) 
         if len(legalActions)==0:
             return None 
-        if util.flipCoin(self.epsilon): # self.epsilon?? random action을 고를 지 best policy를 고를 지 선택하게 하는 것 
+        if util.flipCoin(self.epsilon): # self.epsilon?? random action을 고를 지 best policy를 고를 지 선택하게 하는 것  # 확률 self.epsilon으로 True를 반환하고, 1-self.epsilon으로 False 반환함
             # greedy algorithm과 epsilon greedy algorithm이 있음. greedy algorithm은 미래를 생각하지 않고 각 단계에서 가장 최선의 선택을 하는 기법. 
             # greedy algorithm은 exploration이 충분히 이루어지지 않았기 때문에 최상의 결과가 나올 것이라 확신할 수 없음 
             # 이에 대한 보완책이 epsilon-greedy algorithm. 일정한 확률로 랜덤 선택을 해서 exploration을 하게 함 
@@ -195,8 +195,8 @@ class ApproximateQAgent(PacmanQAgent):
     # linear value function을 통해 가중치를 활용하여 Q(s,a), V(s)를 도출할 수 있다고 함 
     # Q-learning이 Q_v 테이블을 업데이트 한다면, Approximate Q-learning은 가중치를 업데이트 함
     # ㅋㅋㅋ 
-
-    def __init__(self, extractor='IdentityExtractor', **args):
+ 
+    def __init__(self, extractor='IdentityExtractor', **args):   # 디폴트 ectractor는 identityExtractor이고, 이거로 해서 잘 되면 custom extractor를 사용하라고함.
         self.featExtractor = util.lookup(extractor, globals())()
         PacmanQAgent.__init__(self, **args)
         self.weights = util.Counter() # features에 대한 가중치 

@@ -206,7 +206,7 @@ class FightingAgent(Agent):
             if(valid_distance<d):
                 continue    
 
-            F = k * (valid_distance-d)
+            F = k * (-valid_distance+d)
             print("F : ", F)
             if(d>0 and near_agent.dead == False):
                 F_x += (F*(d_x/d))
