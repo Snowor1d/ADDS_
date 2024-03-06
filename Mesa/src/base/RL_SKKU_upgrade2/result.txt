@@ -1,0 +1,50 @@
+results
+
+
+
+theta_1 : 1 theta_2 : 1theta_3 : 8
+
+
+theta_1 : 10 theta_2 : 9theta_3 : 1
+
+
+theta_1 : 3 theta_2 : 7theta_3 : 6
+
+
+theta_1 : 5 theta_2 : 2theta_3 : 2
+
+
+theta_1 : 9 theta_2 : 8theta_3 : 7
+
+
+theta_1 : 9 theta_2 : 7theta_3 : 6
+
+
+theta_1 : 8 theta_2 : 9theta_3 : 1
+
+
+theta_1 : 1 theta_2 : 8theta_3 : 2
+
+
+theta_1 : 5 theta_2 : 10theta_3 : 4
+
+
+theta_1 : 5 theta_2 : 4theta_3 : 9
+
+
+theta_1 : 7 theta_2 : 3theta_3 : 4
+
+
+theta_1 : 9 theta_2 : 2theta_3 : 4
+
+
+theta_1 : 4 theta_2 : 9theta_3 : 8
+
+
+theta_1 : 9 theta_2 : 5theta_3 : 8
+
+
+theta_1 : 1 theta_2 : 10theta_3 : 10
+
+
+theta_1 : 1 theta_2 : 10theta_3 : 10

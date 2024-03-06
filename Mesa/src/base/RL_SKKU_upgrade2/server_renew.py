@@ -1,12 +1,10 @@
-#this source code requires Mesa==2.2.1 
-#^__^
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import NumberInput
 from model_renew import FightingModel
 from mesa.visualization.modules import CanvasGrid, ChartModule
 
 ## grid size
-NUMBER_OF_CELLS = 100 ## square # 한 셀당 50cm x 50cm로 하겠음. 이 시뮬레이션 모델에서는 한 셀당 하나의 사람만 허용 cell 개수가 100개 -> 50m x 50m 크기의 맵
+NUMBER_OF_CELLS = 200 ## square # 한 셀당 50cm x 50cm로 하겠음. 이 시뮬레이션 모델에서는 한 셀당 하나의 사람만 허용 cell 개수가 100개 -> 50m x 50m 크기의 맵
 SIZE_OF_CANVAS_IN_PIXELS_X = 1000
 SIZE_OF_CANVAS_IN_PIXELS_Y = 1000
 
@@ -101,7 +99,7 @@ def agent_portrayal(agent):
         return portrayal
     
     portrayal["r"] = 1
-    if agent.type == 1: #끌려가는 agent  
+    if agent.type == 1: #끌려가는 agent 
         portrayal["Color"] = "lightsalmon"
         portrayal["Layer"] = 1
         return portrayal
