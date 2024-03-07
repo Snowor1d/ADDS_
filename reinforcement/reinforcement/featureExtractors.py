@@ -29,7 +29,7 @@ class FeatureExtractor:
 class IdentityExtractor(FeatureExtractor):   # 디폴트로는 이거를 feature extractpr로 사용
     def getFeatures(self, state, action):
         feats = util.Counter()
-        feats[(state,action)] = 1.0
+        feats[(state,action)] = 1.0 
         return feats
 
 class CoordinateExtractor(FeatureExtractor):
