@@ -6,6 +6,8 @@ import numpy as np
 import random
 import copy
 
+one_foot = 1
+
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
 HEALING_POTION = 20
@@ -22,7 +24,7 @@ theta_3 = random.randint(1,10)
 exit_area = [[0,exit_w], [0,exit_h]]
 
 robot_xy = [2, 2]
-robot_radius = 20 #로봇 반경 -> 10미터 
+robot_radius = 5 #로봇 반경 -> 10미터 
 robot_status = 0
 robot_ringing = 0
 robot_goal = [0, 0]
@@ -281,7 +283,7 @@ class FightingAgent(Agent):
                     self.dead = True 
         self.move()
 
-    def check_stage_agent(self):
+    def check_stage_agent(self): ## 이건 언제 쓰이나??? agent 움직일 때 현재 자기가 있는 위치 알 때
         x = self.xy[0]
         y = self.xy[1]
         now_stage = []
@@ -381,6 +383,15 @@ class FightingAgent(Agent):
 
         if (self.type == 3):
             new_position = self.robot_policy2()
+
+            ''''''
+            # self.agents_in_robot_area(robot_xy)
+            action = "LEFT"
+            mode = "on"
+            NumberOfAgents = self.feature_a(robot_xy, action, mode)
+            print("action : ", action, "\n로봇 반경 내 agents 수 : ", NumberOfAgents, "\n")
+            ''''''
+            
             self.model.grid.move_agent(self, new_position)
             return
 
@@ -744,6 +755,38 @@ class FightingAgent(Agent):
         for j in space_agent_num.keys():
             print(j, "공간에 ", space_agent_num[j], "명이 있음")
         return space_agent_num
+    
+
+    def agents_in_robot_area(self, robot_xyP):
+        from model_renew import Model
+        number_a = 0
+        for i in self.model.agents:
+            if(i.dead == False and (i.type == 0 or i.type == 1)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
+                if pow(robot_xyP[0]-i.xy[0], 2) + pow(robot_xyP[1]-i.xy[1], 2) < pow(robot_radius, 2) : ## 로봇 반경 내에 agent가 있다면
+                    number_a += 1
+        print("\n 현재 로봇 위치 : [", robot_xyP[0], ", ", robot_xyP[1], "], 로봇 반경 : ", robot_radius, ", 로봇 반경 내 agents : ", number_a,  "\n\n")
+        return number_a
+    
+    def feature_a(self, state, action, mode):
+        global one_foot
+        robot_xyP = state ## robot_xyP : action 이후 로봇의 위치
+
+        if action == "UP": ## action이 UP 이면 로봇의 y좌표에 one_foot을 더함
+            robot_xyP[1] += one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP) ##action 이후 로봇 반경 내 agents 수 구함
+        elif action == "DOWN":
+            robot_xyP[1] -= one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "RIGHT":
+            robot_xyP[0] += one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "LEFT":
+            robot_xyP[0] -= one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+
+        return NumberOfAgents
+
+        
 
     def find_target(self, space_agent_num, floyd_distance):
         global past_target
