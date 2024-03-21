@@ -82,10 +82,12 @@ def make_door(xy1, xy2, door_size): #xy1의 좌표~xy2의 좌표 사이 임의�
         temp = x1
         x1 = x2
         x2 = temp
+
     if(xy1[1]>xy2[1]):
         temp = y1
         y1 = y2
         y2 = temp
+
     if(x1 == x2):
         if((y2-y1)<=door_size):
             return door
@@ -100,6 +102,7 @@ def make_door(xy1, xy2, door_size): #xy1의 좌표~xy2의 좌표 사이 임의�
         for i in range(door_size):
             door.append((door_start+i, y1))
         return door
+    
 def goal_average(xys): #좌표들의 평균 도출 
     middle_x = 0
     middle_y = 0
@@ -114,7 +117,7 @@ def space_connected_linear(xy1, xy2): # 두 공간 사이에 겸치는 지점들
     # ex) xy1, xy2는 [(int, int), (int, int)] 형태
     check_connection = [] #어느 점이 겹치는지 체크 
 
-    for i1 in range(51):
+    for i1 in range(51): ## 0~50
         tmp = []
         for j1 in range(51):
             tmp.append(0)
@@ -396,11 +399,11 @@ class FightingModel(Model):
 
         #exit 구역의 goal 재정의
 
-        self.space_agent_num = {} #각 space에 agent가 몇명 있는가..
+        self.space_agent_num = {} #각 space에 agent가 몇 명 있는가..
         for i in self.space_list:
             self.space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
 
-        self.outdoor_space = [] #outdoor_space (방 아닌 것들)
+        self.outdoor_space = [] #outdoor_space (방 아닌 것들) , 통로가 아닌 곳. 로봇을 놓기 위해서
         for i in self.space_list: 
             if i in self.room_list:
                 continue 
@@ -429,7 +432,7 @@ class FightingModel(Model):
         for j in self.space_list:
             space = space + make_room(j[0], j[1])
 
-        set_transform = set(wall)
+        set_transform = set(wall)  ## 위 과정을 거치면 wall이 중복으로 나옴, 힘을 두 번 받으면 안 되니  set으로 중복되는 요소 제거 
         wall = list(set_transform)
         # for i in goal_list:
         #     for j in i:
@@ -437,7 +440,7 @@ class FightingModel(Model):
         #             wall.remove(j)
         #             self.wall_matrix[j[0]][j[1]] = 0
     
-        for i in self.door_list:
+        for i in self.door_list: ## 방 문 뚫는 과정
                 if i in wall:    
                     wall.remove(i)
                     self.wall_matrix[i[0]][i[1]] = 0
@@ -448,7 +451,7 @@ class FightingModel(Model):
             c = FightingAgent(i, self, wall[i], 11)
             self.schedule_w.add(c)
             self.grid.place_agent(c, wall[i])
-            self.only_one_wall[wall[i][0]][wall[i][1]] = 1
+            self.only_one_wall[wall[i][0]][wall[i][1]] = 1 ## 벽을 한 번만 세우기 위해 쓴 것임. 1이면 벽이 있으니 넘어가라는 것임
         for i in range(len(space)):
             if (self.only_one_wall[space[i][0]][space[i][1]] == 1 and space[i][0]!=0 and space[i][1]!=0 and space[i][1]!=49):
                 continue
@@ -460,7 +463,7 @@ class FightingModel(Model):
         
 
         self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
-        if(self.is_left_exit):
+        if(self.is_left_exit == 1):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
 
         if(self.is_up_exit):
@@ -476,20 +479,20 @@ class FightingModel(Model):
 
         self.floyd_warshall_matrix = self.floyd_warshall() 
         #floyd_warshall() 함수는 두 개의 이중 딕셔너리를 리턴함
-        # 첫 번째 이중 딕셔너리는 start space 부터 end space까지 경로
-        # 두 번째 이중 딕셔너리는 start space 부터 end space까지의 거리 
+        # 첫번째 이중 딕셔너리는 start space 부터 end space까지 경로
+        # 두번째 이중 딕셔너리는 start space 부터 end space까지의 거리 
         
         self.floyd_path = self.floyd_warshall_matrix[0]
         self.floyd_distance = self.floyd_warshall_matrix[1]
 
         vertices = list(self.space_graph.keys()) # space_graph에서 key를 추출 (모든 공간이 담김)
-        goal_matrix = {start: {end: float('infinity') for end in vertices} for start in vertices}
+        # goal_matrix = {start: {end: float('infinity') for end in vertices} for start in vertices}
 
-        for i in vertices:
-            for j in vertices:
-                if (i==j):
-                    continue
-                goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
+        # for i in vertices:
+        #     for j in vertices:
+        #         if (i==j):
+        #             continue
+        #         goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
                 
     def make_exit(self):
         exit_rec = []
@@ -647,8 +650,9 @@ class FightingModel(Model):
             self.agent_place(only_space[l][0], only_space[l][1], space_random_list[l])
     
     def way_to_exit(self):
-        if(self.is_left_exit):
-            for i in self.space_graph[((0,0), (5, 45))]:
+        if(self.is_left_exit == 1): ## 왼쪽 공간에 탈출구가 있으면
+            for i in self.space_graph[((0,0), (5, 45))]: ## i는 왼쪽 공간과 맞닿은 공간' 좌표 ex. [( , ), ( , )] ...
+                ## space_goal_dict 의 key (공간 좌표) 에 해당하는 value는  ~     공간과 골(두 공간을 넣으면 겹치는 점들로 구한 골이 나옴)을 넣으면 goal_extend 점이 나옴
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 45]]))]
         if(self.is_right_exit):
             for i in self.space_graph[((45,5), (49, 49))]:
@@ -661,7 +665,7 @@ class FightingModel(Model):
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[5,0], [49, 5]]))]
 
     def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
-        inner_space = []
+        inner_space = [] ## 탈출구 외곽 지역을 뺀 공간. room 제외
         for i in self.outdoor_space:
             if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
                 inner_space.append(i)
@@ -699,7 +703,7 @@ class FightingModel(Model):
         # case1 -> 방에 사람이 있는 경우
         # case2 -> 밖에 주로 사람이 있는 경우
         only_space = []
-        for sp in self.space_list:
+        for sp in self.space_list: ## 너무 쉬운 공간에 agents가 있는 경우를 없
             if (not sp in self.room_list and sp != [[0,0], [5, 45]] and sp != [[0, 45], [45, 49]] and sp != [[45, 5], [49, 49]] and sp != [[5,0], [49,5]]):
                 only_space.append(sp)
         space_num = len(only_space)
@@ -922,8 +926,8 @@ class FightingModel(Model):
                 if(space == space2):
                     continue
 
-                left_goal = [0, 0]
-                left_goal_num = 0
+                left_goal = [0, 0] ## 맞닿은 space 사이 goal 좌표
+                left_goal_num = 0 ## left_goal을 찍기 위해 겹치는 점들 개수'를 구함
 
                 right_goal = [0, 0]
                 right_goal_num = 0
@@ -1549,8 +1553,7 @@ class FightingModel(Model):
         """Advance the model by one step."""
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-        
-    
+
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False

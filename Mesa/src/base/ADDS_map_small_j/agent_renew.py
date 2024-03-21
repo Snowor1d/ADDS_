@@ -6,15 +6,12 @@ import numpy as np
 import random
 import copy
 
-one_foot = 1
-SumList = [0, 1]
-
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
 HEALING_POTION = 20
-exit_w = 5
-exit_h = 5
-exit_area = [[0,exit_w], [0, exit_h]]
+# exit_w = 5
+# exit_h = 5
+# exit_area = [[0,exit_w], [0, exit_h]]
 STRATEGY = 1
 random_disperse = 1
 
@@ -22,10 +19,10 @@ theta_1 = random.randint(1,10)
 theta_2 = random.randint(1,10)
 theta_3 = random.randint(1,10)
 
-exit_area = [[0,exit_w], [0,exit_h]]
+# exit_area = [[0,exit_w], [0,exit_h]]
 
 robot_xy = [2, 2]
-robot_radius = 5 #로봇 반경 -> 10미터 
+robot_radius = 20 #로봇 반경 -> 10미터 
 robot_status = 0
 robot_ringing = 0
 robot_goal = [0, 0]
@@ -236,7 +233,7 @@ class FightingAgent(Agent):
     def __repr__(self) -> str:
         return f"{self.unique_id} -> {self.health}"
 
-    def step(self) -> None:
+    def step(self) -> None: ## 각 스텝마다 agents가 뭘 하는지 ~
         global exit_area
         global goal_list
 
@@ -262,7 +259,7 @@ class FightingAgent(Agent):
         if self.attacked:
             self.attacked = False
             return
-        if(self.type != 3): #robot은 죽지 않는다
+        if(self.type != 3): #robot은 죽지 않는다 (로봇 type 3)
             if (self.model.is_left_exit):
                 if (self.xy[0] > self.model.left_exit_area[0][0] and self.xy[0] < self.model.left_exit_area[1][0] and self.xy[1] > self.model.left_exit_area[0][1] and self.xy[1]<self.model.left_exit_area[1][1]):
                     self.health = 0
@@ -284,7 +281,7 @@ class FightingAgent(Agent):
                     self.dead = True 
         self.move()
 
-    def check_stage_agent(self): ## 이건 언제 쓰이나??? agent 움직일 때 현재 자기가 있는 위치 알 때
+    def check_stage_agent(self):
         x = self.xy[0]
         y = self.xy[1]
         now_stage = []
@@ -312,24 +309,25 @@ class FightingAgent(Agent):
             self.goal_init = 1
             self.previous_stage = now_stage
         now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
-        if(self.previous_stage != self.check_stage_agent()):
-            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]] 
+        if(self.previous_stage != self.check_stage_agent()): ## 원래 있던 공간에서 벗어나면
+            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]] / stage에서 다른 곳으로 넘어가는 extend 점
             goal_candiate2 = []
-            if(len(goal_candiate)>1):
+            if(len(goal_candiate) > 1):
                 min_d = 1000
                 min_i = goal_candiate[0]
                 for i in goal_candiate:
                     d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
-                    if (d<min_d):
+                    if (d < min_d):
                         min_d = d
                         min_i = i #가장 가까운 골 찾기
                 for j in goal_candiate: 
-                    if (j==min_i): #goal 후보에서 빼버림
+                    if (j == min_i): #goal 후보에서 빼버림
                         continue
                     else:
-                        goal_candiate2.append(j)
-                if(len(goal_candiate2)==1):
-                    goal_index = 0
+                        goal_candiate2.append(j) 
+
+                if(len(goal_candiate2) == 1): 
+                    goal_index = 0 ## random 돌리려면 1개일 때 안 돼서~
                 else:
                     goal_index = random.randint(0, len(goal_candiate2)-1)
                 self.now_goal = goal_candiate2[goal_index]
@@ -382,26 +380,13 @@ class FightingAgent(Agent):
 
         cells_with_agents = []
 
-        if (self.type == 3):
+        if (self.type == 3): ## 로봇이면
             new_position = self.robot_policy2()
-
-            ''''''
-            # self.agents_in_robot_area(robot_xy)
-            action = "LEFT"
-            mode = "on"
-            NumberOfAgents = self.feature_a(robot_xy, action, mode)
-            print("action : ", action, "\n로봇 반경 내 agents 수 : ", NumberOfAgents, "\n")
-            ''''''
-
-            """"""
-            self.feature_c(robot_xy, action, mode) ## 사실 여기 인수 아무것도 안씀 ㅋㅋ .
-
-            """"""
-            
             self.model.grid.move_agent(self, new_position)
             return
+        else: 
+            new_position = self.test_modeling()
 
-        new_position = self.test_modeling()
         if(self.type ==0 or self.type==1):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
     
@@ -602,14 +587,14 @@ class FightingAgent(Agent):
 
         self.robot_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])] #로봇이 어느 stage에 있는지 나온다 
 
-        if(self.mission_complete == 1): #새로운 탈출 path를 찾는다
+        if(self.mission_complete == 1): #새로운 탈출 path를 찾는다. ## 원래 0임. 
             self.robot_now_path = [] # [[1,3], [4,5], [5,1]] 
             agent_max = 0 #agent가 가장 많은 stage 
             self.find_target(space_agent_num, floyd_distance)
 
             past_target = self.save_target
 
-            go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target) #로봇의 초기 위치 -> save_target까지 가는데 최단 경로 stage 리스트 
+            go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target) #로봇의 초기 위치 -> save_target(구하려는 agents 있는)까지 가는데 최단 경로 stage 리스트 
             
             back_path = self.model.get_path(floyd_path, self.save_target, self.save_point) # save_target(인구가 가장 많은 곳)에서 save_point(safe zone) 까지의 최단 경로 
             self.go_path_num = len(go_path) #guide를 하기 위해서 ~ 
@@ -622,12 +607,14 @@ class FightingAgent(Agent):
             self.mission_complete = 0 
         #print(self.robot_now_path)
         
-        if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 
+        if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 ## 출구로 가는 중
             robot_status = 1 #robot_status가 1일때 -> guide함, 로봇 색깔바뀜(빨간색), 로봇에 영향받는 agent 색깔 바뀜(주황색) 
-            self.drag = 1 
+            self.drag = 1 ## drag가 1일 때 사람들 끌고 가는 힘 작용
         else:
             robot_status = 0
             self.drag = 0
+
+
         print("현재 골 : ", self.robot_now_path[self.robot_waypoint_index])
         print(self.robot_waypoint_index)
         print(robot_xy)
@@ -636,17 +623,18 @@ class FightingAgent(Agent):
         robot_goal = self.robot_now_path[self.robot_waypoint_index]
         
         d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
+        
         if (d<3):
             self.robot_waypoint_index = self.robot_waypoint_index + 1
 
         if(self.robot_waypoint_index == len(self.robot_now_path)):
-            self.mission_complete = 1 #미션을 새로 만들어야해 (끝났으니까)
+            self.mission_complete = 1 #미션을 새로 만들어야 해 (끝났으니까)
             self.robot_waypoint_index = 0
             return [int(robot_xy[0]), int(robot_xy[1])]
 
-        goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0] #역학을 위한.. 
-        goal_y = self.robot_now_path[self.robot_waypoint_index][1] - robot_xy[1]
-        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0] #역학을 위한.. 힘을 줘야 함. goal까지의 위치를 알고..
+        goal_y = self.robot_now_path[self.robot_waypoint_index][1] - robot_xy[1] ## 
+        goal_d = math.sqrt(pow(goal_x,2) + pow(goal_y,2))
         
         intend_force = 2
         desired_speed = 1.5
@@ -761,38 +749,6 @@ class FightingAgent(Agent):
         for j in space_agent_num.keys():
             print(j, "공간에 ", space_agent_num[j], "명이 있음")
         return space_agent_num
-    
-
-    def agents_in_robot_area(self, robot_xyP):
-        from model_renew import Model
-        number_a = 0
-        for i in self.model.agents:
-            if(i.dead == False and (i.type == 0 or i.type == 1)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
-                if pow(robot_xyP[0]-i.xy[0], 2) + pow(robot_xyP[1]-i.xy[1], 2) < pow(robot_radius, 2) : ## 로봇 반경 내에 agent가 있다면
-                    number_a += 1
-        print("\n 현재 로봇 위치 : [", robot_xyP[0], ", ", robot_xyP[1], "], 로봇 반경 : ", robot_radius, ", 로봇 반경 내 agents : ", number_a,  "\n\n")
-        return number_a
-    
-    def feature_a(self, state, action, mode):
-        global one_foot
-        robot_xyP = state ## robot_xyP : action 이후 로봇의 위치
-
-        if action == "UP": ## action이 UP 이면 로봇의 y좌표에 one_foot을 더함
-            robot_xyP[1] += one_foot
-            NumberOfAgents = self.agents_in_robot_area(robot_xyP) ##action 이후 로봇 반경 내 agents 수 구함
-        elif action == "DOWN":
-            robot_xyP[1] -= one_foot
-            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-        elif action == "RIGHT":
-            robot_xyP[0] += one_foot
-            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-        elif action == "LEFT":
-            robot_xyP[0] -= one_foot
-            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-
-        return NumberOfAgents
-
-        
 
     def find_target(self, space_agent_num, floyd_distance):
         global past_target
@@ -853,18 +809,18 @@ class FightingAgent(Agent):
 
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
-        #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        ## 12칸, 가운데 제외 마름모
         temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
-            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height): ##grid를 벗어나는 구역에 temp_loc이 있으면 제외
                 near_loc.append(i)
         near_agents_list = []
         for i in near_loc:
-            near_agents = self.model.grid.get_cell_list_contents([i])
-            if len(near_agents):
+            near_agents = self.model.grid.get_cell_list_contents([i]) ##fighting agent 객체로 나옴~
+            if len(near_agents): ## 근처 agents 수가 있으면
                 for near_agent in near_agents:
-                    near_agents_list.append(near_agent) #kinetic 모델과 동일
+                    near_agents_list.append(near_agent) #kinetic 모델과 동일 ## near_agents_list에 추가~
 
         F_x = 0
         F_y = 0
@@ -879,16 +835,17 @@ class FightingAgent(Agent):
         desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
+
         for near_agent in near_agents_list:
-            n_x = near_agent.xy[0]
+            n_x = near_agent.xy[0] ## near_agent.xy = [ , ]  ..> 얘 좌표 나옴
             n_y = near_agent.xy[1]
             d_x = self.xy[0] - n_x
             d_y = self.xy[1] - n_y
             d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
-            if(valid_distance<d):
-                continue    
+            if(valid_distance < d): ## d가 valid_distance(=3)보다 작으면 넘어감
+                continue
 
-            F = k * (valid_distance-d)
+            # F = k * (valid_distance - d)
             # print("F : ", F)
             # if(d>0 and near_agent.dead == False):
             #     F_x += (F*(d_x/d))
@@ -896,7 +853,7 @@ class FightingAgent(Agent):
             if(near_agent.dead == True):
                 continue
                 
-            if(d!=0):
+            if(d != 0):
                 if(near_agent.type == 12): ## 가상 벽
                     repulsive_force[0] += 0
                     repulsive_force[1] += 0
@@ -921,12 +878,12 @@ class FightingAgent(Agent):
 
         goal_x = self.now_goal[0] - self.xy[0]
         goal_y = self.now_goal[1] - self.xy[1]
-        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        goal_d = math.sqrt(pow(goal_x,2) + pow(goal_y,2))
 
         robot_x = robot_xy[0] - self.xy[0]
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
-        if(robot_d<robot_radius and robot_status == 1):
+        if(robot_d < robot_radius and robot_status == 1): ## agent와 로봇 거리가 robot_radius 보다 작고 & 로봇이 가이드 모드이면
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
@@ -962,13 +919,13 @@ class FightingAgent(Agent):
         next_x = int(round(self.xy[0]))
         next_y = int(round(self.xy[1]))
 
-        if(next_x<0):
+        if(next_x < 0):
             next_x = 0
-        if(next_y<0):
+        if(next_y < 0):
             next_y = 0
-        if(next_x>49):
+        if(next_x > 49):
             next_x = 49
-        if(next_y>49):
+        if(next_y > 49):
             next_y = 49
         #print(F_x, F_y)
             
@@ -979,130 +936,4 @@ class FightingAgent(Agent):
 
         self.robot_guide = 0
         return (next_x, next_y)
-
-
-    def distance_F(self, state, action, mode):
-        global robot_xy
-        global one_foot
-
-        now_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])]
-        evacuation_points = []
-        if(self.model.is_left_exit): 
-            evacuation_points.append(((0,0), (5, 45)))
-        if(self.model.is_up_exit):
-            evacuation_points.append(((0,45), (45, 49)))
-        if(self.model.is_right_exit):
-            evacuation_points.append(((45,5), (49, 49)))
-        if(self.model.is_down_exit):
-            evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 ##?? 근데 왜 초록 구역이 아니고 사이드 구역 전체일까? 그것은 여기로 오면 탈출하기 때문이지요?
-        min_distance = 1000
-        floyd_distance = self.model.floyd_distance 
-        exit = 0
-        
-        next_vertex_matrix = self.model.floyd_warshall()[0] ## 이중 딕셔너리, start space 부터 end space 까지의 경로
-
-        for i in evacuation_points: #space_target에서 가장 가까운 탈출구를 찾기 
-            if(floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][i] < min_distance): ##floyd_distance[start(now space)][end(i;출구)] 
-                exit = i ##지금은 출구가 하나라서 exit이 evacuation_points이지만 출구가 많아진다면 ~
-        
-
-        next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
-        now_space_x_center = (now_space[0][0] + now_space[1][0])/2
-        now_space_y_center = (now_space[1][0] + now_space[1][1])/2
-
-        next_robot_position = [0, 0]
-        next_robot_position[0] += robot_xy[0]
-        next_robot_position[1] += robot_xy[1]
-
-        if (action=="UP"):
-            next_robot_position[1] += one_foot
-        elif (action=="DOWN"):
-            next_robot_position[1] -= one_foot
-        elif (action=="LEFT"):
-            next_robot_position[0] -= one_foot
-        elif (action=="RIGHT"):
-            next_robot_position[0] += one_foot
-         
-        return floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
-
-
-
-    def feature_c(self, state, action, mode):
-        global SumList
-        SumOfDistances = 0 ##agent 하나로부터 출구까지의 거리의 합
-        floyd_distance = self.model.floyd_distance
-
-        evacuation_points = [] ## 출구 찾기~
-        if(self.model.is_left_exit): 
-            evacuation_points.append(((0,0), (5, 45)))
-        if(self.model.is_up_exit):
-            evacuation_points.append(((0,45), (45, 49)))
-        if(self.model.is_right_exit):
-            evacuation_points.append(((45,5), (49, 49)))
-        if(self.model.is_down_exit):
-            evacuation_points.append(((5,0), (49, 5)))
-
-        for i in self.model.agents: ##SumOfDistaces 구하는 과정
-            if(i.dead == False and (i.type==0 or i.type==1)):
-                agent_space = self.model.grid_to_space[int(i.xy[0])][int(i.xy[1])]
-                
-                ###준아야 너는 아래 코드를 수정해야 하며, 문제는 같은 space 내에서 agents가 움직이는 걸 반영하지 못하는 것에 있단다. 위 코드를 보며 수정하도록 야호^^
-                SumOfDistances += floyd_distance[(agent_space[0][0], agent_space[0][1]), (agent_space[1][0], agent_space[1][1])][evacuation_points[0]]
-
-        t = SumList[1]
-        SumList[0] = t
-        SumList[1] = SumOfDistances
-
-        if SumList[1] >= SumList[0]: ## 이전 sum과 비교해서 최근 것이 같거나 크다면 출구로 가지 않고 있음
-            print("agents가 출구와 근접하지 않아~\n이전 step SumOfDistance: ", SumList[0], "\n현재 step SumOfDistance: ", SumList[1])
-        else:
-            print("agents가 출구와 근접해짐\n이전 step SumOfDistance: ", SumList[0], "\n현재 step SumOfDistance: ", SumList[1])
-
-
-        # for i in self.model.agents:
-        #     i_xyP = [i.xy[0], i.xy[1]] ## action
-        #     if action == "UP":
-        #         i_xyP[0] += one_foot
-        #     elif action == "DOWN":
-        #         i_xyP[0] -= one_foot
-        #     elif action == "RIGHT":
-        #         i_xyP[1] += one_foot
-        #     elif action == "LEFT":
-        #         i_xyP[1] -= one_foot
-            
-        #     agent_spaceP = self.model.grid_to_space[int(i_xyP[0])][int(i_xyP[1])]
-        #     SumOfDistancesP += floyd_distance[((agent_space[0][0], agent_space[0][1]), evacuation_points[0])]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
