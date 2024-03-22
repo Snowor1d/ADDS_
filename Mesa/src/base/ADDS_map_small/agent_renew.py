@@ -1035,6 +1035,8 @@ class FightingAgent(Agent):
     def feature_c(self, state, action, mode):
         global SumList
         SumOfDistances = 0 ##agent 하나로부터 출구까지의 거리의 합
+        b = 0
+        c = 0
         floyd_distance = self.model.floyd_distance
 
         evacuation_points = [] ## 출구 찾기~
@@ -1054,9 +1056,10 @@ class FightingAgent(Agent):
                 next_goal = space_connected_linear(((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1])), self.model.floyd_warshall()[0][((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1]))][evacuation_points[0]])
                 agent_space_x_center = (agent_space[0][0] + agent_space[1][0])/2
                 agent_space_y_center = (agent_space[1][0] + agent_space[1][1])/2
-                a = floyd_distance[((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1]))][evacuation_points[0]] 
+                a = (floyd_distance[((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1]))][evacuation_points[0]] 
                 - math.sqrt(pow(agent_space_x_center-next_goal[0],2) + pow(agent_space_y_center-next_goal[1],2)) 
-                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2))
+                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2)))
+                
                 
                 ###준아야 너는 아래 코드를 수정해야 하며, 문제는 같은 space 내에서 agents가 움직이는 걸 반영하지 못하는 것에 있단다. 위 코드를 보며 수정하도록 야호^^
                 # SumOfDistances += floyd_distance[(agent_space[0][0], agent_space[0][1]), (agent_space[1][0], agent_space[1][1])][evacuation_points[0]]
