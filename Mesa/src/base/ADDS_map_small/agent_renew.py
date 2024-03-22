@@ -389,8 +389,13 @@ class FightingAgent(Agent):
             # self.agents_in_robot_area(robot_xy)
             action = "LEFT"
             mode = "on"
-            NumberOfAgents = self.feature_a(robot_xy, action, mode)
-            print("action : ", action, "\n로봇 반경 내 agents 수 : ", NumberOfAgents, "\n")
+            # NumberOfAgents = self.feature_a(robot_xy, action, mode)
+            # print("action : ", action, "\n로봇 반경 내 agents 수 : ", NumberOfAgents, "\n")
+
+            print("\naction : UP", "\n로봇 반경 내 agents 수 : ", self.feature_a(robot_xy, "UP", mode))
+            print("action : DOWN", "\n로봇 반경 내 agents 수 : ", self.feature_a(robot_xy, "DOWN", mode))
+            print("action : RIGHT", "\n로봇 반경 내 agents 수 : ", self.feature_a(robot_xy, "RIGHT", mode))
+            print("action : LEFT", "\n로봇 반경 내 agents 수 : ", self.feature_a(robot_xy, "LEFT", mode), "\n")
             ''''''
 
             """"""
@@ -770,7 +775,7 @@ class FightingAgent(Agent):
             if(i.dead == False and (i.type == 0 or i.type == 1)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
                 if pow(robot_xyP[0]-i.xy[0], 2) + pow(robot_xyP[1]-i.xy[1], 2) < pow(robot_radius, 2) : ## 로봇 반경 내에 agent가 있다면
                     number_a += 1
-        print("\n 현재 로봇 위치 : [", robot_xyP[0], ", ", robot_xyP[1], "], 로봇 반경 : ", robot_radius, ", 로봇 반경 내 agents : ", number_a,  "\n\n")
+        # print("\n 현재 로봇 위치 : [", robot_xyP[0], ", ", robot_xyP[1], "], 로봇 반경 : ", robot_radius, ", 로봇 반경 내 agents : ", number_a,  "\n\n")
         return number_a
     
     def feature_a(self, state, action, mode):
@@ -1046,8 +1051,16 @@ class FightingAgent(Agent):
             if(i.dead == False and (i.type==0 or i.type==1)):
                 agent_space = self.model.grid_to_space[int(i.xy[0])][int(i.xy[1])]
                 
+                next_goal = space_connected_linear(((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1])), self.model.floyd_warshall()[0][((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1]))][evacuation_points[0]])
+                agent_space_x_center = (agent_space[0][0] + agent_space[1][0])/2
+                agent_space_y_center = (agent_space[1][0] + agent_space[1][1])/2
+                a = floyd_distance[((agent_space[0][0],agent_space[0][1]), (agent_space[1][0], agent_space[1][1]))][evacuation_points[0]] 
+                - math.sqrt(pow(agent_space_x_center-next_goal[0],2) + pow(agent_space_y_center-next_goal[1],2)) 
+                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2))
+                
                 ###준아야 너는 아래 코드를 수정해야 하며, 문제는 같은 space 내에서 agents가 움직이는 걸 반영하지 못하는 것에 있단다. 위 코드를 보며 수정하도록 야호^^
-                SumOfDistances += floyd_distance[(agent_space[0][0], agent_space[0][1]), (agent_space[1][0], agent_space[1][1])][evacuation_points[0]]
+                # SumOfDistances += floyd_distance[(agent_space[0][0], agent_space[0][1]), (agent_space[1][0], agent_space[1][1])][evacuation_points[0]]
+                SumOfDistances += a
 
         t = SumList[1]
         SumList[0] = t
