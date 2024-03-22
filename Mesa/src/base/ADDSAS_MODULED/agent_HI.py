@@ -1,10 +1,10 @@
-#this source code requires Mesa==2.2.1 
-#^__^
 from mesa import Agent
 import math
 import numpy as np
 import random
 import copy
+
+num_remained_agent = 0
 
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
@@ -390,7 +390,7 @@ class FightingAgent(Agent):
     
     def robot_policy(self): # 이거는 무시해도됨
         time_step = 0.2
-        from model_renew import Model
+        from model_HI import Model
         global random_disperse
         global robot_status
         global robot_xy 
@@ -563,7 +563,7 @@ class FightingAgent(Agent):
     
     def robot_policy2(self): # 어딘가에 들리고 safe 존으로 가는 걸 반복
         time_step = 0.2
-        from model_renew import Model
+        from model_HI import Model
         global random_disperse
         global robot_status
         global robot_xy 
@@ -733,7 +733,8 @@ class FightingAgent(Agent):
         return (next_x, next_y)
 
     def agents_in_each_space(self):
-        from model_renew import Model
+        global num_remained_agent
+        from model_HI import Model
         space_agent_num = {}
         for i in self.model.space_list:
             space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
@@ -743,6 +744,8 @@ class FightingAgent(Agent):
                 space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
         for j in space_agent_num.keys():
             print(j, "공간에 ", space_agent_num[j], "명이 있음")
+            num_remained_agent += space_agent_num[j]
+            #print('agents_in_each_space function employed')
         return space_agent_num
 
     def find_target(self, space_agent_num, floyd_distance):
@@ -799,7 +802,7 @@ class FightingAgent(Agent):
         global robot_radius
         global robot_xy
         global robot_status
-        from model_renew import Model
+        from model_HI import Model
         global random_disperse
 
         x = int(round(self.xy[0]))
@@ -930,38 +933,3 @@ class FightingAgent(Agent):
 
         self.robot_guide = 0
         return (next_x, next_y)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
