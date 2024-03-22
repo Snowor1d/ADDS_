@@ -1,5 +1,5 @@
 #this source code requires Mesa==2.2.1 
-#^__^
+#^__^ 
 from mesa import Model
 from agent_renew import FightingAgent
 from mesa.time import RandomActivation
@@ -297,15 +297,14 @@ class FightingModel(Model):
             True  # required by the MESA Model Class to start and stop the simulation
         )
         self.agent_id = 1000
-
+   
         self.datacollector_currents = DataCollector(
             {
                 "Remained Agents": FightingModel.current_healthy_agents,
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
-
-
+ 
         exit_rec = self.make_exit() 
 
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
@@ -344,26 +343,26 @@ class FightingModel(Model):
         #wall = wall+self.random_map_generator2(3, 5, 2, 100)
         self.space_list = []
         self.room_list = []
-        self.space_goal_dict = {} #각 space가 가지는 goal을 표현하기 위함
-        self.space_graph = {} #각 space의 인접 space를 표현하기 위함
+        self.space_goal_dict = {} #각 space가 가지는 goal을 표현하기 위함 # 딕셔너리임
+        self.space_graph = {} #각 space의 인접 space를 표현하기 위함 # 딕셔너리임
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
 
 
-        self.init_outside() #외곽지대 탈출로 구현 
+        self.init_outside() #외곽지대 탈출로 구현 # 탈출로에서는 탈출로로만 다님. 다시 안으로 들어가지 않음.
         
         self.door_list = [] #일단 무시
         self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1) # recursion을 이용해 랜덤으로 맵을 나눔 
 
         for j in self.space_list: 
-            self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = [] # 모든 space에 대한 goal을 설정할 것임
+            self.space_goal_dict[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = [] # 모든 space에 대한 goal을 설정할 것임 # 초기화 해 놓은거
             self.space_graph[((j[0][0], j[0][1]), (j[1][0], j[1][1]))] = []
         for k in self.room_list:
             self.space_type[((k[0][0], k[0][1]), (k[1][0], k[1][1]))] = 1 # self.space_type에서는 room 이면 value의 값을 1로 설정 
 
         self.connect_space_with_one_goal() #space 그래프 연결 
         
-        if(self.simulation_type): # 만약 room이 있는 시뮬레이션이라면..
+        if(self.simulation_type): # 만약 room이 있는 시뮬레이션이라면.. # 야외면 무시해도 되는 부분
             self.make_door_between_room() #방 사이에 room 만들기
             self.make_door_to_outside()
             self.space_connect_via_door()
@@ -380,10 +379,10 @@ class FightingModel(Model):
 
         #print(self.space_graph)
 
-        self.random_agent_distribute_outdoor(20)
+        self.random_agent_distribute_outdoor(20) # agent를 space에 랜덤 배치. 각 space에 1명씩은 할당되도록 함.
         #self.random_hazard_placement(random.randint(1,3))
         if(self.is_left_exit):
-            self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
+            self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal] # 딕셔너리에 출구의 평균 좌표를 할당
 
         if(self.is_up_exit):
             self.space_goal_dict[((0,45), (45, 49))] = [self.up_exit_goal]
@@ -398,8 +397,8 @@ class FightingModel(Model):
 #---------------------------------------------------------------------------------------------------------------------
         self.space_agent_num = {} #각 space에 agent가 몇명 있는가..
         for i in self.space_list:
-            self.space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
-
+            self.space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0 # 공간에 좌표에 해당하는 그 공간의 agent 수 딕셔너리에 할당
+            # value는 나중에
         self.outdoor_space = [] #outdoor_space (방 아닌 것들)
         for i in self.space_list: 
             if i in self.room_list:
@@ -419,31 +418,31 @@ class FightingModel(Model):
             y2 = space[1][1]
             for x in range(x1, x2+1):
                 for y in range(y1, y2+1):
-                    self.grid_to_space[x][y] = space 
+                    self.grid_to_space[x][y] = space # 어떤 좌표든 찍으면 어느 space에 해당하는 지 나오겠네
 
 
         #print(self.space_goal_dict)
 
-        for i in self.room_list:
-            wall = wall + make_room(i[0], i[1])
+        for i in self.room_list: # 실제로 plane을 만드는 부분인 것 같은데?
+            wall = wall + make_room(i[0], i[1]) # 여태까지의 room_list는 꼭짓점의 좌표만 담고 있는데, 이거를 통해 wall에 벽의 모든 좌표를 담음
         for j in self.space_list:
             space = space + make_room(j[0], j[1])
 
         set_transform = set(wall)
-        wall = list(set_transform)
+        wall = list(set_transform) # wall의 요소 중 겹치는 걸 제외하는 표현
         # for i in goal_list:
         #     for j in i:
         #         if j in wall:    
         #             wall.remove(j)
         #             self.wall_matrix[j[0]][j[1]] = 0
     
-        for i in self.door_list:
+        for i in self.door_list: # 일단 무시
                 if i in wall:    
                     wall.remove(i)
                     self.wall_matrix[i[0]][i[1]] = 0
 
-        for i in range(len(wall)):
-            if (self.only_one_wall[wall[i][0]][wall[i][1]] == 1 and wall[i][0]!=0 and wall[i][1]!=0 and wall[i][1]!=49):
+        for i in range(len(wall)): # 실제로 agent를 넣는 부분이라고 이해
+            if (self.only_one_wall[wall[i][0]][wall[i][1]] == 1 and wall[i][0]!=0 and wall[i][1]!=0 and wall[i][1]!=49): # 벽이 겹치지 않도록 하는 이중장치로 생각
                 continue
             c = FightingAgent(i, self, wall[i], 11)
             self.schedule_w.add(c)
@@ -461,8 +460,8 @@ class FightingModel(Model):
 
         self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
         if(self.is_left_exit):
-            self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
-
+            self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal] # make_exit에서부터 할당됩니다~
+            # space_goal_dict란 공간을 넣으면 그 공간에 있을 때 agent가 어디로 가야할 지 알려주는 딕셔너리
         if(self.is_up_exit):
             self.space_goal_dict[((0,45), (45, 49))] = [self.up_exit_goal]
 
@@ -476,12 +475,12 @@ class FightingModel(Model):
 
         self.floyd_warshall_matrix = self.floyd_warshall() 
         #floyd_warshall() 함수는 두 개의 이중 딕셔너리를 리턴함
-        # 첫 번째 이중 딕셔너리는 start space 부터 end space까지 경로
-        # 두 번째 이중 딕셔너리는 start space 부터 end space까지의 거리 
+        # 첫번째 이중 딕셔너리는 start space 부터 end space까지 경로
+        # 두번째 이중 딕셔너리는 start space 부터 end space까지의 거리 
         
-        self.floyd_path = self.floyd_warshall_matrix[0]
+        self.floyd_path = self.floyd_warshall_matrix[0]   
         self.floyd_distance = self.floyd_warshall_matrix[1]
-
+        # 여기부터 안쓰입니다.
         vertices = list(self.space_graph.keys()) # space_graph에서 key를 추출 (모든 공간이 담김)
         goal_matrix = {start: {end: float('infinity') for end in vertices} for start in vertices}
 
@@ -521,7 +520,7 @@ class FightingModel(Model):
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
             exit_size = random.randint(10, 30) #출구 사이즈를 30~70 정한다 
-            start_exit_cell = random.randint(0, 49-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
+            start_exit_cell = random.randint(0, 45-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
             for i in range(0, 5): 
                 for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
                     exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
@@ -647,10 +646,10 @@ class FightingModel(Model):
             self.agent_place(only_space[l][0], only_space[l][1], space_random_list[l])
     
     def way_to_exit(self):
-        if(self.is_left_exit):
-            for i in self.space_graph[((0,0), (5, 45))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 45]]))]
-        if(self.is_right_exit):
+        if(self.is_left_exit): 
+            for i in self.space_graph[((0,0), (5, 45))]: # i에는 left exit과 접하는 space가 찍힐 것.
+                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 45]]))] # space_connected_linear는 왼쪽 출구와 접하는 공간인 i와 왼쪽 탈출구의 좌표를 넣으면, 접하는 부분의 가운데 좌표를 뱉음
+        if(self.is_right_exit):                                                 
             for i in self.space_graph[((45,5), (49, 49))]:
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[45,5], [49, 49]]))]
         if(self.is_up_exit):
@@ -664,7 +663,7 @@ class FightingModel(Model):
         inner_space = []
         for i in self.outdoor_space:
             if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
-                inner_space.append(i)
+                inner_space.append(i) # 방이 아니면서, 탈출로도 아닌 공간을 inner_space로 저장
         space_index = 0 
         if(len(inner_space) > 1):
             space_index = random.randint(0, len(inner_space)-1)
@@ -679,12 +678,12 @@ class FightingModel(Model):
         y_len = xy[1][0] - xy[1][1]
 
 
-        x = random.randint(xy[0][0]+1, xy[1][0]-1)
+        x = random.randint(xy[0][0]+1, xy[1][0]-1) # 무작위로 뽑힌 inner_space 안의 좌표 중 무작위로 선택
         y = random.randint(xy[0][1]+1, xy[1][1]-1)
 
 
         a = FightingAgent(self.agent_id, self, [x,y], 3)
-        self.agent_id = self.agent_id + 1
+        self.agent_id = self.agent_id + 1 # agent id는 모두 달라야해서 벽이랑 다르게 하려고 안전빵으로 1000으로 해놓고 1씩 추가해가면서 쓴다
         self.schedule.add(a)
         self.grid.place_agent(a, (x, y))
         #self.agents.append(a)
@@ -701,29 +700,29 @@ class FightingModel(Model):
         only_space = []
         for sp in self.space_list:
             if (not sp in self.room_list and sp != [[0,0], [5, 45]] and sp != [[0, 45], [45, 49]] and sp != [[45, 5], [49, 49]] and sp != [[5,0], [49,5]]):
-                only_space.append(sp)
+                only_space.append(sp) # 탈출로가 아닌 space를 only space에 할당
         space_num = len(only_space)
         
         
-        space_agent = agent_num
+        space_agent = agent_num # 위치시킬 agent 개수
 
-        random_list = [0] * space_num
+        random_list = [0] * space_num # space_num 만큼의 0 을 가진 list 생성
 
         # 총합이 agent num이 되도록 할당
-        for i in range(space_num - 1):
+        for i in range(space_num - 1): # 각 space에 최소한 1명씩은 들어가게 설정
             random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
             while(random_num>space_agent*(1/3)):
                 random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
 
             random_list[i] = random_num
 
-        # 마지막 숫자는 나머지 값으로 설정
+        # 마지막 숫자는 나머지 값으로 설정해서 총 agent 수 맞춰주기
         if(space_num != 0):
             random_list[-1] = space_agent - sum(random_list)
 
         for j in range(len(only_space)):
             self.agent_place(only_space[j][0], only_space[j][1], random_list[j])
-
+            # agent_place 함수는 space와 num 주면, 그 space 안에 num만큼 agent 랜덤 할당하는 함수
 
 
     def random_hazard_placement(self, hazard_num):
@@ -893,10 +892,10 @@ class FightingModel(Model):
             tmp = []
             for j in range(51):
                 tmp.append(0)
-            check_connection.append(tmp) #이중 리스트로 겹치는지 확인할거임
+            check_connection.append(tmp) #이중 리스트로 space들 겹치는 부분 확인할거임
 
-        for space in self.space_list: #space끼리 연결 #space 그래프 만들기
-            if space in self.room_list: #방이면 건너뛰기
+        for space in self.space_list: # space끼리 연결 #space 그래프 만들기
+            if space in self.room_list: # 방이면 건너뛰기
                 continue
             check_connection = []
             for i1 in range(51):
@@ -904,7 +903,8 @@ class FightingModel(Model):
                 for j1 in range(51):
                     tmp.append(0)
                 check_connection.append(tmp)
-            # 모든 회색 1로 채우기
+
+            # space의 바운더리 1로 채우기
             for y in range(space[0][1]+1, space[1][1]):
                 check_connection[space[0][0]][y] = 1 #left 
             for y in range(space[0][1]+1, space[1][1]):
@@ -913,13 +913,13 @@ class FightingModel(Model):
                 check_connection[x][space[0][1]] = 1 #down
             for x in range(space[0][0]+1, space[1][0]):
                 check_connection[x][space[1][1]] = 1 #up
-
-            for space2 in self.space_list:
-                if space2 in self.room_list:
+            # 다른 space들 겹치는 지 체크 하는 부분
+            for space2 in self.space_list: 
+                if space2 in self.room_list: # 방이면 패스
                     continue
                 check_connection2 = copy.deepcopy(check_connection)
                 checking = 0
-                if(space == space2):
+                if(space == space2): # 지금 방이랑 겹치면 패스
                     continue
 
                 left_goal = [0, 0]
@@ -938,9 +938,9 @@ class FightingModel(Model):
                     check_connection2[space2[0][0]][y2] += 1 #left 
                     if(check_connection2[space2[0][0]][y2] == 2): #space와 space2는 접한다 
                         #print(space, space2, "가 LEFT에서 만남")
-                        left_goal[0] += space2[0][0]
-                        left_goal[1] += y2
-                        left_goal_num = left_goal_num + 1
+                        left_goal[0] += space2[0][0] # 겹치는 부분 x좌표 다 더해
+                        left_goal[1] += y2 # 겹치는 부분 y좌표 다 더해
+                        left_goal_num = left_goal_num + 1 # 나중에 이거로 나눠서 평균 구할 것임
                         checking = 1 #이을거다~ (space와 space2를 )
                 for y3 in range(space2[0][1]+1, space2[1][1]):
                     check_connection2[space2[1][0]][y3] += 1 #right
@@ -967,7 +967,7 @@ class FightingModel(Model):
                         up_goal_num = up_goal_num + 1
                         checking = 1
                 if (checking==1 and space != space2):
-                    self.space_graph[((space[0][0], space[0][1]), (space[1][0], space[1][1]))].append(space2)
+                    self.space_graph[((space[0][0], space[0][1]), (space[1][0], space[1][1]))].append(space2) # 딕셔너리에 접하는 space인 space2 추가
                                               #왼쪽아래모서리              #오른쪽위모서리
                 #위에까지가 space graph 만들기
                     
@@ -977,8 +977,8 @@ class FightingModel(Model):
                     first_left_goal[0] = (left_goal[0]/left_goal_num)
                     first_left_goal[1] = (left_goal[1]/left_goal_num)
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_left_goal))
-         
-                    
+                    # goal 딕셔너리에 추가하긴 하는데, 그냥 goal 추가하면 다음 방의 goal을 못 찾아서 goal_extend 함수 정의해서 다음 방의 goal을 안전히 파악할
+                    # 수 있게 한 뒤에 딕셔너리에 추가
                 elif(right_goal[0] != 0 and right_goal[1] != 0):
                     first_right_goal = [0, 0]
                     first_right_goal[0] = (right_goal[0]/right_goal_num)
@@ -1394,7 +1394,7 @@ class FightingModel(Model):
         y_diff = xy[1][1] - xy[0][1]
 
         real_xy =  [ [xy[0][0]*x_unit, xy[0][1]*y_unit], [xy[1][0]*x_unit, xy[1][1]*y_unit]] # 실제 좌표 
-        if(is_room==0):
+        if(is_room==0): # 빈 공간이면 space list에 넣어
             space_list.append(real_xy)
             return
                    
@@ -1404,7 +1404,7 @@ class FightingModel(Model):
             return
         
             
-        if(num==1): 
+        if(num==1): # 첫번째 획 그은 거. 점차 획 많이 그을수록, room 만들고 탈출할 확률 증가함.
             a = random.randint(1,20)
             if(a<1):
                 space_list.append(real_xy)
@@ -1435,7 +1435,7 @@ class FightingModel(Model):
                 room_list.append(real_xy)
                 return
             
-        divide_num_y = random.randint(1, y_diff-1)
+        divide_num_y = random.randint(1, y_diff-1) # 2개로 나눌 때, 몇 칸 띄고 나눌건지
         divide_num_x = random.randint(1, x_diff-1)
 
         random_exist_room1 = random.randint(0,1)
@@ -1449,8 +1449,8 @@ class FightingModel(Model):
             random_exist_room4 = 1
     
         special_hallway = random.randint(1, 2) #가운데 나눠지는 길을 만들기 위함(일반적인 건물배치도 생성 유도)
-        if(num<3):
-            if (num%2==0): #가로로 나눈다
+        if(num<3): # 3개로 나눔
+            if (num%2==0): # 세로선을 긋는다
                 left = int(x_diff*random.randint(1,3)/4)
                 hallway_size = random.randint(1,2)
                 if(xy[0][0]+left+hallway_size >= (xy[1][0]-2)):
@@ -1461,7 +1461,7 @@ class FightingModel(Model):
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+left, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                 self.map_recur_divider_fine([[xy[0][0]+left, xy[0][1]], [xy[0][0]+left+hallway_size, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 0)
                 self.map_recur_divider_fine([[xy[0][0]+left+hallway_size, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
-            else: #세로로 나눈다
+            else: # 가로선을 긋는다
                 up = int(y_diff*random.randint(1,3)/4)
                 hallway_size = random.randint(1,2)
                 if(xy[0][1]+up+hallway_size >= (xy[1][1]-2)):
@@ -1473,14 +1473,14 @@ class FightingModel(Model):
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up], [xy[1][0], xy[0][1]+up+hallway_size]], x_unit, y_unit, num+1, space_list, room_list, 0)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up+hallway_size], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
 
-        else:
+        else: # 2개로 나눔
             if(num<1):
                 random_exist_room1 = random_exist_room2 = random_exist_room3 = random_exist_room4 = 1
-            if (num%2==0): #가로로 나눈다
+            if (num%2==0): #세로선을 긋는다
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1)
                 self.map_recur_divider_fine([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2)
         
-            else: #세로로 나눈다
+            else: #가로선을 긋는다
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4) 
     
@@ -1549,8 +1549,7 @@ class FightingModel(Model):
         """Advance the model by one step."""
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-        
-    
+
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
