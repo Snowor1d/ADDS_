@@ -1055,7 +1055,7 @@ class FightingAgent(Agent):
         return floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
     
     def F1_near_agents(self, state, action, mode):
-        global one_footd
+        global one_foot
         robot_xyP = [0, 0]
         robot_xyP[0] = state[0] ## robot_xyP : action 이후 로봇의 위치
         robot_xyP[1] = state[1]
