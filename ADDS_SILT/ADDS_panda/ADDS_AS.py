@@ -19,8 +19,8 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
-run_iteration = 100
+visualization_mode = 'on' # choose your visualization mode 'on / off
+run_iteration = 1
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
 for _ in range(run_iteration):
