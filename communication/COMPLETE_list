@@ -13,3 +13,5 @@ penguin - frog - quokka
 240327
   9. Q_not_guide & Q_guide 분리
   
+240329
+  8. feature 추가해야함. 이걸로 로봇 제대로 안굴러 갈 듯 -> direction_agents 함수 추가
