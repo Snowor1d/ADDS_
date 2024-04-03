@@ -19,11 +19,12 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 1
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
-for _ in range(run_iteration):
+for j in range(run_iteration):
+    print(j)
     if visualization_mode == 'off':
         if(run_iteration>0):
             del s_model
