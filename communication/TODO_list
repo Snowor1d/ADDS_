@@ -12,10 +12,12 @@
   
  7. 시뮬레이션을 iter 돌리면서 가중치를 업데이트하고 저장해야하는데, 그럴려면 가중치 변수는 ADDS_AS 파일에
        저장해야 할듯..? 그러면서도 가중치 변수를 agent.py가 돌아가며 수정할 수 있어야 함
-       
- 8. feature 추가해야함. 이걸로 로봇 제대로 안굴러 갈 듯
  
  10. 구역별 난이도와 그 구역에 있는 agent 수 고려해서 reward 주기  
+ 
+ 11. floyd_Warshall 에서 a공간과 a공간 사이의 거리가 inf로 나타나지 않는 문제점 발견.
+ 
+ 12. something goes wrong in reward
  
 
     
