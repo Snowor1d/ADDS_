@@ -5,11 +5,13 @@ import math
 import numpy as np
 import random
 import copy
+# import ADDS_AS
+
 num_remained_agent = 0
 
-feature_weights_guide = [1, 1]
-feature_weights_not_guide = [1, 1]
-
+# feature_weights_guide = [1, 1]
+# feature_weights_not_guide = [1, 1]
+robot_step = 0
 
 
 one_foot = 1
@@ -230,6 +232,23 @@ class FightingAgent(Agent):
         self.go_path_num= 0
         self.back_path_num = 0
 
+        file_path = "weight.txt"
+        file = open(file_path, "r")
+        
+        lines = file.readlines()
+
+        file.close()
+
+        self.w1 = int(lines[0].strip())
+        self.w2 = int(lines[1].strip())
+        self.w3 = int(lines[2].strip())
+        self.w4 = int(lines[3].strip())    
+
+        self.feature_weights_guide = [self.w1, self.w2]
+        self.feature_weights_not_guide = [self.w3, self.w4]
+
+        print("w1, w2, w3, w4 출력 ~ : ", self.w1, self.w2, self.w3, self.w4)
+
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)
         # self.xy[1] = self.random.randrange(self.model.grid.height)
@@ -378,6 +397,7 @@ class FightingAgent(Agent):
 
     def move(self) -> None:
         global goal_list
+        global robot_step
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -386,12 +406,35 @@ class FightingAgent(Agent):
         cells_with_agents = []
 
         if (self.type == 3):
+            robot_step += 1
             new_position = self.robot_policy2()
             print("선택된 action : ",  self.select_Q(robot_xy))
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
             self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
             #reward += self.reward_difficulty_space
+            
+            self.w1 += 1
+            self.w2 += 1
+            self.w3 += 1
+            self.w4 += 1
+
+            print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4)
+            ""
+            
+            # self.model.step() 
+
+            # from ADDS_AS import n
+            if robot_step == 500 or num_remained_agent == 0:
+            # if num_remained_agent == 0:
+                file2 = open("weight.txt", 'w')
+                new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n']
+                file2.writelines(new_lines)
+                file2.close()
+            
+            
+            
+            
             self.model.grid.move_agent(self, new_position)
             return
 
@@ -1185,9 +1228,14 @@ class FightingAgent(Agent):
             f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
             f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f0 * feature_weights_guide[0] + f1 *feature_weights_guide[1])
+                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 *self.feature_weights_guide[1])
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                Q_list[j] = (f0 * feature_weights_not_guide[0] + f1 * feature_weights_not_guide[1])
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1])
+            
+            # if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+            #     Q_list[j] = (f0 * feature_weights_guide[0] + f1 *feature_weights_guide[1])
+            # else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+            #     Q_list[j] = (f0 * feature_weights_not_guide[0] + f1 * feature_weights_not_guide[1])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
