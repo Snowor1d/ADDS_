@@ -748,6 +748,19 @@ class FightingAgent(Agent):
         for j in space_agent_num.keys():
             num_remained_agent += space_agent_num[j]
         return space_agent_num
+
+
+    def agents_in_each_space2(self): #this function will not change global variable num_remained_agent 
+        global num_remained_agent
+        from model import Model
+        space_agent_num = {}
+        for i in self.model.space_list:
+            space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
+        for i in self.model.agents:
+            space_xy = self.model.grid_to_space[int(round((i.xy)[0]))][int(round((i.xy)[1]))]
+            if(i.dead == False and (i.type==0 or i.type==1)):
+                space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
+        return space_agent_num
     
 
     def agents_in_robot_area(self, robot_xyP):
@@ -1153,7 +1166,7 @@ class FightingAgent(Agent):
             safe_zone_space = ((5,0),(49,5))
 
         
-        each_space_agent_num = self.agents_in_each_space() # 각 구역에 몇명있는지 저장
+        each_space_agent_num = self.agents_in_each_space2() # 각 구역에 몇명있는지 저장
         shortest_distance = self.model.floyd_distance
 
         sum_Difficulty = 0 # 여기에 (출구로부터 회색 공간까지의 거리 * 그 공간의 agent 수) 들의 합을 저장함
@@ -1173,7 +1186,7 @@ class FightingAgent(Agent):
         DifficultyList[0] = sum_Difficulty
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
-        print('reward',reward)
+        #print('reward',reward)
         return reward
     def select_Q(self, state) :
         global feature_weights_guide
@@ -1208,7 +1221,7 @@ class FightingAgent(Agent):
             f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
             f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
             f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
-            print(direction_agents_num)
+            #print(direction_agents_num)
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
                 Q_list[j] = (f0 * feature_weights_guide[0] + f1 *feature_weights_guide[1] + f3 * feature_weights_guide[2])
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
@@ -1301,7 +1314,7 @@ class FightingAgent(Agent):
     
     def F3_direction_agents(self, state, action, mode, compartment_direction):
         sum = 0 
-        each_space_agents_num = self.agents_in_each_space()
+        each_space_agents_num = self.agents_in_each_space2()
         for i in compartment_direction[action]:
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key]
