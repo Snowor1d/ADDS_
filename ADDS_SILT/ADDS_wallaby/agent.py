@@ -5,9 +5,13 @@ import math
 import numpy as np
 import random
 import copy
+
+
+
 num_remained_agent = 0
 
-feature_weights = [1,1]
+
+
 
 
 one_foot = 1
@@ -227,11 +231,39 @@ class FightingAgent(Agent):
         self.go_path_num= 0
         self.back_path_num = 0
 
+        file_path = "weight.txt"
+        file = open(file_path, "r")
+        
+        lines = file.readlines()
 
-        # self.xy[0] = self.random.randrange(self.model.grid.width)
-        # self.xy[1] = self.random.randrange(self.model.grid.height)
+        file.close()
+
+        self.w1 = int(lines[0].strip())
+        self.w2 = int(lines[1].strip())
+        self.w3 = int(lines[2].strip())
+        self.w4 = int(lines[3].strip())    
+
+        self.feature_weights_guide = [self.w1, self.w2]
+        self.feature_weights_not_guide = [self.w3, self.w4]
+
+        print("w1, w2, w3, w4 출력 ~ : ", self.w1, self.w2, self.w3, self.w4)
         
         set_agent_type_settings(self, type)
+
+
+    # def __exit__(self):
+    #     print(" __exit__ㅔ 들어옴~")
+    #     if self.type == 3:
+            
+    #         # file_path = "weight.txt"
+    #         file2 = open("weight.txt", 'w')
+    #         new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n']
+    #         file2.writelines(new_lines)
+
+    #         file2.close()
+ 
+
+
 
     def __repr__(self) -> str:
         return f"{self.unique_id} -> {self.health}"
@@ -384,9 +416,30 @@ class FightingAgent(Agent):
 
         if (self.type == 3):
             new_position = self.robot_policy2()
+
             print("선택된 action : ",  self.select_Q(robot_xy))
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
+
+            ""
+            # weight 업데이트 ##
+
+            self.w1 += 1
+            self.w2 += 1
+            self.w3 += 1
+            self.w4 += 1
+
+            print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4)
+            ""
+
+            import ADDS_AS
+            if ADDS_AS.n == 500 or num_remained_agent == 0:
+                file2 = open("weight.txt", 'w')
+                new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n']
+                file2.writelines(new_lines)
+                file2.close()
+            
+
             self.model.grid.move_agent(self, new_position)
             return
 
@@ -1055,7 +1108,7 @@ class FightingAgent(Agent):
         return floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
     
     def F1_near_agents(self, state, action, mode):
-        global one_foot
+        global one_footd
         robot_xyP = [0, 0]
         robot_xyP[0] = state[0] ## robot_xyP : action 이후 로봇의 위치
         robot_xyP[1] = state[1]
@@ -1118,15 +1171,21 @@ class FightingAgent(Agent):
         return reward
 
     def select_Q(self, state) :
-        global feature_weights
+
         action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
         Q_list = []
         for i in range(8):
-            Q_list.append(i)
+            Q_list.append(0)
         MAX_Q = -9999999
         selected = ["UP", "GUIDE"]
         for j in range(len(Q_list)):
-            Q_list[j] = (self.F0_distance(state, action_list[j][0], action_list[j][1]) * feature_weights[0] + self.F1_near_agents(state, action_list[j][0], action_list[j][1])*feature_weights[1])
+            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 *self.feature_weights_guide[1])
+            else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1])
+            
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
