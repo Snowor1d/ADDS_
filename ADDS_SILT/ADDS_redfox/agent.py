@@ -404,6 +404,7 @@ class FightingAgent(Agent):
         cells_with_agents = []
 
         if (self.type == 3):
+            robot_step += 1
             new_position = self.robot_policy_Q()
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
