@@ -19,8 +19,8 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
-run_iteration = 100
+visualization_mode = 'off' # choose your visualization mode 'on / off
+run_iteration = 1
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
 for j in range(run_iteration):
@@ -31,7 +31,7 @@ for j in range(run_iteration):
             s_model = model.FightingModel(5,50,50)
 
 
-        n = 500  # n을 반복하려는 횟수로 설정
+        n = 50  # n을 반복하려는 횟수로 설정
         #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
 
 

@@ -237,12 +237,12 @@ class FightingAgent(Agent):
 
         file.close()
 
-        self.w1 = int(lines[0].strip())
-        self.w2 = int(lines[1].strip())
-        self.w3 = int(lines[2].strip())
-        self.w4 = int(lines[3].strip())
-        self.w5 = int(lines[2].strip())
-        self.w6 = int(lines[3].strip()) 
+        self.w1 = float(lines[0].strip())
+        self.w2 = float(lines[1].strip())
+        self.w3 = float(lines[2].strip())
+        self.w4 = float(lines[3].strip())
+        self.w5 = float(lines[2].strip())
+        self.w6 = float(lines[3].strip()) 
 
         self.feature_weights_guide = [self.w1, self.w2, self.w3]
         self.feature_weights_not_guide = [self.w4, self.w5, self.w6]
@@ -412,21 +412,16 @@ class FightingAgent(Agent):
             #reward += self.reward_difficulty_space
 
 ## 여기 아래에서 weight 변경하는 코드 넣어주세용
-
-            self.w1 += 1
-            self.w2 += 1
-            self.w3 += 1
-            self.w4 += 1
-            self.w5 += 1
-            self.w6 += 1
+            
 
             print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
             ""
-            
+            self.update_weight(reward)
+
             # self.model.step() 
 
             # from ADDS_AS import n
-            if robot_step == 500 or num_remained_agent == 0:
+            if robot_step == 50 or num_remained_agent == 0:
             # if num_remained_agent == 0:
                 file2 = open("weight.txt", 'w')
                 new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
@@ -1226,7 +1221,7 @@ class FightingAgent(Agent):
         MAX_Q = -9999999
         selected = ["UP", "GUIDE"]
         direction_agents_num = self.four_direction_compartment()
-        print(direction_agents_num)
+        #print(direction_agents_num)
         for j in range(len(action_list)):
             f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
             f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
@@ -1235,7 +1230,7 @@ class FightingAgent(Agent):
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
                 Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
@@ -1283,8 +1278,8 @@ class FightingAgent(Agent):
         next_vertex_matrix = self.model.floyd_warshall()[0]
 
         now_s = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
-        print(robot_xy)
-        print(now_s)
+        #print(robot_xy)
+        #print(now_s)
         now_s = ((now_s[0][0], now_s[0][1]), (now_s[1][0], now_s[1][1]))
         now_s_x_center = (now_s[0][0] + now_s[1][0])/2
         now_s_y_center = (now_s[1][0] + now_s[1][1])/2 
@@ -1341,32 +1336,101 @@ class FightingAgent(Agent):
             sum += each_space_agents_num[key]
         return sum
 
+    def calculate_Max_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
+        global robot_xy
+        global one_foot
+        action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        
+        r_x = robot_xy[0]
+        r_y = robot_xy[1]
+        
+        del_object = []
+        for k in action_list:
+            if (k[0] == "UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
+                    del_object.append("UP")
+                    
+            elif (k[0] == "DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
 
+            elif (k[0] == "LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
+            elif (k[0] == "RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        del_object= list(set(del_object))
+        for i in del_object:
+            action_list.remove([i, "GUIDE"])
+            action_list.remove([i, "NOGUIDE"])
 
+        Q_list = []
+        for i in range(len(action_list)):
+            Q_list.append(0)
+        MAX_Q = -9999999
+        selected = ["UP", "GUIDE"]
+        direction_agents_num = self.four_direction_compartment()
+        for j in range(len(action_list)):
+            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
+            
+            if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+            
+            if (Q_list[j]>MAX_Q):
+                MAX_Q= Q_list[j]
+        return MAX_Q
 
+    def update_weight(self,reward):  
+        global robot_xy
 
+        alpha = 0.1
+        discount_factor = 0.2
+        next_robot_xy = [0,0]
+        next_robot_xy[0] = robot_xy[0]
+        next_robot_xy[1] = robot_xy[1]
 
+        # select_Q에서 내주는 action에 따라 다음 state 계산
+        if self.select_Q(robot_xy)[0] == 'UP':
+            next_robot_xy[1] += 1
+        elif self.select_Q(robot_xy)[0] == 'DOWN':
+            next_robot_xy[1] -= 1
+        elif self.select_Q(robot_xy)[0] == 'RIGHT':
+            next_robot_xy[0] += 1
+        else:
+            next_robot_xy[0] -= 1
 
+        #print('잘됐나',self.select_Q(robot_xy)[0],robot_xy,next_robot_xy)
 
+        # 현재 state와 다음 state의 max_Q 값 계산
+        next_state_max_Q = self.calculate_Max_Q(next_robot_xy)
+        present_state_Q = self.calculate_Max_Q(robot_xy)
+        #print('good?',next_state_max_Q,present_state_Q)
 
+        # 여기부터 실제 업데이트 진행
+        direction_agents_num = self.four_direction_compartment()
+        
+        f0 = self.F0_distance(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f1 = self.F1_near_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f3 = self.F3_direction_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1],direction_agents_num)
+        
+        
+        
+        selected_action = self.select_Q(robot_xy)[1]
+        #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
+        print('select_Q :',self.select_Q(robot_xy) )
+        if selected_action == "GUIDE":
+            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if selected_action == "NOGUIDE":
+            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w6 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+        
+        return
