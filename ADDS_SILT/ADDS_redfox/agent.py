@@ -7,7 +7,7 @@ import random
 import copy
 num_remained_agent = 0
 robot_step = 0
-
+NUMBER_OF_CELLS = 50 
 
 
 one_foot = 1
@@ -706,14 +706,7 @@ class FightingAgent(Agent):
                 elif(near_agent.type == 11):## 검정벽 
                     repulsive_force[0] += 5*np.exp(-(d/2))*(d_x/d)
                     repulsive_force[1] += 5*np.exp(-(d/2))*(d_y/d)
-            else :
-                if(random_disperse):
-                    repulsive_force = [1, -1]
-                    random_disperse = 0
-                else:
-                    repulsive_force = [-1, 1] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
-                    random_disperse = 1
-        
+
         F_x = 0
         F_y = 0
         
@@ -1088,7 +1081,7 @@ class FightingAgent(Agent):
         return floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
     
     def F1_near_agents(self, state, action, mode):
-        global one_footd
+        global one_foot
         robot_xyP = [0, 0]
         robot_xyP[0] = state[0] ## robot_xyP : action 이후 로봇의 위치
         robot_xyP[1] = state[1]
@@ -1188,9 +1181,7 @@ class FightingAgent(Agent):
             #print("그래이 공간과 그 공간의 사람 수",sublist,each_space_agent_num.get(tuple_key))
             #print("safe zone과 그레이 공간사이의 거리1",shortest_distance[safe_zone_space][tuple_key])
             gray_space_agent_mul_difficulty = shortest_distance[safe_zone_space][tuple_key] * each_space_agent_num.get(tuple_key)
-            #print('결과',gray_space_agent_mul_difficulty)
             sum_Difficulty += gray_space_agent_mul_difficulty
-            #print('합 결과',sum_Difficulty)
 
         DifficultyList[4] = DifficultyList[3]
         DifficultyList[3] = DifficultyList[2]
@@ -1199,29 +1190,35 @@ class FightingAgent(Agent):
         DifficultyList[0] = sum_Difficulty
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
-        #print('reward',reward)
         return reward
     def select_Q(self, state) :
-        
         global robot_xy
         global one_foot
+        global NUMBER_OF_CELLS
         action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
-        
         r_x = robot_xy[0]
         r_y = robot_xy[1]
+        
+        del_object = []
         for k in action_list:
             if (k[0] == "UP"):
                 if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
-                    del k
+                    del_object.append("UP")
+                    
             elif (k[0] == "DOWN"):
-                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0):
-                    del k
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
+
             elif (k[0] == "LEFT"):
-                if(self.model.valid_space[int(round(r_x-one_foot))][int(round(r_y))]==0):
-                    del k
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
             elif (k[0] == "RIGHT"):
-                if(self.model.valid_space[int(round(r_x+one_foot))][int(round(r_y))]==0) :
-                    del k
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        del_object= list(set(del_object))
+        for i in del_object:
+            action_list.remove([i, "GUIDE"])
+            action_list.remove([i, "NOGUIDE"])
 
         Q_list = []
         for i in range(len(action_list)):
@@ -1229,6 +1226,7 @@ class FightingAgent(Agent):
         MAX_Q = -9999999
         selected = ["UP", "GUIDE"]
         direction_agents_num = self.four_direction_compartment()
+        print(direction_agents_num)
         for j in range(len(action_list)):
             f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
             f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
@@ -1252,20 +1250,29 @@ class FightingAgent(Agent):
         r_x = robot_xy[0]
         r_y = robot_xy[1]
         four_actions = ["UP", "DOWN", "LEFT", "RIGHT"]
+        
 
+        del_object = []
         for k in four_actions:
             if (k[0] == "UP"):
                 if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
-                    del k
+                    del_object.append("UP")
+                    
             elif (k[0] == "DOWN"):
-                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0):
-                    del k
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
+
             elif (k[0] == "LEFT"):
-                if(self.model.valid_space[int(round(r_x-one_foot))][int(round(r_y))]==0):
-                    del k
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
             elif (k[0] == "RIGHT"):
-                if(self.model.valid_space[int(round(r_x+one_foot))][int(round(r_y))]==0) :
-                    del k
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        
+        del_object= list(set(del_object))
+        for i in del_object:
+            four_actions.remove([i])
+            four_actions.remove([i])
 
         four_compartment = {}
 
@@ -1276,6 +1283,8 @@ class FightingAgent(Agent):
         next_vertex_matrix = self.model.floyd_warshall()[0]
 
         now_s = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
+        print(robot_xy)
+        print(now_s)
         now_s = ((now_s[0][0], now_s[0][1]), (now_s[1][0], now_s[1][1]))
         now_s_x_center = (now_s[0][0] + now_s[1][0])/2
         now_s_y_center = (now_s[1][0] + now_s[1][1])/2 
