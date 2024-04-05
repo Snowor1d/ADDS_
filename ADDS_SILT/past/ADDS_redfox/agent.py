@@ -6,12 +6,13 @@ import numpy as np
 import random
 import copy
 num_remained_agent = 0
-
-feature_weights = [1,1]
+robot_step = 0
+NUMBER_OF_CELLS = 50 
 
 
 one_foot = 1
 SumList = [0, 0, 0, 0, 0]
+DifficultyList = [0, 0, 0, 0, 0]
 
 ATTACK_DAMAGE = 50
 INITIAL_HEALTH = 100
@@ -184,6 +185,8 @@ def set_agent_type_settings(agent, type):
         agent.health = 500
         agent.attack_damage = 0
 
+
+
 class FightingAgent(Agent):
     """An agent that fights."""
 
@@ -226,6 +229,23 @@ class FightingAgent(Agent):
 
         self.go_path_num= 0
         self.back_path_num = 0
+
+        file_path = "weight.txt"
+        file = open(file_path, "r")
+        
+        lines = file.readlines()
+
+        file.close()
+
+        self.w1 = float(lines[0].strip())
+        self.w2 = float(lines[1].strip())
+        self.w3 = float(lines[2].strip())
+        self.w4 = float(lines[3].strip())
+        self.w5 = float(lines[2].strip())
+        self.w6 = float(lines[3].strip()) 
+
+        self.feature_weights_guide = [self.w1, self.w2, self.w3]
+        self.feature_weights_not_guide = [self.w4, self.w5, self.w6]
 
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)
@@ -375,6 +395,7 @@ class FightingAgent(Agent):
 
     def move(self) -> None:
         global goal_list
+        global robot_step
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -383,187 +404,38 @@ class FightingAgent(Agent):
         cells_with_agents = []
 
         if (self.type == 3):
-            new_position = self.robot_policy2()
-            print("선택된 action : ",  self.select_Q(robot_xy))
+            robot_step += 1
+            new_position = self.robot_policy_Q()
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
+            self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
+            #reward += self.reward_difficulty_space
+
+## 여기 아래에서 weight 변경하는 코드 넣어주세용
+            
+
+            print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
+            ""
+            self.update_weight(reward)
+
+            # self.model.step() 
+
+            # from ADDS_AS import n
+            if robot_step == 50 or num_remained_agent == 0:
+            # if num_remained_agent == 0:
+                file2 = open("weight.txt", 'w')
+                new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
+                file2.writelines(new_lines)
+                file2.close()
+
+
             self.model.grid.move_agent(self, new_position)
             return
 
         new_position = self.test_modeling()
         if(self.type ==0 or self.type==1):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
-    
-    # def robot_policy(self):
-    #     time_step = 0.2
-    #     from model_renew import Model
-    #     global random_disperse
-    #     global robot_status
-    #     global robot_xy 
-    #     global robot_radius
-    #     global robot_ringing
-    #     self.drag = 1
-    #     robot_status = 1
-    #     space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는지
-    #     floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
-    #     floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
-    #                                        #floyd_path[stage_x][stage_2] = stage_y 
-    #                                        #floyd_path[stage_y][stage_2] = ste... 
-    #                                        # s1 -> sx -> sy -> .. stage
-    
-        
-
-    #     self.robot_space = self.model.grid_to_space[int(robot_xy[0])][int(robot_xy[1])] #로봇이 어느 stage에 있는지 나온다 
-
-    #     if(self.mission_complete == 1): #새로운 탈출 path를 찾는다
-    #         self.robot_now_path = [] # [[1,3], [4,5], [5,1]] 
-    #         agent_max = 0 #agent가 가장 많은 stage 
-    #         for i in space_agent_num.keys(): 
-    #             if (space_agent_num[i]>agent_max):
-    #                 self.save_target = i #현재 가장 인구가 많이 있는 stage
-    #                 agent_max = space_agent_num[self.save_target] 
-            
-    #         evacuation_points = []
-    #         if(self.model.is_left_exit): 
-    #             evacuation_points.append(((0,0), (5, 45)))
-    #         if(self.model.is_up_exit):
-    #             evacuation_points.append(((0,45), (45, 49)))
-    #         if(self.model.is_right_exit):
-    #             evacuation_points.append(((45,5), (49, 49)))
-    #         if(self.model.is_down_exit):
-    #             evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 
-
-    #         min_distance = 1000
-    #         for i in evacuation_points: #space_target에서 가장 가까운 탈출구를 찾기 
-    #             if(floyd_distance[self.save_target][i]<min_distance):
-    #                 self.save_point = i 
-    #         go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target) #로봇의 초기 위치 -> save_target까지 가는데 최단 경로 stage 리스트 
-            
-    #         back_path = self.model.get_path(floyd_path, self.save_target, self.save_point) # save_target(인구가 가장 많은 곳)에서 save_point(safe zone) 까지의 최단 경로 
-    #         self.go_path_num = len(go_path) #guide를 하기 위해서 ~ 
-
-    #         for i in range(len(go_path)-1):
-    #             self.robot_now_path.append(space_connected_linear(go_path[i], go_path[i+1])) #(stage1 stage2) -> 중간 goal을 알려준다  
-    #         self.robot_now_path.append([(self.save_target[0][0]+self.save_target[1][0])/2, (self.save_target[0][1]+self.save_target[1][1])/2]) #save target 중점까지 간다 
-    #         for i in range(len(back_path)-1):
-    #             self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  #back path도 넣는다 
-    #         self.mission_complete = 0 
-        
-    #     if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 
-    #         robot_status = 1 #robot_status가 1일때 -> guide함, 로봇 색깔바뀜(빨간색), 로봇에 영향받는 agent 색깔 바뀜(주황색) 
-    #         self.drag = 1 
-    #     else:
-    #         robot_status = 0
-    #         self.drag = 0
-    #     robot_goal = self.robot_now_path[self.robot_waypoint_index]
-        
-
-    #     d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
-    #     if (d<3):
-    #         self.robot_waypoint_index = self.robot_waypoint_index + 1
-
-    #     if(self.robot_waypoint_index == len(self.robot_now_path)):
-    #         self.mission_complete = 1 #미션을 새로 만들어야해 (끝났으니까)
-    #         self.robot_waypoint_index = 0
-    #         return [int(robot_xy[0]), int(robot_xy[1])]
-
-    #     goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0] #역학을 위한.. 
-    #     goal_y = self.robot_now_path[self.robot_waypoint_index][1] - robot_xy[1]
-    #     goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-        
-    #     intend_force = 2
-    #     desired_speed = 1.5
-
-    #     if(self.drag == 0):
-    #         desired_speed = 5
-    #     else:
-    #         desired_speed = 5
-
-    #     if(goal_d != 0):
-    #         desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
-    #     else :
-    #         desired_force = [0, 0]
-    
-        
-    #     x=int(round(robot_xy[0]))
-    #     y=int(round(robot_xy[1]))
-
-    #     #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-    #     temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-    #     near_loc = []
-    #     for i in temp_loc:
-    #         if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
-    #             near_loc.append(i)
-    #     near_agents_list = []
-    #     for i in near_loc:
-    #         near_agents = self.model.grid.get_cell_list_contents([i])
-    #         if len(near_agents):
-    #             for near_agent in near_agents:
-    #                 near_agents_list.append(near_agent) #kinetic 모델과 동일
-    #     repulsive_force = [0, 0]
-    #     obstacle_force = [0, 0]
-
-    #     k=4
-
-    #     for near_agent in near_agents_list:
-    #         n_x = near_agent.xy[0]
-    #         n_y = near_agent.xy[1]
-    #         d_x = robot_xy[0] - n_x
-    #         d_y = robot_xy[1] - n_y
-    #         d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
-
-
-    #         if(near_agent.dead == True):
-    #             continue
-                
-    #         if(d!=0):
-    #             if(near_agent.type == 12): ## 가상 벽
-    #                 repulsive_force[0] += 0
-    #                 repulsive_force[1] += 0
-
-    #             elif(near_agent.type == 1): ## agents
-    #                 repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
-    #                 repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
-
-    #             elif(near_agent.type == 11):## 검정벽 
-    #                 repulsive_force[0] += 2*k*np.exp(-(d/2))*(d_x/d)
-    #                 repulsive_force[1] += 2*k*np.exp(-(d/2))*(d_y/d)
-    #         else :
-    #             if(random_disperse):
-    #                 repulsive_force = [1, -1]
-    #                 random_disperse = 0
-    #             else:
-    #                 repulsive_force = [-1, 1] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
-    #                 random_disperse = 1
-        
-    #     F_x = 0
-    #     F_y = 0
-        
-    #     F_x += desired_force[0]
-    #     F_y += desired_force[1]
-
-    #     F_x += repulsive_force[0]
-    #     F_y += repulsive_force[1]
-    #     vel = [0,0]
-    #     vel[0] = F_x/self.mass
-    #     vel[1] = F_y/self.mass
-
-    #     robot_xy[0] += vel[0] * time_step
-    #     robot_xy[1] += vel[1] * time_step
-        
-    #     next_x = int(round(robot_xy[0]))
-    #     next_y = int(round(robot_xy[1]))
-
-    #     if(next_x<0):
-    #         next_x = 0
-    #     if(next_y<0):
-    #         next_y = 0
-    #     if(next_x>49):
-    #         next_x = 49
-    #     if(next_y>49):
-    #         next_y = 49
-
-    #     return (next_x, next_y)
+  
     
     def robot_policy2(self):
         time_step = 0.2
@@ -726,6 +598,142 @@ class FightingAgent(Agent):
         #self.robot_guide = 0
         robot_goal = self.robot_now_path[self.robot_waypoint_index]
         return (next_x, next_y)
+    
+    def robot_policy_Q(self):
+        time_step = 0.2
+        from model import Model
+        global random_disperse
+        global robot_status
+        global robot_xy 
+        global robot_radius
+        global robot_ringing
+        global robot_goal
+        global past_target
+        self.drag = 1
+        robot_status = 1
+        space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
+        floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
+        floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
+                                           #floyd_path[stage_x][stage_2] = stage_y 
+                                           #floyd_path[stage_y][stage_2] = ste... 
+                                           # s1 -> sx -> sy -> .. stage
+        
+    
+        
+
+        self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
+
+        next_action = self.select_Q(robot_xy)
+        goal_d =2 
+        if(next_action[0] == "UP"):
+            goal_x = 0 
+            goal_y = 2
+        elif(next_action[0] == "LEFT"):
+            goal_x = -2
+            goal_y = 0
+        elif(next_action[0] == "RIGHT"):
+            goal_x = 2
+            goal_y = 0
+        elif(next_action[0] == "DOWN"):
+            goal_x = 0
+            goal_y = -2
+        if(next_action[1]== "GUIDE"):
+            self.drag = 1
+            robot_status = 1
+        else :
+            self.drag = 0
+            robot_status = 0
+
+        intend_force = 2
+        desired_speed = 1.5
+
+        if(self.drag == 0):
+            desired_speed = 4
+        else:
+            desired_speed = 4
+
+        if(goal_d != 0):
+            desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+        else :
+            desired_force = [0, 0]
+    
+        
+        x=int(round(robot_xy[0]))
+        y=int(round(robot_xy[1]))
+
+        #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        near_loc = []
+        for i in temp_loc:
+            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
+                near_loc.append(i)
+        near_agents_list = []
+        for i in near_loc:
+            near_agents = self.model.grid.get_cell_list_contents([i])
+            if len(near_agents):
+                for near_agent in near_agents:
+                    near_agents_list.append(near_agent) #kinetic 모델과 동일
+        repulsive_force = [0, 0]
+        obstacle_force = [0, 0]
+
+        k=4
+
+        for near_agent in near_agents_list:
+            n_x = near_agent.xy[0]
+            n_y = near_agent.xy[1]
+            d_x = robot_xy[0] - n_x
+            d_y = robot_xy[1] - n_y
+            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
+
+
+            if(near_agent.dead == True):
+                continue
+                
+            if(d!=0):
+                if(near_agent.type == 12): ## 가상 벽
+                    repulsive_force[0] += 0
+                    repulsive_force[1] += 0
+
+                elif(near_agent.type == 1): ## agents
+                    repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
+                    repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
+
+                elif(near_agent.type == 11):## 검정벽 
+                    repulsive_force[0] += 5*np.exp(-(d/2))*(d_x/d)
+                    repulsive_force[1] += 5*np.exp(-(d/2))*(d_y/d)
+
+        F_x = 0
+        F_y = 0
+        
+        F_x += desired_force[0]
+        F_y += desired_force[1]
+
+        F_x += repulsive_force[0]
+        F_y += repulsive_force[1]
+        vel = [0,0]
+        vel[0] = F_x/self.mass
+        vel[1] = F_y/self.mass
+
+        robot_xy[0] += vel[0] * time_step
+        robot_xy[1] += vel[1] * time_step
+        self.move_to_valid_robot()
+        
+        next_x = int(round(robot_xy[0]))
+        next_y = int(round(robot_xy[1]))
+
+        if(next_x<0):
+            next_x = 0
+        if(next_y<0):
+            next_y = 0
+        if(next_x>49):
+            next_x = 49
+        if(next_y>49):
+            next_y = 49
+
+            
+        #self.robot_guide = 0
+        robot_goal = [robot_xy[0]+goal_x, robot_xy[1]+goal_y]
+        return (next_x, next_y)
 
     def agents_in_each_space(self):
         global num_remained_agent
@@ -740,6 +748,19 @@ class FightingAgent(Agent):
         
         for j in space_agent_num.keys():
             num_remained_agent += space_agent_num[j]
+        return space_agent_num
+
+
+    def agents_in_each_space2(self): #this function will not change global variable num_remained_agent 
+        global num_remained_agent
+        from model import Model
+        space_agent_num = {}
+        for i in self.model.space_list:
+            space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
+        for i in self.model.agents:
+            space_xy = self.model.grid_to_space[int(round((i.xy)[0]))][int(round((i.xy)[1]))]
+            if(i.dead == False and (i.type==0 or i.type==1)):
+                space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
         return space_agent_num
     
 
@@ -1116,67 +1137,300 @@ class FightingAgent(Agent):
         reward = (SumList[1]+SumList[2]+SumList[3]+SumList[4])/4 - SumOfDistances
 
         return reward
+    
+    def reward_difficulty_space(self,state,action,mode):
+        global DifficultyList
 
+        # gray spcce의 좌표만 가진 list 생성
+        space_list = self.model.space_list #space list 저장
+        room_list = self.model.room_list #room list 저장
+        semi_safe_zone_list = [[[0, 0], [5, 45]], [[0, 45], [45, 49]], [[45, 5], [49, 49]], [[5, 0], [49, 5]]] # 후보 safe zone list 저장
+        pure_gray_space = [] # safe zone이랑 room 빼서 순수 gray 만듦
+        for sublist_a in space_list:
+            if sublist_a not in room_list and sublist_a not in semi_safe_zone_list:
+                pure_gray_space.append(sublist_a)
+        #print('pure_space list 입니다:',pure_gray_space)
+
+        
+        
+        # exit이 있는 공간 좌표 safe_zone_space으로 저장
+        exit_coordinate = self.model.exit_rec
+        #print('exit :',exit_coordinate)
+        #print('exit #1 ',exit_coordinate[0][0],exit_coordinate[0][1])
+        if exit_coordinate[0][0] >=0 and exit_coordinate[0][0]<=5 and exit_coordinate[0][1]>=0 and exit_coordinate[0][1] <= 45:
+            safe_zone_space =  ((0,0),(5,45))
+        elif exit_coordinate[0][0] >=0 and exit_coordinate[0][0]<=45 and exit_coordinate[0][1]>=45 and exit_coordinate[0][1] <= 49:
+            safe_zone_space = ((0,45),(45,49))
+        elif exit_coordinate[0][0] >=45 and exit_coordinate[0][0]<=49 and exit_coordinate[0][1]>=5 and exit_coordinate[0][1] <= 49:
+            safe_zone_space =  ((45,5),(49,49))
+        else:
+            safe_zone_space = ((5,0),(49,5))
+
+        
+        each_space_agent_num = self.agents_in_each_space2() # 각 구역에 몇명있는지 저장
+        shortest_distance = self.model.floyd_distance
+
+        sum_Difficulty = 0 # 여기에 (출구로부터 회색 공간까지의 거리 * 그 공간의 agent 수) 들의 합을 저장함
+        for sublist in pure_gray_space: # 순수 gray 공간에 agent 수 찾기~
+            tuple_key = tuple(map(tuple, sublist))
+            #print("그래이 공간과 그 공간의 사람 수",sublist,each_space_agent_num.get(tuple_key))
+            #print("safe zone과 그레이 공간사이의 거리1",shortest_distance[safe_zone_space][tuple_key])
+            gray_space_agent_mul_difficulty = shortest_distance[safe_zone_space][tuple_key] * each_space_agent_num.get(tuple_key)
+            sum_Difficulty += gray_space_agent_mul_difficulty
+
+        DifficultyList[4] = DifficultyList[3]
+        DifficultyList[3] = DifficultyList[2]
+        DifficultyList[2] = DifficultyList[1]
+        DifficultyList[1] = DifficultyList[0]
+        DifficultyList[0] = sum_Difficulty
+
+        reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
+        return reward
     def select_Q(self, state) :
-        global feature_weights
+        global robot_xy
+        global one_foot
+        global NUMBER_OF_CELLS
         action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        r_x = robot_xy[0]
+        r_y = robot_xy[1]
+        
+        del_object = []
+        for k in action_list:
+            if (k[0] == "UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
+                    del_object.append("UP")
+                    
+            elif (k[0] == "DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
+
+            elif (k[0] == "LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
+            elif (k[0] == "RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        del_object= list(set(del_object))
+        for i in del_object:
+            action_list.remove([i, "GUIDE"])
+            action_list.remove([i, "NOGUIDE"])
+
         Q_list = []
-        for i in range(8):
-            Q_list.append(i)
+        for i in range(len(action_list)):
+            Q_list.append(0)
         MAX_Q = -9999999
         selected = ["UP", "GUIDE"]
-        for j in range(len(Q_list)):
-            Q_list[j] = (self.F0_distance(state, action_list[j][0], action_list[j][1]) * feature_weights[0] + self.F1_near_agents(state, action_list[j][0], action_list[j][1])*feature_weights[1])
+        direction_agents_num = self.four_direction_compartment()
+        #print(direction_agents_num)
+        for j in range(len(action_list)):
+            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
+            #print(direction_agents_num)
+            if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+            
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
         return selected 
 
+
+    def four_direction_compartment(self):
+        from model import Model 
+        global robot_xy 
+        global one_foot
+        r_x = robot_xy[0]
+        r_y = robot_xy[1]
+        four_actions = ["UP", "DOWN", "LEFT", "RIGHT"]
         
-        # for i in self.model.agents:
-        #     i_xyP = [i.xy[0], i.xy[1]] ## action
-        #     if action == "UP":
-        #         i_xyP[0] += one_foot
-        #     elif action == "DOWN":
-        #         i_xyP[0] -= one_foot
-        #     elif action == "RIGHT":
-        #         i_xyP[1] += one_foot
-        #     elif action == "LEFT":
-        #         i_xyP[1] -= one_foot
+
+        del_object = []
+        for k in four_actions:
+            if (k[0] == "UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
+                    del_object.append("UP")
+                    
+            elif (k[0] == "DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
+
+            elif (k[0] == "LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
+            elif (k[0] == "RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        
+        del_object= list(set(del_object))
+        for i in del_object:
+            four_actions.remove([i])
+            four_actions.remove([i])
+
+        four_compartment = {}
+
+        for j in four_actions:
+            four_compartment[j] = []
+        
+        floyd_distance = self.model.floyd_distance 
+        next_vertex_matrix = self.model.floyd_warshall()[0]
+
+        now_s = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
+        #print(robot_xy)
+        #print(now_s)
+        now_s = ((now_s[0][0], now_s[0][1]), (now_s[1][0], now_s[1][1]))
+        now_s_x_center = (now_s[0][0] + now_s[1][0])/2
+        now_s_y_center = (now_s[1][0] + now_s[1][1])/2 
+        robot_position = [0, 0]
+        robot_position[0] = robot_xy[0]
+        robot_position[1] = robot_xy[1]
+        only_space = []
+        for sp in self.model.space_list:
+            if (not sp in self.model.room_list and sp != [[0,0], [10, 10]] and sp != [[]]):
+                only_space.append(sp)
+
+        for i in only_space:
+            key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
+            if(key==now_s):
+                continue
+            next_goal = space_connected_linear(now_s, next_vertex_matrix[now_s][key])
+            original_distance = floyd_distance[now_s][key] - math.sqrt(pow(now_s_x_center-next_goal[0],2)+pow(now_s_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-robot_position[0],2)+pow(next_goal[1]-robot_position[1],2))
+            up_direction = 99999
+            down_direction = 99999
+            left_direction = 99999
+            right_direction = 99999
+
+            for m in four_actions:
+                if (m=="UP"):
+                    up_direction = floyd_distance[now_s][key] - math.sqrt(pow(now_s_x_center-next_goal[0],2)+pow(now_s_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-robot_position[0],2)+pow(next_goal[1]-(robot_position[1]+one_foot),2))        
+                elif (m=="DOWN"):
+                    down_direction = floyd_distance[now_s][key] - math.sqrt(pow(now_s_x_center-next_goal[0],2)+pow(now_s_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-robot_position[0],2)+pow(next_goal[1]-(robot_position[1]-one_foot),2))        
+                elif (m=="LEFT"):
+                    left_direction = floyd_distance[now_s][key] - math.sqrt(pow(now_s_x_center-next_goal[0],2)+pow(now_s_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-(robot_position[0]-one_foot),2)+pow(next_goal[1]-robot_position[1],2))     
+                elif (m=="RIGHT"):
+                    right_direction = floyd_distance[now_s][key] - math.sqrt(pow(now_s_x_center-next_goal[0],2)+pow(now_s_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-(robot_position[0]+one_foot),2)+pow(next_goal[1]-robot_position[1],2))     
+
+            min = up_direction 
+            min_direction = "UP"
+
+            if(min>down_direction):
+                min_direction = "DOWN"
+                min = down_direction
+            if(min>left_direction):
+                min_direction = "LEFT"
+                min = left_direction
+            if(min>right_direction):
+                min_direction = "RIGHT"
+                min = right_direction  
+
+            four_compartment[min_direction].append(i)
+        return four_compartment
+    
+    def F3_direction_agents(self, state, action, mode, compartment_direction):
+        sum = 0 
+        each_space_agents_num = self.agents_in_each_space2()
+        for i in compartment_direction[action]:
+            key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
+            sum += each_space_agents_num[key]
+        return sum
+
+    def calculate_Max_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
+        global robot_xy
+        global one_foot
+        action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        
+        r_x = robot_xy[0]
+        r_y = robot_xy[1]
+        
+        del_object = []
+        for k in action_list:
+            if (k[0] == "UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
+                    del_object.append("UP")
+                    
+            elif (k[0] == "DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
+                    del_object.append("DOWN")
+
+            elif (k[0] == "LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
+                    del_object.append("LEFT")
+            elif (k[0] == "RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("RIGHT")
+        del_object= list(set(del_object))
+        for i in del_object:
+            action_list.remove([i, "GUIDE"])
+            action_list.remove([i, "NOGUIDE"])
+
+        Q_list = []
+        for i in range(len(action_list)):
+            Q_list.append(0)
+        MAX_Q = -9999999
+        selected = ["UP", "GUIDE"]
+        direction_agents_num = self.four_direction_compartment()
+        for j in range(len(action_list)):
+            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
             
-        #     agent_spaceP = self.model.grid_to_space[int(i_xyP[0])][int(i_xyP[1])]
-        #     SumOfDistancesP += floyd_distance[((agent_space[0][0], agent_space[0][1]), evacuation_points[0])]
+            if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+            
+            if (Q_list[j]>MAX_Q):
+                MAX_Q= Q_list[j]
+        return MAX_Q
 
+    def update_weight(self,reward):  
+        global robot_xy
 
+        alpha = 0.1
+        discount_factor = 0.2
+        next_robot_xy = [0,0]
+        next_robot_xy[0] = robot_xy[0]
+        next_robot_xy[1] = robot_xy[1]
 
+        # select_Q에서 내주는 action에 따라 다음 state 계산
+        if self.select_Q(robot_xy)[0] == 'UP':
+            next_robot_xy[1] += 1
+        elif self.select_Q(robot_xy)[0] == 'DOWN':
+            next_robot_xy[1] -= 1
+        elif self.select_Q(robot_xy)[0] == 'RIGHT':
+            next_robot_xy[0] += 1
+        else:
+            next_robot_xy[0] -= 1
 
+        #print('잘됐나',self.select_Q(robot_xy)[0],robot_xy,next_robot_xy)
 
+        # 현재 state와 다음 state의 max_Q 값 계산
+        next_state_max_Q = self.calculate_Max_Q(next_robot_xy)
+        present_state_Q = self.calculate_Max_Q(robot_xy)
+        #print('good?',next_state_max_Q,present_state_Q)
 
+        # 여기부터 실제 업데이트 진행
+        direction_agents_num = self.four_direction_compartment()
+        
+        f0 = self.F0_distance(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f1 = self.F1_near_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f3 = self.F3_direction_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1],direction_agents_num)
+        
+        
+        
+        selected_action = self.select_Q(robot_xy)[1]
+        #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
+        print('select_Q :',self.select_Q(robot_xy) )
+        if selected_action == "GUIDE":
+            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if selected_action == "NOGUIDE":
+            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w6 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+        
+        return

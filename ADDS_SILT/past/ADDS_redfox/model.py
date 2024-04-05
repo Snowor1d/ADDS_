@@ -308,6 +308,7 @@ class FightingModel(Model):
 
 
         exit_rec = self.make_exit() 
+        self.exit_rec = exit_rec
 
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
         for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
@@ -362,6 +363,10 @@ class FightingModel(Model):
         notvalid_list = []
         for i in self.room_list:
             notvalid_list.extend(make_plane(i[0], i[1]))
+        notvalid_list.extend(make_plane((0,0), (49,0)))
+        notvalid_list.extend(make_plane((0,0), (0, 49)))
+        notvalid_list.extend(make_plane((49, 0), (49, 49)))
+        notvalid_list.extend(make_plane((0, 49), (49, 49)))
         for j in notvalid_list :
             self.valid_space[j[0]][j[1]] =0
         for j in self.space_list: 
