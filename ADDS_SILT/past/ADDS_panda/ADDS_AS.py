@@ -19,11 +19,11 @@ import model
 import time
 
 #-------------------------#
+run_iteration = 5
 visualization_mode = 'off' # choose your visualization mode 'on / off
-run_iteration = 1
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
-for _ in range(run_iteration):
+for j in range(run_iteration):
     if visualization_mode == 'off':
         if(run_iteration>0):
             del s_model
@@ -31,6 +31,7 @@ for _ in range(run_iteration):
 
 
         n = 500  # n을 반복하려는 횟수로 설정
+        #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
 
 
         num_escaped_episodes = {
@@ -45,6 +46,7 @@ for _ in range(run_iteration):
             
             #print('남은 agent 수', num_remained_agent)
             print('num_remained_agent',agent.num_remained_agent)
+            print("num_iteration j : ", j)
         #-----------------------------------------------------------------------------------------------------------------------
             if i == 0: # 처음 생성된 agent 수 저장
                 num_assigned_agent = agent.num_remained_agent

@@ -19,12 +19,12 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
-run_iteration = 6
+visualization_mode = 'off' # choose your visualization mode 'on / off
+run_iteration = 5
+
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
 for j in range(run_iteration):
-    print(j)
     if visualization_mode == 'off':
         if(run_iteration>0):
             del s_model
@@ -46,6 +46,7 @@ for j in range(run_iteration):
             
             #print('남은 agent 수', num_remained_agent)
             print('num_remained_agent',agent.num_remained_agent)
+            print("run_iteration j : ", j)
         #-----------------------------------------------------------------------------------------------------------------------
             if i == 0: # 처음 생성된 agent 수 저장
                 num_assigned_agent = agent.num_remained_agent

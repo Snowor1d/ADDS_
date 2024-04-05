@@ -19,7 +19,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 6
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
@@ -32,6 +32,7 @@ for j in range(run_iteration):
 
 
         n = 500  # n을 반복하려는 횟수로 설정
+        #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
 
 
         num_escaped_episodes = {
