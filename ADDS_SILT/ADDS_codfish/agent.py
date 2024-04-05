@@ -393,6 +393,7 @@ class FightingAgent(Agent):
             #print("reward : ", reward)
             self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
             #reward += self.reward_difficulty_space
+            self.update_weight(reward)
             self.model.grid.move_agent(self, new_position)
             return
 
@@ -1292,7 +1293,105 @@ class FightingAgent(Agent):
             sum += each_space_agents_num[key]
         return sum
 
+    def calculate_Max_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
+        global feature_weights_guide
+        global feature_weights_not_guide
+        global robot_xy
+        global one_foot
+        action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        
+        r_x = robot_xy[0]
+        r_y = robot_xy[1]
+        for k in action_list:
+            if (k[0] == "UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
+                    del k
+            elif (k[0] == "DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0):
+                    del k
+            elif (k[0] == "LEFT"):
+                if(self.model.valid_space[int(round(r_x-one_foot))][int(round(r_y))]==0):
+                    del k
+            elif (k[0] == "RIGHT"):
+                if(self.model.valid_space[int(round(r_x+one_foot))][int(round(r_y))]==0) :
+                    del k
 
+        Q_list = []
+        for i in range(len(action_list)):
+            Q_list.append(0)
+        MAX_Q = -9999999
+        selected = ["UP", "GUIDE"]
+        direction_agents_num = self.four_direction_compartment()
+        for j in range(len(action_list)):
+            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
+            
+            if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                Q_list[j] = (f0 * feature_weights_guide[0] + f1 *feature_weights_guide[1] + f3 * feature_weights_guide[2])
+            else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
+                Q_list[j] = (f0 * feature_weights_not_guide[0] + f1 * feature_weights_not_guide[1] + f3 * feature_weights_guide[2])
+            
+            if (Q_list[j]>MAX_Q):
+                MAX_Q= Q_list[j]
+        return MAX_Q
+
+
+    def update_weight(self,reward):  
+        global feature_weights_guide
+        global feature_weights_not_guide
+        global robot_xy
+
+        alpha = 0.1
+        discount_factor = 0.2
+        next_robot_xy = [0,0]
+        next_robot_xy[0] = robot_xy[0]
+        next_robot_xy[1] = robot_xy[1]
+
+        # select_Q에서 내주는 action에 따라 다음 state 계산
+        if self.select_Q(robot_xy)[0] == 'UP':
+            next_robot_xy[1] += 1
+        elif self.select_Q(robot_xy)[0] == 'DOWN':
+            next_robot_xy[1] -= 1
+        elif self.select_Q(robot_xy)[0] == 'RIGHT':
+            next_robot_xy[0] += 1
+        else:
+            next_robot_xy[0] -= 1
+
+        #print('잘됐나',self.select_Q(robot_xy)[0],robot_xy,next_robot_xy)
+
+        # 현재 state와 다음 state의 max_Q 값 계산
+        next_state_max_Q = self.calculate_Max_Q(next_robot_xy)
+        present_state_Q = self.calculate_Max_Q(robot_xy)
+        #print('good?',next_state_max_Q,present_state_Q)
+
+        # 여기부터 실제 업데이트 진행
+        direction_agents_num = self.four_direction_compartment()
+        
+        f0 = self.F0_distance(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f1 = self.F1_near_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1])
+        f3 = self.F3_direction_agents(robot_xy, self.select_Q(robot_xy)[0], self.select_Q(robot_xy)[1],direction_agents_num)
+        
+        
+        
+        selected_action = self.select_Q(robot_xy)[1]
+        print('weight :',feature_weights_guide,feature_weights_not_guide)
+        print('select_Q :',self.select_Q(robot_xy) )
+        if selected_action == 'GUIDE':
+            feature_weights_guide[0] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            feature_weights_guide[1] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            feature_weights_guide[2] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+
+        if selected_action == 'NOGUIDE':
+            feature_weights_not_guide[0] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            feature_weights_not_guide[1] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            feature_weights_not_guide[2] += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+        
+        
+        #
+            
+            
+        return 
 
 
 
