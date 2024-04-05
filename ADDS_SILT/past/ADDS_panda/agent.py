@@ -11,7 +11,7 @@ num_remained_agent = 0
 
 # feature_weights_guide = [1, 1]
 # feature_weights_not_guide = [1, 1]
-robot_step = 0
+# robot_step = 0
 
 
 one_foot = 1
@@ -209,6 +209,7 @@ class FightingAgent(Agent):
         self.which_goal = 0
         self.previous_stage = []
         self.now_goal = [0,0]
+        self.robot_step = 0
         
         #self.robot_xy = [2,2]
         #self.robot_status = 0
@@ -247,7 +248,7 @@ class FightingAgent(Agent):
         self.feature_weights_guide = [self.w1, self.w2]
         self.feature_weights_not_guide = [self.w3, self.w4]
 
-        print("w1, w2, w3, w4 출력 ~ : ", self.w1, self.w2, self.w3, self.w4)
+        # print("w1, w2, w3, w4 출력 ~ : ", self.w1, self.w2, self.w3, self.w4)
 
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)
@@ -397,7 +398,7 @@ class FightingAgent(Agent):
 
     def move(self) -> None:
         global goal_list
-        global robot_step
+        # global robot_step
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -406,7 +407,7 @@ class FightingAgent(Agent):
         cells_with_agents = []
 
         if (self.type == 3):
-            robot_step += 1
+            self.robot_step += 1
             new_position = self.robot_policy2()
             print("선택된 action : ",  self.select_Q(robot_xy))
             reward = self.reward_distance(robot_xy, "none", "none")
@@ -425,7 +426,8 @@ class FightingAgent(Agent):
             # self.model.step() 
 
             # from ADDS_AS import n
-            if robot_step == 500 or num_remained_agent == 0:
+            print("robot step : ", self.robot_step)
+            if self.robot_step == 50 or num_remained_agent == 0: 
             # if num_remained_agent == 0:
                 file2 = open("weight.txt", 'w')
                 new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n']
@@ -1214,7 +1216,7 @@ class FightingAgent(Agent):
         DifficultyList[0] = sum_Difficulty
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
-        print('reward',reward)
+        # print('reward',reward)
         return reward
     def select_Q(self, state) :
         global feature_weights

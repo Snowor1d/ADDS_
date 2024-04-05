@@ -6,7 +6,6 @@ import numpy as np
 import random
 import copy
 num_remained_agent = 0
-robot_step = 0
 NUMBER_OF_CELLS = 50 
 
 
@@ -193,6 +192,7 @@ class FightingAgent(Agent):
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         global robot_xy
+        self.robot_step = 0
         robot_xy = pos
         self.goal_init = 0
         self.type = type
@@ -395,7 +395,6 @@ class FightingAgent(Agent):
 
     def move(self) -> None:
         global goal_list
-        global robot_step
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -404,7 +403,7 @@ class FightingAgent(Agent):
         cells_with_agents = []
 
         if (self.type == 3):
-            robot_step += 1
+            self.robot_step += 1
             new_position = self.robot_policy_Q()
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
@@ -421,7 +420,7 @@ class FightingAgent(Agent):
             # self.model.step() 
 
             # from ADDS_AS import n
-            if robot_step == 50 or num_remained_agent == 0:
+            if self.robot_step == 50 or num_remained_agent == 0:
             # if num_remained_agent == 0:
                 file2 = open("weight.txt", 'w')
                 new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']

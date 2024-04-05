@@ -15,7 +15,7 @@ import math
 
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
-total_crowd = 10 
+total_crowd = 100 
 
 def make_plane(xy1, xy2): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
     new_plane = []
