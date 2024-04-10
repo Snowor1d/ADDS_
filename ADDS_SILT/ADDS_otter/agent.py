@@ -1218,7 +1218,11 @@ class FightingAgent(Agent):
         for i in range(len(action_list)):
             Q_list.append(0)
         MAX_Q = -9999999
-        selected = ["UP", "GUIDE"]
+
+        ## 초기 selected 값 random 선택 ##
+        values = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        selected = random.choice(values)
+
         direction_agents_num = self.four_direction_compartment()
         #print(direction_agents_num)
         for j in range(len(action_list)):
@@ -1360,15 +1364,19 @@ class FightingAgent(Agent):
                 if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
                     del_object.append("RIGHT")
         del_object= list(set(del_object))
-        for i in del_object:
+        for i in del_object: ## action_list에서 할 수 없는 액션들 지움
             action_list.remove([i, "GUIDE"])
             action_list.remove([i, "NOGUIDE"])
+
 
         Q_list = []
         for i in range(len(action_list)):
             Q_list.append(0)
         MAX_Q = -9999999
-        selected = ["UP", "GUIDE"]
+        
+        values = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        selected = random.choice(values) ## 초기 값 랜덤 선택
+
         direction_agents_num = self.four_direction_compartment()
         for j in range(len(action_list)):
             f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
