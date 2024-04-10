@@ -14,4 +14,6 @@ penguin - frog - quokka
   9. Q_not_guide & Q_guide 분리
   
 240329
+  7. 시뮬레이션을 iter 돌리면서 가중치를 업데이트하고 저장해야하는데, 그럴려면 가중치 변수는 ADDS_AS 파일에
+         저장해야 할듯..? 그러면서도 가중치 변수를 agent.py가 돌아가며 수정할 수 있어야 함
   8. feature 추가해야함. 이걸로 로봇 제대로 안굴러 갈 듯 -> direction_agents 함수 추가
