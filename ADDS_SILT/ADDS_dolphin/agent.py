@@ -1449,6 +1449,8 @@ class FightingAgent(Agent):
         #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
         print('select_Q :', self.now_action)
         if selected_action == "GUIDE":
+            ### 아래는 얘네 각각 출력..
+            print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f0(", f0, ")")
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
