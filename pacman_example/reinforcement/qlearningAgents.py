@@ -231,6 +231,11 @@ class ApproximateQAgent(PacmanQAgent):
         for feature in featureVector: # 이것들을 이용해서 feature에 대한 가중치를 업데이트 한다 
             self.weights[feature] += self.alpha * (reward + self.discount * maxQFromNextState - actionQValue) * \
                                      featureVector[feature]
+            print( "reward : ", reward )
+            print( "maxQFromNextState : ", maxQFromNextState)
+            print( "actionQValue : ", actionQValue)
+            print( "featureVector[feature] : ",featureVector)
+            print( "self.weights[feature] : ", self.weights)
 
     def final(self, state):
         """Called at the end of each game."""

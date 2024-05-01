@@ -1219,7 +1219,7 @@ class FightingAgent(Agent):
         Q_list = []
         for i in range(len(action_list)):
             Q_list.append(0)
-        MAX_Q = -9999999
+        MAX_Q =-999999999
         ## 초기 selected 값 random 선택 ##
         values = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
         selected = random.choice(values)
