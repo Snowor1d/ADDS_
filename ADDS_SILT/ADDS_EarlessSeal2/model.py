@@ -17,6 +17,7 @@ import math
 hazard_id = 5000
 total_crowd = 10 
 dict_NoC = {}
+max_specification = [20, 20]
 
 number_of_cases = 0 # 난이도 함수 ; 경우의 수
 started = 1
@@ -309,7 +310,7 @@ class FightingModel(Model):
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
-
+        
 
         exit_rec = self.make_exit() 
         self.exit_rec = exit_rec
@@ -360,12 +361,11 @@ class FightingModel(Model):
 
         self.difficulty_dict = {}
 
-
-
         self.init_outside() #외곽지대 탈출로 구현 
         
         self.door_list = [] #일단 무시
         self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1) # recursion을 이용해 랜덤으로 맵을 나눔 
+        print(self.space_list)
         notvalid_list = []
         for i in self.room_list:
             notvalid_list.extend(make_plane(i[0], i[1]))
@@ -398,7 +398,7 @@ class FightingModel(Model):
                     self.make_one_door_in_room(r)
             self.space_connect_via_door()
 
-        print("space_graph\n",self.space_graph, "\n\n")
+        #print(self.space_graph)
         global total_crowd
         self.random_agent_distribute_outdoor(total_crowd)
         #self.random_hazard_placement(random.randint(1,3))
@@ -509,8 +509,8 @@ class FightingModel(Model):
                 if (i==j):
                     continue
                 goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
-
-                
+        print("init 다시 돌았지롱~")
+        self.difficulty_f()
     def make_exit(self):
         exit_rec = []
         only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
@@ -708,6 +708,32 @@ class FightingModel(Model):
         self.schedule.add(a)
         self.grid.place_agent(a, (x, y))
         #self.agents.append(a)
+
+    def robot_respawn(self):
+        inner_space = []
+        for i in self.outdoor_space:
+            if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
+                inner_space.append(i)
+        space_index = 0 
+        if(len(inner_space) > 1):
+            space_index = random.randint(0, len(inner_space)-1)
+        else :
+            space_index = 0
+        if(len(inner_space) == 0):
+            return
+        xy = inner_space[space_index]
+
+    
+        x_len = xy[0][0] - xy[1][0]
+        y_len = xy[1][0] - xy[1][1]
+
+
+        x = random.randint(xy[0][0]+1, xy[1][0]-1)
+        y = random.randint(xy[0][1]+1, xy[1][1]-1)
+
+
+        return [x, y]
+
         
         
                     
@@ -1563,50 +1589,6 @@ class FightingModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
             #self.agents.append(a)
-
-
-    def step(self):
-        global started
-        """Advance the model by one step."""
-        self.schedule.step()
-        self.datacollector_currents.collect(self)  # passing the model
-        if(started):
-            self.difficulty_f()
-            started = 0
-    
-        # Checking if there is a champion
-        if FightingModel.current_healthy_agents(self) == 0:
-            self.running = False
-        print(self.difficulty_dict)
-
-    @staticmethod
-    def current_healthy_agents(model) -> int:
-        """Returns the total number of healthy agents.
-
-        Args:
-            model (SimulationModel): The model instance.
-
-        Returns:
-            (Integer): Number of Agents.
-        """
-        return sum([1 for agent in model.schedule.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
-                                                                               ### agent.py 에서 exit area 도착했을 때 health를 0으로 바꿈
-
-    @staticmethod
-    def current_non_healthy_agents(model) -> int:
-        """Returns the total number of non healthy agents.
-
-        Args:
-            model (SimulationModel): The model instance.
-
-        Returns:
-            (Integer): Number of Agents.
-        """
-        return sum([1 for agent in model.schedule.agents if agent.health == 0])
-
-
-
-
     def dfs(self, key, m_list, p_list): #튜플, 리스트, 리스트 속 튜플
         global number_of_cases
         global dict_NoC
@@ -1624,6 +1606,22 @@ class FightingModel(Model):
                 pp_list.pop()
 
 
+    def step(self):
+        """Advance the model by one step."""
+        global started
+        if(started):
+            #self.difficulty_f()
+            started = 0
+    
+        self.schedule.step()
+        self.datacollector_currents.collect(self)  # passing the model
+    
+        
+    
+        # Checking if there is a champion
+        if FightingModel.current_healthy_agents(self) == 0:
+            self.running = False
+            
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
         global dict_NoC
@@ -1661,4 +1659,64 @@ class FightingModel(Model):
                 dict_NoC[key] = number_of_cases
         self.difficulty_dict =dict_NoC
         
-        #print("dict_NoC :: \n", dict_NoC, "\n\n")
+
+    def space_specification(self):
+
+        global max_specification
+        new_space_list = []
+
+        for i in self.space_list:
+            x_size = i[1][0] - i[0][0]
+            y_size = i[1][1] - i[0][1]
+
+            if(x_size>max_specification[0]):
+                middle = int((i[0][0] + i[1][0])/2)
+                new_x = [[i[0][0], i[0][1]], [middle, i[1][1]]]
+                new_x2 = [[middle+1, i[0][1]], [i[1][0], i[1][1]]]
+                new_space_list.append(new_x)
+                new_space_list.append(new_x2)
+            else:
+                new_space_list.append(i)
+        
+        new_space_list2 = []
+        
+        for i in new_space_list:
+            y_size = i[1][1] - i[0][1]
+
+            if(y_size>max_specification[0]):
+                middle = int((i[0][1] + i[1][1])/2)
+                new_y = [[i[0][0], i[0][1]], [i[1][0],middle]]
+                new_y2 = [[i[0][0], middle+1], [i[1][0], i[1][1]]]
+                new_space_list2.append(new_y)
+                new_space_list2.append(new_y2)
+            else:
+                new_space_list2.append(i)
+
+
+        return new_space_list2
+    @staticmethod
+    def current_healthy_agents(model) -> int:
+        """Returns the total number of healthy agents.
+
+        Args:
+            model (SimulationModel): The model instance.
+
+        Returns:
+            (Integer): Number of Agents.
+        """
+        return sum([1 for agent in model.schedule.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
+                                                                               ### agent.py 에서 exit area 도착했을 때 health를 0으로 바꿈
+
+    @staticmethod
+    def current_non_healthy_agents(model) -> int:
+        """Returns the total number of non healthy agents.
+
+        Args:
+            model (SimulationModel): The model instance.
+
+        Returns:
+            (Integer): Number of Agents.
+        """
+        return sum([1 for agent in model.schedule.agents if agent.health == 0])
+
+    

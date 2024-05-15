@@ -411,7 +411,6 @@ class FightingAgent(Agent):
         if (self.type == 3):
             self.robot_step += 1
             ####### difficulty_f test
-            self.difficulty_f()
             new_position = self.robot_policy_Q()
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)

@@ -19,7 +19,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
+visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 s_model = model.FightingModel(5,50,50)
@@ -235,7 +235,7 @@ for j in range(run_iteration):
             "ADDS crowd system", # 웹 페이지에 표시되는 이름
             simulation_params,
         )
-        server.port = 8521  # The default
+        server.port = 8522  # The default
         server.launch()
 
 

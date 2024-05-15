@@ -282,6 +282,7 @@ class FightingModel(Model):
     """A model with some number of agents."""
 
     def __init__(self, number_agents: int, width: int, height: int):
+        print("!!!!!!!!!!!!")
         self.simulation_type = 0 #0->outdoor, #1->indoor
         self.room_list = [] # ex) [((1, 2), (3,4)), ((4,5), (5,6))]
         self.map_divide =  [[[0,0], [0,0]]*10 for _ in range(10)]

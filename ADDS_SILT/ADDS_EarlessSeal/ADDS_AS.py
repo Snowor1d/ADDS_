@@ -5,7 +5,7 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.space import ContinuousSpace
 from mesa.datacollection import DataCollector
-
+import os 
 import agent
 from agent import WallAgent
 import random
@@ -19,7 +19,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
+visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 s_model = model.FightingModel(5,50,50)

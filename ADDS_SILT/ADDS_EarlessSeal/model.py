@@ -16,10 +16,7 @@ import math
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
 total_crowd = 10 
-dict_NoC = {}
-
-number_of_cases = 0 # 난이도 함수 ; 경우의 수
-started = 1
+max_specification = [20, 20]
 
 def make_plane(xy1, xy2): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
     new_plane = []
@@ -358,14 +355,13 @@ class FightingModel(Model):
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
-        self.difficulty_dict = {}
-
 
 
         self.init_outside() #외곽지대 탈출로 구현 
         
         self.door_list = [] #일단 무시
         self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1) # recursion을 이용해 랜덤으로 맵을 나눔 
+        print(self.space_list)
         notvalid_list = []
         for i in self.room_list:
             notvalid_list.extend(make_plane(i[0], i[1]))
@@ -398,7 +394,7 @@ class FightingModel(Model):
                     self.make_one_door_in_room(r)
             self.space_connect_via_door()
 
-        print("space_graph\n",self.space_graph, "\n\n")
+        #print(self.space_graph)
         global total_crowd
         self.random_agent_distribute_outdoor(total_crowd)
         #self.random_hazard_placement(random.randint(1,3))
@@ -509,7 +505,6 @@ class FightingModel(Model):
                 if (i==j):
                     continue
                 goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
-
                 
     def make_exit(self):
         exit_rec = []
@@ -708,6 +703,32 @@ class FightingModel(Model):
         self.schedule.add(a)
         self.grid.place_agent(a, (x, y))
         #self.agents.append(a)
+
+    def robot_respawn(self):
+        inner_space = []
+        for i in self.outdoor_space:
+            if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
+                inner_space.append(i)
+        space_index = 0 
+        if(len(inner_space) > 1):
+            space_index = random.randint(0, len(inner_space)-1)
+        else :
+            space_index = 0
+        if(len(inner_space) == 0):
+            return
+        xy = inner_space[space_index]
+
+    
+        x_len = xy[0][0] - xy[1][0]
+        y_len = xy[1][0] - xy[1][1]
+
+
+        x = random.randint(xy[0][0]+1, xy[1][0]-1)
+        y = random.randint(xy[0][1]+1, xy[1][1]-1)
+
+
+        return [x, y]
+
         
         
                     
@@ -1566,19 +1587,49 @@ class FightingModel(Model):
 
 
     def step(self):
-        global started
         """Advance the model by one step."""
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-        if(started):
-            self.difficulty_f()
-            started = 0
+        
     
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-        print(self.difficulty_dict)
 
+    def space_specification(self):
+
+        global max_specification
+        new_space_list = []
+
+        for i in self.space_list:
+            x_size = i[1][0] - i[0][0]
+            y_size = i[1][1] - i[0][1]
+
+            if(x_size>max_specification[0]):
+                middle = int((i[0][0] + i[1][0])/2)
+                new_x = [[i[0][0], i[0][1]], [middle, i[1][1]]]
+                new_x2 = [[middle+1, i[0][1]], [i[1][0], i[1][1]]]
+                new_space_list.append(new_x)
+                new_space_list.append(new_x2)
+            else:
+                new_space_list.append(i)
+        
+        new_space_list2 = []
+        
+        for i in new_space_list:
+            y_size = i[1][1] - i[0][1]
+
+            if(y_size>max_specification[0]):
+                middle = int((i[0][1] + i[1][1])/2)
+                new_y = [[i[0][0], i[0][1]], [i[1][0],middle]]
+                new_y2 = [[i[0][0], middle+1], [i[1][0], i[1][1]]]
+                new_space_list2.append(new_y)
+                new_space_list2.append(new_y2)
+            else:
+                new_space_list2.append(i)
+
+
+        return new_space_list2
     @staticmethod
     def current_healthy_agents(model) -> int:
         """Returns the total number of healthy agents.
@@ -1604,61 +1655,4 @@ class FightingModel(Model):
         """
         return sum([1 for agent in model.schedule.agents if agent.health == 0])
 
-
-
-
-    def dfs(self, key, m_list, p_list): #튜플, 리스트, 리스트 속 튜플
-        global number_of_cases
-        global dict_NoC
-
-        if dict_NoC[key] == 1:
-            number_of_cases += 1
-            return
-        
-        for i in m_list:
-            i = tuple(map(tuple, i)) # 이중리스트 형태인 i를 튜플 형태로 변환
-            pp_list = copy.deepcopy(p_list)
-            if i not in pp_list:
-                pp_list.append(i)
-                self.dfs(i, self.space_graph[i], pp_list)
-                pp_list.pop()
-
-
-    def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
-        global number_of_cases
-        global dict_NoC
-
-        for key, val in self.space_graph.items():
-            if len(val) != 0 : #닫힌 공간 제외 val 0으로 초기화
-                dict_NoC[key] = 0
-
-        for key in dict_NoC.keys(): # key 공간이 출구와 맞닿아 있으면 value 1
-            if (self.is_left_exit):
-                dict_NoC[((0, 0), (5, 45))] = "X" # 출구 표시
-                if [[0, 0], [5, 45]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-            if (self.is_up_exit):
-                dict_NoC[((0, 45), (45, 49))] = "X" 
-                if [[0, 45], [45, 49]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-        
-            if (self.is_right_exit):
-                dict_NoC[((45, 5), (49, 49))] = "X" 
-                if [[45, 5], [49, 49]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-            if (self.is_down_exit):
-                dict_NoC[((5, 0), (49, 5))] = "X" 
-                if [[5, 0], [49, 5]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-        for key, val in dict_NoC.items():
-            number_of_cases = 0
-            if val == 0:
-                p_list = [key]
-                self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
-                dict_NoC[key] = number_of_cases
-        self.difficulty_dict =dict_NoC
-        
-        #print("dict_NoC :: \n", dict_NoC, "\n\n")
+    
