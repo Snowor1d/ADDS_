@@ -401,17 +401,24 @@ class FightingModel(Model):
         global total_crowd
         self.random_agent_distribute_outdoor(total_crowd)
         #self.random_hazard_placement(random.randint(1,3))
+        
+        self.exit_compartment = ((0,0), (0, 0)) ##출구 위치 저장
+
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
+            self.exit_compartment = ((0,0), (5, 45))
 
         if(self.is_up_exit):
             self.space_goal_dict[((0,45), (45, 49))] = [self.up_exit_goal]
+            self.exit_compartment = ((0,45), (45, 49))
 
         if(self.is_right_exit):
             self.space_goal_dict[((45,5), (49, 49))] = [self.right_exit_goal]
+            self.exit_compartment = ((45,5), (49, 49))
 
         if(self.is_down_exit):
             self.space_goal_dict[((5,0), (49, 5))] = [self.down_exit_goal]
+            self.exit_compartment = ((5,0), (49, 5))
 
         #exit 구역의 goal 재정의
 #---------------------------------------------------------------------------------------------------------------------
@@ -477,7 +484,9 @@ class FightingModel(Model):
             self.only_one_wall[space[i][0]][space[i][1]] = 1
         
 
-        self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
+        self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기  
+        
+        ###@@ 아래 고치고 싶었으나 left_exit_goal 까지 바꿔야 해서 일단 pass.. 
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
 
@@ -667,18 +676,8 @@ class FightingModel(Model):
             self.agent_place(only_space[l][0], only_space[l][1], space_random_list[l])
     
     def way_to_exit(self):
-        if(self.is_left_exit):
-            for i in self.space_graph[((0,0), (5, 45))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,0], [5, 45]]))]
-        if(self.is_right_exit):
-            for i in self.space_graph[((45,5), (49, 49))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[45,5], [49, 49]]))]
-        if(self.is_up_exit):
-            for i in self.space_graph[((0,45), (45, 49))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[0,45], [45, 49]]))]
-        if(self.is_down_exit):
-            for i in self.space_graph[((5,0), (49, 5))]:
-                self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[5,0], [49, 5]]))]
+        for i in self.space_graph[self.exit_compartment]: #exit_compartment : tuple, 출구 공간 좌표 #i 는 list
+            self.space_goal_dict[tuple(map(tuple, i))] = [goal_extend(tuple(map(tuple, i)), space_connected_linear(i, list(map(list, i))))]
 
     def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
         inner_space = []
@@ -734,10 +733,6 @@ class FightingModel(Model):
 
         return [x, y]
 
-        
-        
-                    
-        
     
     
     def random_agent_distribute_outdoor(self, agent_num):
@@ -1630,25 +1625,9 @@ class FightingModel(Model):
                 self.dict_NoC[key] = 0
 
         for key in self.dict_NoC.keys(): # key 공간이 출구와 맞닿아 있으면 value 1
-            if (self.is_left_exit):
-                self.dict_NoC[((0, 0), (5, 45))] = "X" # 출구 표시
-                if [[0, 0], [5, 45]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-
-            if (self.is_up_exit):
-                self.dict_NoC[((0, 45), (45, 49))] = "X" 
-                if [[0, 45], [45, 49]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-        
-            if (self.is_right_exit):
-                self.dict_NoC[((45, 5), (49, 49))] = "X" 
-                if [[45, 5], [49, 49]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-
-            if (self.is_down_exit):
-                self.dict_NoC[((5, 0), (49, 5))] = "X" 
-                if [[5, 0], [49, 5]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
+            self.dict_NoC[self.exit_compartment] = -1 # 출구는 -1
+            if list(map(list, self.exit_compartment)) in self.space_graph[key]: 
+                self.dict_NoC[key] = 1
 
         for key, val in self.dict_NoC.items():
             number_of_cases = 0
@@ -1656,7 +1635,7 @@ class FightingModel(Model):
                 p_list = [key]
                 self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
                 self.dict_NoC[key] = number_of_cases
-        self.difficulty_dict =self.dict_NoC
+        self.difficulty_dict = self.dict_NoC
         
 
     def space_specification(self):

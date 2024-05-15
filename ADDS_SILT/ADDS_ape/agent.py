@@ -793,16 +793,17 @@ class FightingAgent(Agent):
         space_priority = {}
         distance_to_safe = {}
         
+        evacuation_points = [self.model.exit_compartment] #evacuation_points에 탈출구들 저장 
 
-        evacuation_points = []
-        if(self.model.is_left_exit): 
-            evacuation_points.append(((0,0), (5, 45)))
-        if(self.model.is_up_exit):
-            evacuation_points.append(((0,45), (45, 49)))
-        if(self.model.is_right_exit):
-            evacuation_points.append(((45,5), (49, 49)))
-        if(self.model.is_down_exit):
-            evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 
+        # evacuation_points = []
+        # if(self.model.is_left_exit): 
+        #     evacuation_points.append(((0,0), (5, 45)))
+        # if(self.model.is_up_exit):
+        #     evacuation_points.append(((0,45), (45, 49)))
+        # if(self.model.is_right_exit):
+        #     evacuation_points.append(((45,5), (49, 49)))
+        # if(self.model.is_down_exit):
+        #     evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 
 
         for i in space_agent_num.keys():
             min_d = 10000
@@ -1250,6 +1251,8 @@ class FightingAgent(Agent):
             f1 = self.F1_distance(state, action_list[j], "GUIDE")
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
+            f4 = self.F4_difficulty_avg(state, action_list[j], "GUIDE", direction_agents_num) ###f4 test
+            print("\nf4 : ", f4, "action: ", action_list[j])
             #print(direction_agents_num)
             if True : # guide 모드일때 weight는 feature_weights_guide
                 Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
@@ -1357,6 +1360,7 @@ class FightingAgent(Agent):
                 min = right_direction  
 
             four_compartment[min_direction].append(i)
+            print("\nfour compartment : ", four_compartment, "\n")
         return four_compartment
     
     def F3_direction_agents(self, state, action, mode, compartment_direction):
@@ -1366,6 +1370,20 @@ class FightingAgent(Agent):
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key]
         return sum * 0.1
+    
+    def F4_difficulty_avg(self, state, action, mode, compartment_direction): # 가까워지는(action 했을 때) 구역의 난이도 평균 return
+        ## 가까워지는 구역이 없으면 return 0, 가까워지는 구역에 출구가 포함되어 있으면 출구 제외 난이도 평균 (출구는 난이도 -1)
+        a = []
+        for val in compartment_direction[action]: # action을 했을 때 가까워지는 구역
+            if val != list(map(list, self.model.exit_compartment)): #출구 포함되어 있으면 제외
+                a.append(self.model.difficulty_dict[tuple(map(tuple, val))])
+        if len(a) != 0 :
+            return np.mean(a)
+        else:
+            return 0
+        
+
+
     def calculate_Guide_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
         global robot_xy
         global one_foot
