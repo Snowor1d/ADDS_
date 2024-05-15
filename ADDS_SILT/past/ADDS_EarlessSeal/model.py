@@ -16,11 +16,7 @@ import math
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
 total_crowd = 10 
-dict_NoC = {}
 max_specification = [20, 20]
-
-number_of_cases = 0 # 난이도 함수 ; 경우의 수
-started = 1
 
 def make_plane(xy1, xy2): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
     new_plane = []
@@ -310,7 +306,7 @@ class FightingModel(Model):
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
-        
+
 
         exit_rec = self.make_exit() 
         self.exit_rec = exit_rec
@@ -359,7 +355,7 @@ class FightingModel(Model):
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
 
-        self.difficulty_dict = {}
+
 
         self.init_outside() #외곽지대 탈출로 구현 
         
@@ -509,8 +505,7 @@ class FightingModel(Model):
                 if (i==j):
                     continue
                 goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
-        print("init 다시 돌았지롱~")
-        self.difficulty_f()
+                
     def make_exit(self):
         exit_rec = []
         only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
@@ -1589,76 +1584,17 @@ class FightingModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
             #self.agents.append(a)
-    def dfs(self, key, m_list, p_list): #튜플, 리스트, 리스트 속 튜플
-        global number_of_cases
-        global dict_NoC
-
-        if dict_NoC[key] == 1:
-            number_of_cases += 1
-            return
-        
-        for i in m_list:
-            i = tuple(map(tuple, i)) # 이중리스트 형태인 i를 튜플 형태로 변환
-            pp_list = copy.deepcopy(p_list)
-            if i not in pp_list:
-                pp_list.append(i)
-                self.dfs(i, self.space_graph[i], pp_list)
-                pp_list.pop()
 
 
     def step(self):
         """Advance the model by one step."""
-        global started
-        if(started):
-            #self.difficulty_f()
-            started = 0
-    
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-    
         
     
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-            
-    def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
-        global number_of_cases
-        global dict_NoC
-
-        for key, val in self.space_graph.items():
-            if len(val) != 0 : #닫힌 공간 제외 val 0으로 초기화
-                dict_NoC[key] = 0
-
-        for key in dict_NoC.keys(): # key 공간이 출구와 맞닿아 있으면 value 1
-            if (self.is_left_exit):
-                dict_NoC[((0, 0), (5, 45))] = "X" # 출구 표시
-                if [[0, 0], [5, 45]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-            if (self.is_up_exit):
-                dict_NoC[((0, 45), (45, 49))] = "X" 
-                if [[0, 45], [45, 49]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-        
-            if (self.is_right_exit):
-                dict_NoC[((45, 5), (49, 49))] = "X" 
-                if [[45, 5], [49, 49]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-            if (self.is_down_exit):
-                dict_NoC[((5, 0), (49, 5))] = "X" 
-                if [[5, 0], [49, 5]] in self.space_graph[key]:
-                    dict_NoC[key] = 1
-
-        for key, val in dict_NoC.items():
-            number_of_cases = 0
-            if val == 0:
-                p_list = [key]
-                self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
-                dict_NoC[key] = number_of_cases
-        self.difficulty_dict =dict_NoC
-        
 
     def space_specification(self):
 

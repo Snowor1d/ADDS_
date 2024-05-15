@@ -22,10 +22,10 @@ import time
 visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
-s_model = model.FightingModel(5,50,50)
 for j in range(run_iteration):
     print(j)
     if visualization_mode == 'off':
+        s_model = model.FightingModel(5,50,50)
         if(run_iteration>0):
             del s_model
             s_model = model.FightingModel(5,50,50)
@@ -74,7 +74,6 @@ for j in range(run_iteration):
         end_time = time.time()
         execution_time = end_time - start_time
         print("코드 실행 시간:", execution_time, "초")
-
 
 
 
@@ -227,7 +226,7 @@ for j in range(run_iteration):
             data_collector_name = "datacollector_currents",
         )
 
-
+        print("으악!!!!!!!!!!!!!")
         server = ModularServer(     # 이게 본체인데,,,
             FightingModel, # 내 모델
             #[grid, chart_healthy], # visualization elements 써줌
@@ -236,8 +235,10 @@ for j in range(run_iteration):
             simulation_params,
         )
         server.port = 8521  # The default
+        print("으악!!!!!!!!!!!!!")
         server.launch()
 
 
 
 
+ 

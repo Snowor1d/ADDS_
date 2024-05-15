@@ -220,7 +220,7 @@ class FightingAgent(Agent):
         self.now_action = ["UP", "GUIDE"]
 
         #for robot 
-        self.robot_space = ((0,0), (5,45))
+        self.robot_space = ((0,0), (5,95))
         self.mission_complete = 1
         self.going = 0
         self.guide = 0
@@ -232,7 +232,7 @@ class FightingAgent(Agent):
         self.go_path_num= 0
         self.back_path_num = 0
 
-        file_path = 'weight.txt'
+        file_path = "weight.txt"
         file = open(file_path, "r")
         
         lines = file.readlines()
@@ -406,12 +406,7 @@ class FightingAgent(Agent):
 
         if (self.type == 3):
             self.robot_step += 1
-            print(self.model.difficulty_dict)
-            robot_space_tuple = tuple(map(tuple, self.robot_space))
-            if(self.model.difficulty_dict[robot_space_tuple]==1):
-                new_position = self.model.robot_respawn()
             new_position = self.robot_policy_Q()
-            
             #new_position = self.model.robot_respawn()
             reward = self.reward_distance(robot_xy, "none", "none")
             #print("reward : ", reward)
