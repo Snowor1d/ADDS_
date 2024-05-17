@@ -1672,6 +1672,32 @@ class FightingModel(Model):
 
 
         return new_space_list2
+    
+    def reward_distance_difficulty(self):
+        s_distance = 0
+        for i in self.agents:
+            if(i.dead == False and (i.type == 0 or i.type == 1)):
+                agent_space = self.grid_to_space[int(round(i.xy[0]))][int(round(i.xy[1]))]
+                next_goal = space_connected_linear(tuple(map(tuple, agent_space)), self.floyd_warshall()[0][tuple(map(tuple, agent_space))][self.exit_compartment]) ##### 여기 ~~!!! 에러 남 . . list 와 튜플 어딘가...
+                agent_space_x_center = (agent_space[0][0] + agent_space[1][0])/2
+                agent_space_y_center = (agent_space[1][0] + agent_space[1][1])/2
+                a = (self.floyd_distance[tuple(map(tuple, agent_space))][self.exit_compartment] 
+                - math.sqrt(pow(agent_space_x_center-next_goal[0],2) + pow(agent_space_y_center-next_goal[1],2)) 
+                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2)))
+                
+                s_distance += a
+
+        s_difficulty = 0
+        for i in self.agents:
+            if(i.dead == False and (i.type == 0 or i.type == 1)):
+                agent_space = self.grid_to_space[int(round(i.xy[0]))][int(round(i.xy[1]))]
+                s_difficulty += self.difficulty_dict[tuple(map(tuple, agent_space))]
+
+        a = 1
+        b = 1
+        print("reward_distance_difficulty = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")
+        return a*s_distance + b*s_difficulty
+
     @staticmethod
     def current_healthy_agents(model) -> int:
         """Returns the total number of healthy agents.

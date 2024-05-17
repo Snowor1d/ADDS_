@@ -411,6 +411,8 @@ class FightingAgent(Agent):
             if(self.model.difficulty_dict[robot_space_tuple]==1):
                 new_position = self.model.robot_respawn()
             new_position = self.robot_policy_Q()
+
+            self.model.reward_distance_difficulty()
             
             #new_position = self.model.robot_respawn()
             reward = self.reward_distance(robot_xy, "none", "none")
@@ -1210,6 +1212,7 @@ class FightingAgent(Agent):
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
         return reward
+    
     def select_Q(self, state) :
         global robot_xy
         global one_foot
@@ -1360,7 +1363,7 @@ class FightingAgent(Agent):
                 min = right_direction  
 
             four_compartment[min_direction].append(i)
-            print("\nfour compartment : ", four_compartment, "\n")
+            # print("\nfour compartment : ", four_compartment, "\n")
         return four_compartment
     
     def F3_direction_agents(self, state, action, mode, compartment_direction):
