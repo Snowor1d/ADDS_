@@ -99,5 +99,5 @@ class SimpleExtractor(FeatureExtractor):
             # make the distance a number less than one otherwise the update
             # will diverge wildly
             features["closest-food"] = float(dist) / (walls.width * walls.height)
-        features.divideAll(100.0)
+        features.divideAll(10.0)
         return features

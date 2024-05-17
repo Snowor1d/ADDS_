@@ -186,10 +186,11 @@ def set_agent_type_settings(agent, type):
 
 
 
-class FightingAgent(Agent):
+class FightingAgent2(Agent):
     """An agent that fights."""
 
     def __init__(self, unique_id, model, pos, type): 
+        #print("pos : ", pos)
         super().__init__(unique_id, model)
         global robot_xy
         self.robot_step = 0
@@ -261,7 +262,7 @@ class FightingAgent(Agent):
     def step(self) -> None:
         global exit_area
         global goal_list
-
+        print("model B : ", robot_xy)
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
@@ -406,11 +407,12 @@ class FightingAgent(Agent):
 
         if (self.type == 3):
             self.robot_step += 1
-            print(self.model.difficulty_dict)
+            #print(self.model.difficulty_dict)
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             if(self.model.difficulty_dict[robot_space_tuple]==1):
                 new_position = self.model.robot_respawn()
             new_position = self.robot_policy_Q()
+            print("Model B에 robot이 있다")
             
             #new_position = self.model.robot_respawn()
             reward = self.reward_distance(robot_xy, "none", "none")
@@ -421,7 +423,7 @@ class FightingAgent(Agent):
 ## 여기 아래에서 weight 변경하는 코드 넣어주세용
             
 
-            print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
+            #print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
             ""
             self.update_weight(reward)
 
@@ -631,7 +633,7 @@ class FightingAgent(Agent):
         self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
 
         next_action = self.select_Q(robot_xy)
-        print("next action ", next_action)
+        #print("next action ", next_action)
         goal_x = 0
         goal_y = 0
         goal_d =2 
@@ -793,16 +795,17 @@ class FightingAgent(Agent):
         space_priority = {}
         distance_to_safe = {}
         
+        evacuation_points = [self.model.exit_compartment] #evacuation_points에 탈출구들 저장 
 
-        evacuation_points = []
-        if(self.model.is_left_exit): 
-            evacuation_points.append(((0,0), (5, 45)))
-        if(self.model.is_up_exit):
-            evacuation_points.append(((0,45), (45, 49)))
-        if(self.model.is_right_exit):
-            evacuation_points.append(((45,5), (49, 49)))
-        if(self.model.is_down_exit):
-            evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 
+        # evacuation_points = []
+        # if(self.model.is_left_exit): 
+        #     evacuation_points.append(((0,0), (5, 45)))
+        # if(self.model.is_up_exit):
+        #     evacuation_points.append(((0,45), (45, 49)))
+        # if(self.model.is_right_exit):
+        #     evacuation_points.append(((45,5), (49, 49)))
+        # if(self.model.is_down_exit):
+        #     evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 
 
         for i in space_agent_num.keys():
             min_d = 10000
@@ -1036,7 +1039,7 @@ class FightingAgent(Agent):
 
 
 
-    def F0_distance(self, state, action, mode):
+    def F1_distance(self, state, action, mode):
         global robot_xy
         global one_foot
 
@@ -1098,7 +1101,7 @@ class FightingAgent(Agent):
         else :
             return 0.6
     
-    def F1_near_agents(self, state, action, mode):
+    def F2_near_agents(self, state, action, mode):
         global one_foot
         robot_xyP = [0, 0]
         robot_xyP[0] = state[0] ## robot_xyP : action 이후 로봇의 위치
@@ -1247,14 +1250,16 @@ class FightingAgent(Agent):
         direction_agents_num = self.four_direction_compartment()
         #print(direction_agents_num)
         for j in range(len(action_list)):
-            f0 = self.F0_distance(state, action_list[j], "GUIDE")
-            f1 = self.F1_near_agents(state, action_list[j], "GUIDE")
+            f1 = self.F1_distance(state, action_list[j], "GUIDE")
+            f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
+            f4 = self.F4_difficulty_avg(state, action_list[j], "GUIDE", direction_agents_num) ###f4 test
+            #print("\nf4 : ", f4, "action: ", action_list[j])
             #print(direction_agents_num)
             if True : # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
@@ -1357,6 +1362,7 @@ class FightingAgent(Agent):
                 min = right_direction  
 
             four_compartment[min_direction].append(i)
+            #print("\nfour compartment : ", four_compartment, "\n")
         return four_compartment
     
     def F3_direction_agents(self, state, action, mode, compartment_direction):
@@ -1366,6 +1372,20 @@ class FightingAgent(Agent):
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key]
         return sum * 0.1
+    
+    def F4_difficulty_avg(self, state, action, mode, compartment_direction): # 가까워지는(action 했을 때) 구역의 난이도 평균 return
+        ## 가까워지는 구역이 없으면 return 0, 가까워지는 구역에 출구가 포함되어 있으면 출구 제외 난이도 평균 (출구는 난이도 -1)
+        a = []
+        for val in compartment_direction[action]: # action을 했을 때 가까워지는 구역
+            if val != list(map(list, self.model.exit_compartment)): #출구 포함되어 있으면 제외
+                a.append(self.model.difficulty_dict[tuple(map(tuple, val))])
+        if len(a) != 0 :
+            return np.mean(a)
+        else:
+            return 0
+        
+
+
     def calculate_Guide_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
         global robot_xy
         global one_foot
@@ -1401,12 +1421,12 @@ class FightingAgent(Agent):
 
         direction_agents_num = self.four_direction_compartment()
         for j in range(len(action_list)):
-            f0 = self.F0_distance(state, action_list[j], "GUIDE")
-            f1 = self.F1_near_agents(state, action_list[j], "GUIDE")
+            f1 = self.F1_distance(state, action_list[j], "GUIDE")
+            f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
             
 
-            Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
@@ -1448,14 +1468,14 @@ class FightingAgent(Agent):
 
         direction_agents_num = self.four_direction_compartment()
         for j in range(len(action_list)):
-            f0 = self.F0_distance(state, action_list[j][0], action_list[j][1])
-            f1 = self.F1_near_agents(state, action_list[j][0], action_list[j][1])
+            f1 = self.F1_distance(state, action_list[j][0], action_list[j][1])
+            f2 = self.F2_near_agents(state, action_list[j][0], action_list[j][1])
             f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
             
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f0 * self.feature_weights_guide[0] + f1 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                Q_list[j] = (f0 * self.feature_weights_not_guide[0] + f1 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
@@ -1464,15 +1484,15 @@ class FightingAgent(Agent):
     def calculate_Q(self, state, action):
         global robot_xy
         
-        f0 = self.F0_distance(state, action[0], action[1])
-        f1 = self.F1_near_agents(state, action[0], action[1])
+        f1 = self.F1_distance(state, action[0], action[1])
+        f2 = self.F2_near_agents(state, action[0], action[1])
         direction_agents_num = self.four_direction_compartment()
         f3 = self.F3_direction_agents(state, action[0], action[1], direction_agents_num)
         Q= 0
         if(action[1] == "GUIDE"):
-            Q = f0 * self.feature_weights_guide[0] + f1*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
+            Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
         else:
-            Q = f0 * self.feature_weights_not_guide[0] + f1*self.feature_weights_not_guide[1] + f3*self.feature_weights_not_guide[2]
+            Q = f1 * self.feature_weights_not_guide[0] + f2*self.feature_weights_not_guide[1] + f3*self.feature_weights_not_guide[2]
 
         return Q
 
@@ -1505,25 +1525,25 @@ class FightingAgent(Agent):
         # 여기부터 실제 업데이트 진행
         direction_agents_num = self.four_direction_compartment()
         
-        f0 = self.F0_distance(robot_xy, self.now_action[0], self.now_action[1])
-        f1 = self.F1_near_agents(robot_xy, self.now_action[0], self.now_action[1])
+        f1 = self.F1_distance(robot_xy, self.now_action[0], self.now_action[1])
+        f2 = self.F2_near_agents(robot_xy, self.now_action[0], self.now_action[1])
         f3 = self.F3_direction_agents(robot_xy, self.now_action[0], self.now_action[1],direction_agents_num)
         
         
         
         selected_action = self.now_action[1]
         #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
-        print('select_Q :', self.now_action)
+        #print('select_Q :', self.now_action)
         if selected_action == "GUIDE":
             ### 아래는 얘네 각각 출력..
-            print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f0(", f0, ")")
-            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
-            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            #print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f1(", f1, ")")
+            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
 
         if selected_action == "NOGUIDE":
-            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
-            self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.w6 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
         
         return

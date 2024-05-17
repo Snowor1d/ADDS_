@@ -19,17 +19,29 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 for j in range(run_iteration):
-    print(j)
+    #print(j)
     if visualization_mode == 'off':
         s_model = model.FightingModel(5,50,50)
+        s_model_r = copy.deepcopy(s_model)
+        s_model_r.make_robot()
+        s_model_r.make_agents()
+        s_model.make_agents2()
+        s_model_r.random_agent_distribute_outdoor(10)
+        s_model.random_agent_distribute_outdoor2(10)
         if(run_iteration>0):
             del s_model
+            del s_model_r
             s_model = model.FightingModel(5,50,50)
-
+            s_model_r = copy.deepcopy(s_model)
+            s_model_r.make_robot()
+            s_model_r.make_agents()
+            s_model.make_agents2()
+            s_model_r.random_agent_distribute_outdoor(10)
+            s_model.random_agent_distribute_outdoor2(10)
 
         n = 500  # n을 반복하려는 횟수로 설정
         #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
@@ -43,33 +55,63 @@ for j in range(run_iteration):
         start_time = time.time()
         for i in range(n): # 에피소드 n번 돌린다
             s_model.step()
-            print('에피소드 수',i+1)
-            
-            #print('남은 agent 수', num_remained_agent)
-            print('num_remained_agent',agent.num_remained_agent)
+            print('num_remained_agent',s_model.num_remained_agent)
+        # robot 없는 모델의 agent 수 저장
         #-----------------------------------------------------------------------------------------------------------------------
             if i == 0: # 처음 생성된 agent 수 저장
-                num_assigned_agent = agent.num_remained_agent
+                num_assigned_agent = s_model.num_remained_agent
 
-            if agent.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
+            if s_model.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
                 if num_escaped_episodes["50%"] == 0:
                     num_escaped_episodes["50%"] = i+1
 
-            if agent.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
+            if s_model.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
                 if num_escaped_episodes["80%"] == 0:
                     num_escaped_episodes["80%"] = i+1
             
-            if agent.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
+            if s_model.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
                 if num_escaped_episodes["100%"] == 0:
                     num_escaped_episodes["100%"] = i+1
                     print(num_escaped_episodes)
-                    with open("example.txt", "a") as f:
+                    with open("norobot.txt", "a") as f:
                         f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
                 break
             else:
-                agent.num_remained_agent = 0 # 초기화
+                s_model.num_remained_agent = 0 # 초기화
         #-----------------------------------------------------------------------------------------------------------------------
+
+
+            s_model_r.step()
+            print('num_remained_agent_r',s_model_r.num_remained_agent)
+        # robot 있는 모델의 agent 수 저장
+        #-----------------------------------------------------------------------------------------------------------------------
+            if i == 0: # 처음 생성된 agent 수 저장
+                num_assigned_agent = s_model_r.num_remained_agent
+
+            if s_model_r.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["50%"] == 0:
+                    num_escaped_episodes["50%"] = i+1
+
+            if s_model_r.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["80%"] == 0:
+                    num_escaped_episodes["80%"] = i+1
+            
+            if s_model_r.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
+                if num_escaped_episodes["100%"] == 0:
+                    num_escaped_episodes["100%"] = i+1
+                    print(num_escaped_episodes)
+                    with open("robot.txt", "a") as f:
+                        f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+
+                break
+            else:
+                s_model_r.num_remained_agent = 0 # 초기화
+
+            
+            print('에피소드 수',i+1)
+            
+            #print('남은 agent 수', num_remained_agent)
 
         end_time = time.time()
         execution_time = end_time - start_time
@@ -83,7 +125,7 @@ for j in range(run_iteration):
     from mesa.visualization.ModularVisualization import ModularServer
     from mesa.visualization.UserParam import NumberInput
     from model import FightingModel
-    from mesa.visualization.modules import CanvasGrid, ChartModule
+    from mesa.visualization.modules import CanvasGrid, MultiChartModule
 
 
 
@@ -216,26 +258,25 @@ for j in range(run_iteration):
             SIZE_OF_CANVAS_IN_PIXELS_X,
             SIZE_OF_CANVAS_IN_PIXELS_Y,
         )
-
-        chart_healthy = ChartModule(
+        chart_healthy = MultiChartModule(
             [
                 {"Label": "Remained Agents", "Color": "blue"},
                 #{"Label": "Non Healthy Agents", "Color": "red"}, ## 그래프 상에서 Non Healthy Agents 삭제
             ],
             canvas_height = 300,
             data_collector_name = "datacollector_currents",
+            sims=2
         )
 
-        print("으악!!!!!!!!!!!!!")
         server = ModularServer(     # 이게 본체인데,,,
             FightingModel, # 내 모델
             #[grid, chart_healthy], # visualization elements 써줌
             [grid, chart_healthy],
             "ADDS crowd system", # 웹 페이지에 표시되는 이름
             simulation_params,
+            n_simulations=2
         )
         server.port = 8521  # The default
-        print("으악!!!!!!!!!!!!!")
         server.launch()
 
 
