@@ -1653,7 +1653,8 @@ class FightingModel(Model):
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-            
+        
+
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
 

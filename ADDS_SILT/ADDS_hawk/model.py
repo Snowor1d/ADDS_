@@ -2,6 +2,7 @@
 #^__^
 from mesa import Model
 from agent import FightingAgent
+from agent2 import FightingAgent2
 from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.space import ContinuousSpace
@@ -315,10 +316,6 @@ class FightingModel(Model):
         self.exit_rec = exit_rec
 
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
-        for i in range(len(exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
-            b = FightingAgent(i, self, [0,0], 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
-            self.schedule_e.add(b)
-            self.grid.place_agent(b, exit_rec[i]) ##exit_rec 에 agents 채우기
 
 
         wall = [] 
@@ -364,7 +361,7 @@ class FightingModel(Model):
         
         self.door_list = [] #일단 무시
         self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1) # recursion을 이용해 랜덤으로 맵을 나눔 
-        print(self.space_list)
+        #print(self.space_list)
         notvalid_list = []
         for i in self.room_list:
             notvalid_list.extend(make_plane(i[0], i[1]))
@@ -399,19 +396,26 @@ class FightingModel(Model):
 
         #print(self.space_graph)
         global total_crowd
-        self.random_agent_distribute_outdoor(total_crowd)
+        #self.random_agent_distribute_outdoor(total_crowd)
         #self.random_hazard_placement(random.randint(1,3))
+        
+        self.exit_compartment = ((0,0), (0, 0)) ##출구 위치 저장
+
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
+            self.exit_compartment = ((0,0), (5, 45))
 
         if(self.is_up_exit):
             self.space_goal_dict[((0,45), (45, 49))] = [self.up_exit_goal]
+            self.exit_compartment = ((0,45), (45, 49))
 
         if(self.is_right_exit):
             self.space_goal_dict[((45,5), (49, 49))] = [self.right_exit_goal]
+            self.exit_compartment = ((45,5), (49, 49))
 
         if(self.is_down_exit):
             self.space_goal_dict[((5,0), (49, 5))] = [self.down_exit_goal]
+            self.exit_compartment = ((5,0), (49, 5))
 
         #exit 구역의 goal 재정의
 #---------------------------------------------------------------------------------------------------------------------
@@ -461,23 +465,11 @@ class FightingModel(Model):
                     wall.remove(i)
                     self.wall_matrix[i[0]][i[1]] = 0
 
-        for i in range(len(wall)):
-            if (self.only_one_wall[wall[i][0]][wall[i][1]] == 1 and wall[i][0]!=0 and wall[i][1]!=0 and wall[i][1]!=49):
-                continue
-            c = FightingAgent(i, self, wall[i], 11)
-            self.schedule_w.add(c)
-            self.grid.place_agent(c, wall[i])
-            self.only_one_wall[wall[i][0]][wall[i][1]] = 1
-        for i in range(len(space)):
-            if (self.only_one_wall[space[i][0]][space[i][1]] == 1 ):
-                continue
-            c = FightingAgent(10000+i, self, space[i], 12)
-            self.schedule_w.add(c)
-            self.grid.place_agent(c, space[i])
-            self.only_one_wall[space[i][0]][space[i][1]] = 1
         
 
-        self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기
+        self.way_to_exit() #탈출구와 연결된 space들은 탈출구로 향하게 하기  
+        
+        ###@@ 아래 고치고 싶었으나 left_exit_goal 까지 바꿔야 해서 일단 pass.. 
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
 
@@ -490,7 +482,6 @@ class FightingModel(Model):
         if(self.is_down_exit):
             self.space_goal_dict[((5,0), (49, 5))] = [self.down_exit_goal]
         
-        self.robot_placement() #로봇 배치 
 
         self.floyd_warshall_matrix = self.floyd_warshall() 
         #floyd_warshall() 함수는 두 개의 이중 딕셔너리를 리턴함
@@ -508,9 +499,69 @@ class FightingModel(Model):
                 if (i==j):
                     continue
                 goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
-        print("init 다시 돌았지롱~")
         self.dict_NoC = {}
         self.difficulty_f()
+        
+        self.wall = wall 
+        self.space = space
+        self.exit_rec = exit_rec
+
+        # self.make_agents()
+        # self.random_agent_distribute_outdoor(10)
+        # self.make_robot()
+
+    def make_robot(self):
+        self.robot_placement() #로봇 배치 
+    def make_agents(self):
+        
+        self.wall = [list(t) for t in self.wall]
+        self.exit_rec = [list(t) for t in self.exit_rec]
+        self.space = [list(t) for t in self.space]
+
+        print("model A 생성")
+        for i in range(len(self.exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
+            b = FightingAgent(i, self, [0,0], 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
+            self.schedule_e.add(b)
+            self.grid.place_agent(b, self.exit_rec[i]) ##exit_rec 에 agents 채우기
+        for i in range(len(self.wall)):
+            if (self.only_one_wall[self.wall[i][0]][self.wall[i][1]] == 1 and self.wall[i][0]!=0 and self.wall[i][1]!=0 and self.wall[i][1]!=49):
+                continue
+            c = FightingAgent(i, self, self.wall[i], 11)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, self.wall[i])
+            self.only_one_wall[self.wall[i][0]][self.wall[i][1]] = 1
+        for i in range(len(self.space)):
+            if (self.only_one_wall[self.space[i][0]][self.space[i][1]] == 1 ):
+                continue
+            c = FightingAgent(10000+i, self, self.space[i], 12)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, self.space[i])
+            self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1 
+
+    def make_agents2(self):
+        print("model B 생성")
+        self.wall = [list(t) for t in self.wall]
+        self.exit_rec = [list(t) for t in self.exit_rec]
+        self.space = [list(t) for t in self.space]
+        for i in range(len(self.exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
+            b = FightingAgent2(i, self, [0,0], 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
+            self.schedule_e.add(b)
+            self.grid.place_agent(b, self.exit_rec[i]) ##exit_rec 에 agents 채우기
+        for i in range(len(self.wall)):
+            if (self.only_one_wall[self.wall[i][0]][self.wall[i][1]] == 1 and self.wall[i][0]!=0 and self.wall[i][1]!=0 and self.wall[i][1]!=49):
+                continue
+            c = FightingAgent2(i, self, self.wall[i], 11)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, self.wall[i])
+            self.only_one_wall[self.wall[i][0]][self.wall[i][1]] = 1
+        for i in range(len(self.space)):
+            if (self.only_one_wall[self.space[i][0]][self.space[i][1]] == 1 ):
+                continue
+            c = FightingAgent2(10000+i, self, self.space[i], 12)
+            self.schedule_w.add(c)
+            self.grid.place_agent(c, self.space[i])
+            self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1            
+
     def make_exit(self):
         exit_rec = []
         only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
@@ -680,6 +731,7 @@ class FightingModel(Model):
             for i in self.space_graph[((5,0), (49, 5))]:
                 self.space_goal_dict[((i[0][0], i[0][1]), (i[1][0], i[1][1]))] = [goal_extend(((i[0][0], i[0][1]), (i[1][0], i[1][1])), space_connected_linear(i, [[5,0], [49, 5]]))]
 
+
     def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
         inner_space = []
         for i in self.outdoor_space:
@@ -734,13 +786,42 @@ class FightingModel(Model):
 
         return [x, y]
 
-        
-        
-                    
-        
     
     
-    def random_agent_distribute_outdoor(self, agent_num):
+    def random_agent_distribute_outdoor(self, agent_num, ran):
+        
+        # case1 -> 방에 사람이 있는 경우
+        # case2 -> 밖에 주로 사람이 있는 경우
+        only_space = []
+        for sp in self.space_list:
+            if (not sp in self.room_list and sp != [[0,0], [5, 45]] and sp != [[0, 45], [45, 49]] and sp != [[45, 5], [49, 49]] and sp != [[5,0], [49,5]]):
+                only_space.append(sp)
+        space_num = len(only_space)
+        
+        
+        space_agent = agent_num
+
+        random_list = [0] * space_num
+
+        # 총합이 agent num이 되도록 할당
+        for i in range(space_num - 1):
+            #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+            print("왜안돼",space_agent - sum(random_list) - (space_num - i - 1))
+            random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+            while(random_num>space_agent*(1/3)):
+                #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+                random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+                ran += 1
+            random_list[i] = random_num
+
+        # 마지막 숫자는 나머지 값으로 설정
+        if(space_num != 0):
+            random_list[-1] = space_agent - sum(random_list)
+
+        for j in range(len(only_space)):
+            self.agent_place(only_space[j][0], only_space[j][1], random_list[j],ran)
+
+    def random_agent_distribute_outdoor2(self, agent_num, ran):
         case = random.randint(1,2) 
         # case1 -> 방에 사람이 있는 경우
         # case2 -> 밖에 주로 사람이 있는 경우
@@ -757,10 +838,16 @@ class FightingModel(Model):
 
         # 총합이 agent num이 되도록 할당
         for i in range(space_num - 1):
-            random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+            #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+            print("왜안돼",space_agent - sum(random_list) - (space_num - i - 1))
+            print("ran",ran)
+            random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+            print("random_num",random_num)
             while(random_num>space_agent*(1/3)):
-                random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
-
+                #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+                random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+                ran += 1
+                print("갇힘",1)
             random_list[i] = random_num
 
         # 마지막 숫자는 나머지 값으로 설정
@@ -768,8 +855,7 @@ class FightingModel(Model):
             random_list[-1] = space_agent - sum(random_list)
 
         for j in range(len(only_space)):
-            self.agent_place(only_space[j][0], only_space[j][1], random_list[j])
-
+            self.agent_place2(only_space[j][0], only_space[j][1], random_list[j],ran)
 
 
     def random_hazard_placement(self, hazard_num):
@@ -1567,7 +1653,7 @@ class FightingModel(Model):
         
     
 
-    def agent_place(self, xy1, xy2, num):
+    def agent_place(self, xy1, xy2, num, ran):
     
         agent_list = []
         x_len = xy2[0]-xy1[0]
@@ -1575,13 +1661,19 @@ class FightingModel(Model):
 
         check_list = [[0]*y_len for _ in range(x_len)]
         while(num>0):
-            x = random.randint(xy1[0]+1, xy2[0]-1)
-            y = random.randint(xy1[1]+1, xy2[1]-1)
+            #x = random.randint(xy1[0]+1, xy2[0]-1)
+            x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+            #y = random.randint(xy1[1]+1, xy2[1]-1)
+            y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+            ran += 1
             #print(x, xy1[0])
             #print(y, xy1[1])
             while(check_list[x-xy1[0]][y-xy1[1]] == 1):
-                x = random.randint(xy1[0]+1, xy2[0]-1)
-                y = random.randint(xy1[1]+1, xy2[1]-1)
+                # x = random.randint(xy1[0]+1, xy2[0]-1)
+                # y = random.randint(xy1[1]+1, xy2[1]-1)
+                x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+                y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+                ran += 1
             check_list[x-xy1[0]][y-xy1[1]] = 1
             num = num-1
             a = FightingAgent(self.agent_id, self, [x,y], 0)
@@ -1589,6 +1681,35 @@ class FightingModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
             #self.agents.append(a)
+
+    def agent_place2(self, xy1, xy2, num, ran):
+    
+        agent_list = []
+        x_len = xy2[0]-xy1[0]
+        y_len = xy2[1]-xy1[1]
+
+        check_list = [[0]*y_len for _ in range(x_len)]
+        while(num>0):
+            # x = random.randint(xy1[0]+1, xy2[0]-1)
+            # y = random.randint(xy1[1]+1, xy2[1]-1)
+            x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+            y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+            ran += 1
+            #print(x, xy1[0])
+            #print(y, xy1[1])
+            while(check_list[x-xy1[0]][y-xy1[1]] == 1):
+                # x = random.randint(xy1[0]+1, xy2[0]-1)
+                # y = random.randint(xy1[1]+1, xy2[1]-1)
+                x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+                y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+                ran += 1
+            check_list[x-xy1[0]][y-xy1[1]] = 1
+            num = num-1
+            a = FightingAgent2(self.agent_id, self, [x,y], 0)
+            self.agent_id = self.agent_id + 1
+            self.schedule.add(a)
+            self.grid.place_agent(a, (x, y))
+
     def dfs(self, key, m_list, p_list): #튜플, 리스트, 리스트 속 튜플
         global number_of_cases
 
@@ -1620,7 +1741,8 @@ class FightingModel(Model):
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-            
+        print("num_remained_Agent",self.num_remained_agents())
+
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
 
@@ -1630,25 +1752,9 @@ class FightingModel(Model):
                 self.dict_NoC[key] = 0
 
         for key in self.dict_NoC.keys(): # key 공간이 출구와 맞닿아 있으면 value 1
-            if (self.is_left_exit):
-                self.dict_NoC[((0, 0), (5, 45))] = "X" # 출구 표시
-                if [[0, 0], [5, 45]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-
-            if (self.is_up_exit):
-                self.dict_NoC[((0, 45), (45, 49))] = "X" 
-                if [[0, 45], [45, 49]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-        
-            if (self.is_right_exit):
-                self.dict_NoC[((45, 5), (49, 49))] = "X" 
-                if [[45, 5], [49, 49]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
-
-            if (self.is_down_exit):
-                self.dict_NoC[((5, 0), (49, 5))] = "X" 
-                if [[5, 0], [49, 5]] in self.space_graph[key]:
-                    self.dict_NoC[key] = 1
+            self.dict_NoC[self.exit_compartment] = -1 # 출구는 -1
+            if list(map(list, self.exit_compartment)) in self.space_graph[key]: 
+                self.dict_NoC[key] = 1
 
         for key, val in self.dict_NoC.items():
             number_of_cases = 0
@@ -1656,7 +1762,7 @@ class FightingModel(Model):
                 p_list = [key]
                 self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
                 self.dict_NoC[key] = number_of_cases
-        self.difficulty_dict =self.dict_NoC
+        self.difficulty_dict = self.dict_NoC
         
 
     def space_specification(self):
@@ -1706,6 +1812,7 @@ class FightingModel(Model):
         return sum([1 for agent in model.schedule.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
                                                                                ### agent.py 에서 exit area 도착했을 때 health를 0으로 바꿈
 
+
     @staticmethod
     def current_non_healthy_agents(model) -> int:
         """Returns the total number of non healthy agents.
@@ -1718,4 +1825,17 @@ class FightingModel(Model):
         """
         return sum([1 for agent in model.schedule.agents if agent.health == 0])
 
-    
+    def num_remained_agents(self):
+        #from model import Model
+        self.num_remained_agent = 0
+        space_agent_num = {}
+        for i in self.space_list:
+            space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
+        for i in self.agents:
+            space_xy = self.grid_to_space[int(round((i.xy)[0]))][int(round((i.xy)[1]))]
+            if(i.dead == False and (i.type==0 or i.type==1)):
+                space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
+        
+        for j in space_agent_num.keys():
+            self.num_remained_agent += space_agent_num[j]
+        return self.num_remained_agent
