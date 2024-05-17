@@ -105,6 +105,7 @@ def make_door(xy1, xy2, door_size): #xy1의 좌표~xy2의 좌표 사이 임의�
         for i in range(door_size):
             door.append((door_start+i, y1))
         return door
+
 def goal_average(xys): #좌표들의 평균 도출 
     middle_x = 0
     middle_y = 0
@@ -116,6 +117,7 @@ def goal_average(xys): #좌표들의 평균 도출
     return [middle_x, middle_y]
 
 def space_connected_linear(xy1, xy2): # 두 공간 사이에 겸치는 지점들의 중앙값을 return 
+    
     # ex) xy1, xy2는 [(int, int), (int, int)] 형태
     check_connection = [] #어느 점이 겹치는지 체크 
 
@@ -210,8 +212,6 @@ def space_connected_linear(xy1, xy2): # 두 공간 사이에 겸치는 지점들
 
     return [0, 0]
  
-    
-    
 def make_door2(xy1, xy2, door_size): #두 room 사이에 벽 뚫기 (문 만들기)
     x1 = 0
     y1 = 0
@@ -281,7 +281,6 @@ def make_door_to_outdoor(door_list, space_list):
             door_list = door_list + make_door([i[1][0], i[0][1]], i[1], 4)
         elif (i[1][1] == 90):
             door_list = door_list + make_door([i[0][0], i[1][1]], i[1], 4) 
-
 
 class FightingModel(Model):
     """A model with some number of agents."""
@@ -357,8 +356,6 @@ class FightingModel(Model):
         self.space_goal_dict = {} #각 space가 가지는 goal을 표현하기 위함
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
-
-        self.difficulty_dict = {}
 
         self.init_outside() #외곽지대 탈출로 구현 
         
@@ -520,6 +517,7 @@ class FightingModel(Model):
         print("init 다시 돌았지롱~")
         self.dict_NoC = {}
         self.difficulty_f()
+
     def make_exit(self):
         exit_rec = []
         only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
@@ -608,9 +606,6 @@ class FightingModel(Model):
         #exit_rec에는 탈출 점들의 좌표가 쌓임
         return exit_rec
 
-
-
-
     def check_bridge(self, space1, space2):
         visited = {}
         for i in self.space_graph.keys():
@@ -677,7 +672,7 @@ class FightingModel(Model):
     
     def way_to_exit(self):
         for i in self.space_graph[self.exit_compartment]: #exit_compartment : tuple, 출구 공간 좌표 #i 는 list
-            self.space_goal_dict[tuple(map(tuple, i))] = [goal_extend(tuple(map(tuple, i)), space_connected_linear(i, list(map(list, i))))]
+            self.space_goal_dict[tuple(map(tuple, i))] = [goal_extend(tuple(map(tuple, i)), space_connected_linear(i, list(map(list, self.exit_compartment))))]
 
     def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
         inner_space = []
@@ -733,8 +728,6 @@ class FightingModel(Model):
 
         return [x, y]
 
-    
-    
     def random_agent_distribute_outdoor(self, agent_num):
         case = random.randint(1,2) 
         # case1 -> 방에 사람이 있는 경우
@@ -764,8 +757,6 @@ class FightingModel(Model):
 
         for j in range(len(only_space)):
             self.agent_place(only_space[j][0], only_space[j][1], random_list[j])
-
-
 
     def random_hazard_placement(self, hazard_num):
         min_size = 4
@@ -1041,8 +1032,6 @@ class FightingModel(Model):
                     first_up_goal[1] = (up_goal[1]/up_goal_num)
                     self.space_goal_dict[((space[0][0],space[0][1]), (space[1][0], space[1][1]))].append(goal_extend(((space[0][0],space[0][1]), (space[1][0], space[1][1])), first_up_goal))
 
-
-
     def make_door_between_room(self):
         for i in self.room_list: #방과 방 사이에 문 만들기
             left_down = i[0]
@@ -1250,7 +1239,6 @@ class FightingModel(Model):
         # if(which_wall !=0 and which_wall != 1 and which_wall != 2 and which_wall !=3)
         #     for x in range(r[0][0]+1, r[1][0]):
         #     check_door[x][r[1][1]] = 1 #up
-
         
     def space_connect_via_door(self):
         check_door = []
@@ -1604,7 +1592,6 @@ class FightingModel(Model):
         """Advance the model by one step."""
         global started
         if(started):
-            #self.difficulty_f()
             started = 0
     
         self.schedule.step()
@@ -1618,7 +1605,6 @@ class FightingModel(Model):
             
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
-
 
         for key, val in self.space_graph.items():
             if len(val) != 0 : #닫힌 공간 제외 val 0으로 초기화
@@ -1635,7 +1621,6 @@ class FightingModel(Model):
                 p_list = [key]
                 self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
                 self.dict_NoC[key] = number_of_cases
-        self.difficulty_dict = self.dict_NoC
         
 
     def space_specification(self):
@@ -1673,29 +1658,31 @@ class FightingModel(Model):
 
         return new_space_list2
     
-    def reward_distance_difficulty(self):
-        s_distance = 0
+    def reward_distance_difficulty(self): # 모든 agent 각각의 거리 총합, 난이도 총합 고려 reward 산출
+        s_distance = 0 # 거리합
         for i in self.agents:
             if(i.dead == False and (i.type == 0 or i.type == 1)):
                 agent_space = self.grid_to_space[int(round(i.xy[0]))][int(round(i.xy[1]))]
-                next_goal = space_connected_linear(tuple(map(tuple, agent_space)), self.floyd_warshall()[0][tuple(map(tuple, agent_space))][self.exit_compartment]) ##### 여기 ~~!!! 에러 남 . . list 와 튜플 어딘가...
+                next_goal = space_connected_linear(tuple(map(tuple, agent_space)), self.floyd_warshall()[0][tuple(map(tuple, agent_space))][self.exit_compartment])
                 agent_space_x_center = (agent_space[0][0] + agent_space[1][0])/2
                 agent_space_y_center = (agent_space[1][0] + agent_space[1][1])/2
-                a = (self.floyd_distance[tuple(map(tuple, agent_space))][self.exit_compartment] 
-                - math.sqrt(pow(agent_space_x_center-next_goal[0],2) + pow(agent_space_y_center-next_goal[1],2)) 
-                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2)))
+                a = (self.floyd_distance[tuple(map(tuple, agent_space))][self.exit_compartment] #agent가 있는 공간-출구 공간 까지의 거리
+                - math.sqrt(pow(agent_space_x_center-next_goal[0],2) + pow(agent_space_y_center-next_goal[1],2)) #-(agent 공간 외부점..- agent 공간 중심점)
+                + math.sqrt(pow(next_goal[0]-i.xy[0],2) + pow(next_goal[1]-i.xy[1],2))) #+(agent공간 외부점-agent 위치)
                 
                 s_distance += a
 
         s_difficulty = 0
         for i in self.agents:
             if(i.dead == False and (i.type == 0 or i.type == 1)):
-                agent_space = self.grid_to_space[int(round(i.xy[0]))][int(round(i.xy[1]))]
-                s_difficulty += self.difficulty_dict[tuple(map(tuple, agent_space))]
+                agent_space = self.grid_to_space[int(round(i.xy[0]))][int(round(i.xy[1]))] # 각 agent 가 있는 공간
+                if self.dict_NoC[tuple(map(tuple, agent_space))] != -1:
+                    s_difficulty += self.dict_NoC[tuple(map(tuple, agent_space))] #그 공간의 난이도 합산
 
         a = 1
         b = 1
-        print("reward_distance_difficulty = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")
+        
+        print("reward_distance_difficulty (", a*s_distance + b*s_difficulty, ") = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")
         return a*s_distance + b*s_difficulty
 
     @staticmethod
@@ -1722,5 +1709,3 @@ class FightingModel(Model):
             (Integer): Number of Agents.
         """
         return sum([1 for agent in model.schedule.agents if agent.health == 0])
-
-    

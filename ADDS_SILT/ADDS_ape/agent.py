@@ -47,95 +47,6 @@ def Multiple_linear_regresssion(distance_ratio, remained_ratio, now_affected_age
         return v
 
 
-def space_connected_linear(xy1, xy2):
-    check_connection = []
-    for i1 in range(51):
-        tmp = []
-        for j1 in range(51):
-            tmp.append(0)
-        check_connection.append(tmp)
-    
-    for y in range(xy1[0][1]+1, xy1[1][1]):
-        check_connection[xy1[0][0]][y] = 1 #left 
-    for y in range(xy1[0][1]+1, xy1[1][1]):
-        check_connection[xy1[1][0]][y] = 1 #right
-    for x in range(xy1[0][0]+1, xy1[1][0]):
-        check_connection[x][xy1[0][1]] = 1 #down
-    for x in range(xy1[0][0]+1, xy1[1][0]):
-        check_connection[x][xy1[1][1]] = 1 #up
-
-
-    check_connection2 = copy.deepcopy(check_connection)
-    checking = 0
-
-    left_goal = [0, 0]
-    left_goal_num = 0
-
-    right_goal = [0, 0]
-    right_goal_num = 0
-
-    down_goal = [0, 0]
-    down_goal_num = 0
-
-    up_goal = [0, 0]
-    up_goal_num = 0
-    for y2 in range(xy2[0][1]+1, xy2[1][1]):
-        check_connection2[xy2[0][0]][y2] += 1 #left 
-        if(check_connection2[xy2[0][0]][y2] == 2): #space와 space2는 접한다 
-            left_goal[0] += xy2[0][0]
-            left_goal[1] += y2
-            left_goal_num = left_goal_num + 1
-            checking = 1 #이을거다~ (space와 space2를 )
-    for y3 in range(xy2[0][1]+1, xy2[1][1]):
-        check_connection2[xy2[1][0]][y3] += 1 #right
-        if(check_connection2[xy2[1][0]][y3] == 2):
-            right_goal[0] += xy2[1][0]
-            right_goal[1] += y3
-            right_goal_num = right_goal_num + 1
-            checking = 1
-    for x2 in range(xy2[0][0]+1, xy2[1][0]):
-        check_connection2[x2][xy2[0][1]] += 1 #down
-        if(check_connection2[x2][xy2[0][1]] == 2):
-            down_goal[0] += x2
-            down_goal[1] += xy2[0][1]
-            down_goal_num = down_goal_num + 1
-            checking = 1
-    for x3 in range(xy2[0][0]+1, xy2[1][0]):
-        check_connection2[x3][xy2[1][1]] += 1 #up
-        if(check_connection2[x3][xy2[1][1]] == 2):
-            up_goal[0] += x3
-            up_goal[1] += xy2[1][1]
-            up_goal_num = up_goal_num + 1
-            checking = 1
-
-    if(left_goal[0] != 0 and left_goal[1] != 0):
-        first_left_goal = [0, 0]
-        first_left_goal[0] = (left_goal[0]/left_goal_num)
-        first_left_goal[1] = (left_goal[1]/left_goal_num)
-        return first_left_goal
-        
-    elif(right_goal[0] != 0 and right_goal[1] != 0):
-        first_right_goal = [0, 0]
-        first_right_goal[0] = (right_goal[0]/right_goal_num)
-        first_right_goal[1] = (right_goal[1]/right_goal_num)
-        return first_right_goal
-    
-    elif(down_goal[0] != 0 and down_goal[1] != 0):
-        first_down_goal = [0, 0]
-        first_down_goal[0] = (down_goal[0]/down_goal_num)
-        first_down_goal[1] = (down_goal[1]/down_goal_num)
-        return first_down_goal
- 
-
-    elif(up_goal[0] != 0 and up_goal[1] != 0):
-        first_up_goal = [0, 0]
-        first_up_goal[0] = (up_goal[0]/up_goal_num)
-        first_up_goal[1] = (up_goal[1]/up_goal_num)
-        return first_up_goal
-
-
-goal_list = [[(71, 52)], [(89, 52)]]
-
 def central_of_goal(goals):
     real_goal = [0, 0]
     for i in goals:
@@ -406,9 +317,9 @@ class FightingAgent(Agent):
 
         if (self.type == 3):
             self.robot_step += 1
-            print(self.model.difficulty_dict)
+            print(self.model.dict_NoC)
             robot_space_tuple = tuple(map(tuple, self.robot_space))
-            if(self.model.difficulty_dict[robot_space_tuple]==1):
+            if(self.model.dict_NoC[robot_space_tuple]==1):
                 new_position = self.model.robot_respawn()
             new_position = self.robot_policy_Q()
 
@@ -449,6 +360,7 @@ class FightingAgent(Agent):
     def robot_policy2(self):
         time_step = 0.2
         from model import Model
+        from model import space_connected_linear
         global random_disperse
         global robot_status
         global robot_xy 
@@ -1040,6 +952,7 @@ class FightingAgent(Agent):
 
 
     def F1_distance(self, state, action, mode):
+        from model import space_connected_linear
         global robot_xy
         global one_foot
 
@@ -1124,6 +1037,7 @@ class FightingAgent(Agent):
 
 
     def reward_distance(self, state, action, mode):
+        from model import space_connected_linear
         global SumList
         SumOfDistances = 0 ##agent 하나로부터 출구까지의 거리의 합
         floyd_distance = self.model.floyd_distance
@@ -1276,6 +1190,7 @@ class FightingAgent(Agent):
 
 
     def four_direction_compartment(self):
+        from model import space_connected_linear
         #from model import Model 
         global robot_xy 
         global one_foot
@@ -1379,7 +1294,7 @@ class FightingAgent(Agent):
         a = []
         for val in compartment_direction[action]: # action을 했을 때 가까워지는 구역
             if val != list(map(list, self.model.exit_compartment)): #출구 포함되어 있으면 제외
-                a.append(self.model.difficulty_dict[tuple(map(tuple, val))])
+                a.append(self.model.dict_NoC[tuple(map(tuple, val))])
         if len(a) != 0 :
             return np.mean(a)
         else:
