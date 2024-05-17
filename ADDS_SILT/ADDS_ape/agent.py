@@ -1,5 +1,6 @@
 #this source code requires Mesa==2.2.1 
-#^__^
+#^__^ 
+#야호 야호 
 from mesa import Agent
 import math
 import numpy as np
