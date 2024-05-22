@@ -174,7 +174,7 @@ class FightingAgent(Agent):
         return f"{self.unique_id} -> {self.health}"
 
     def step(self) -> None:
-        print("model A: ", robot_xy)
+        #print("model A: ", robot_xy)
         global exit_area
         global goal_list
 
@@ -658,6 +658,7 @@ class FightingAgent(Agent):
             
         #self.robot_guide = 0
         robot_goal = [robot_xy[0]+goal_x, robot_xy[1]+goal_y]
+        self.robot_xy = robot_xy
         return (next_x, next_y)
 
     def agents_in_each_space(self):

@@ -288,6 +288,7 @@ class FightingModel(Model):
     """A model with some number of agents."""
 
     def __init__(self, number_agents: int, width: int, height: int):
+        self.robot = None 
         self.simulation_type = 0 #0->outdoor, #1->indoor
         self.room_list = [] # ex) [((1, 2), (3,4)), ((4,5), (5,6))]
         self.map_divide =  [[[0,0], [0,0]]*10 for _ in range(10)]
@@ -695,12 +696,12 @@ class FightingModel(Model):
         y = random.randint(xy[0][1]+1, xy[1][1]-1)
 
 
-        a = FightingAgent(self.agent_id, self, [x,y], 3)
+        self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
         self.agent_id = self.agent_id + 1
-        self.schedule.add(a)
-        self.grid.place_agent(a, (x, y))
-        #self.agents.append(a)
-
+        self.schedule.add(self.robot)
+        self.grid.place_agent(self.robot, (x, y))
+        
+        
     def robot_respawn(self):
         inner_space = []
         for i in self.outdoor_space:
@@ -746,7 +747,6 @@ class FightingModel(Model):
         # 총합이 agent num이 되도록 할당
         for i in range(space_num - 1):
             #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
-            print("왜안돼",space_agent - sum(random_list) - (space_num - i - 1))
             random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
             random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
             ran += (ran*ran-int(12343/34)+3435*ran%(23))
@@ -777,10 +777,7 @@ class FightingModel(Model):
         # 총합이 agent num이 되도록 할당
         for i in range(space_num - 1):
             #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
-            print("왜안돼",space_agent - sum(random_list) - (space_num - i - 1))
-            print("ran",ran)
             random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
-            print("random_num",random_num)
 
                 #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
             random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
@@ -1672,13 +1669,14 @@ class FightingModel(Model):
     
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-    
+        # if(self.robot != None):
+        #     print(self.robot.robot_xy)
         
     
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-        print("num_remained_Agent",self.num_remained_agents())
+        self.num_remained_agents()
 
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
@@ -1760,15 +1758,11 @@ class FightingModel(Model):
         a = 1
         b = 1
         
-        print("reward_distance_difficulty (", a*s_distance + b*s_difficulty, ") = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")
+        #print("reward_distance_difficulty (", a*s_distance + b*s_difficulty, ") = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")
         return a*s_distance + b*s_difficulty
     
     def return_robot(self):
-        for i in self.agents:
-            print("robot type : ", i.type)
-            if(i.type == 3):
-                return i
-        print("robot이 없는디")
+        return self.robot
 
 
     @staticmethod
