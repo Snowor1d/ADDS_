@@ -510,6 +510,8 @@ class FightingModel(Model):
         # self.random_agent_distribute_outdoor(10)
         # self.make_robot()
 
+        
+
     def make_robot(self):
         self.robot_placement() #로봇 배치 
     def make_agents(self):
@@ -700,8 +702,7 @@ class FightingModel(Model):
         self.agent_id = self.agent_id + 1
         self.schedule.add(self.robot)
         self.grid.place_agent(self.robot, (x, y))
-        
-        
+
     def robot_respawn(self):
         inner_space = []
         for i in self.outdoor_space:

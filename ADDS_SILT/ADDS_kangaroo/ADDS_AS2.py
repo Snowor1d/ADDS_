@@ -59,7 +59,9 @@ for j in range(run_iteration):
             "100%": 0
         }
         start_time = time.time()
+        weight_update_flag = 0
         for i in range(n): # 에피소드 n번 돌린다
+            
             s_model.step()
             print('num_remained_agent',s_model.num_remained_agent)
         # robot 없는 모델의 agent 수 저장
@@ -82,16 +84,19 @@ for j in range(run_iteration):
                     with open("norobot.txt", "a") as f:
                         f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
+                    file2 = open("weight.txt", 'w')
+                    new_lines = [str(s_model_r.return_robot().w1) + '\n', str(s_model_r.return_robot().w2) + '\n', str(s_model_r.return_robot().w3) + '\n', str(s_model_r.return_robot().w4) + '\n', str(s_model_r.return_robot().w5) + '\n', str(s_model_r.return_robot().w6) + '\n']
+                    file2.writelines(new_lines)
+                    file2.close()
                 break
-            else:
-                s_model.num_remained_agent = 0 # 초기화
+            
+                
         #-----------------------------------------------------------------------------------------------------------------------
 
 
             s_model_r.step()
 
-            reward = s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty()
-            (s_model_r.return_robot()).update_weight(reward)
+            
             print('num_remained_agent_r',s_model_r.num_remained_agent)
         # robot 있는 모델의 agent 수 저장
         #-----------------------------------------------------------------------------------------------------------------------
@@ -113,15 +118,29 @@ for j in range(run_iteration):
                     with open("robot.txt", "a") as f:
                         f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
+                    file2 = open("weight.txt", 'w')
+                    new_lines = [str(s_model_r.return_robot().w1) + '\n', str(s_model_r.return_robot().w2) + '\n', str(s_model_r.return_robot().w3) + '\n', str(s_model_r.return_robot().w4) + '\n', str(s_model_r.return_robot().w5) + '\n', str(s_model_r.return_robot().w6) + '\n']
+                    file2.writelines(new_lines)
+                    file2.close()
                 break
-            else:
-                s_model_r.num_remained_agent = 0 # 초기화
-
-            
+          
+             
             print('에피소드 수',i+1)
             
-            #print('남은 agent 수', num_remained_agent)
+            if i % 10 == 0:
+                reward = s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty()
+                (s_model_r.return_robot()).update_weight(reward)
 
+            if i == 500 :
+                print("txt 저장 들어옴")
+                file2 = open("weight.txt", 'w')
+                new_lines = [str(s_model_r.return_robot().w1) + '\n', str(s_model_r.return_robot().w2) + '\n', str(s_model_r.return_robot().w3) + '\n', str(s_model_r.return_robot().w4) + '\n', str(s_model_r.return_robot().w5) + '\n', str(s_model_r.return_robot().w6) + '\n']
+                file2.writelines(new_lines)
+                file2.close()
+            
+            s_model.num_remained_agent = 0 # 초기화
+            s_model_r.num_remained_agent = 0 # 초기화
+            
         end_time = time.time()
         execution_time = end_time - start_time
         print("코드 실행 시간:", execution_time, "초")
@@ -166,7 +185,6 @@ for j in range(run_iteration):
         s_model_r.make_agents()
         s_model_r.random_agent_distribute_outdoor(10,ran_num)
         
-
         
 
         ## grid size
@@ -310,6 +328,9 @@ for j in range(run_iteration):
             8522,
             s_model_r
         )
+
+        
+
         server.port = 8521  # The default
         server2.port = 8522
         
@@ -318,9 +339,7 @@ for j in range(run_iteration):
         else:
             server2.launch()
         
-
-    
-
+        
 
 
 

@@ -5,6 +5,7 @@ import math
 import numpy as np
 import random
 import copy
+
 num_remained_agent = 0
 NUMBER_OF_CELLS = 50 
 
@@ -158,8 +159,8 @@ class FightingAgent(Agent):
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
         self.w4 = float(lines[3].strip())
-        self.w5 = float(lines[2].strip())
-        self.w6 = float(lines[3].strip()) 
+        self.w5 = float(lines[4].strip())
+        self.w6 = float(lines[5].strip()) 
 
         self.feature_weights_guide = [self.w1, self.w2, self.w3]
         self.feature_weights_not_guide = [self.w4, self.w5, self.w6]
@@ -313,6 +314,7 @@ class FightingAgent(Agent):
 
     def move(self) -> None:
         global goal_list
+        global num_remained_agent
         """Handles the movement behavior.
         Here the agent decides   if it moves,
         drinks the heal potion,
@@ -345,12 +347,12 @@ class FightingAgent(Agent):
             # self.model.step() 
 
             # from ADDS_AS import n
-            if self.robot_step == 500 or num_remained_agent == 0:
+            # if self.robot_step == 500 or num_remained_agent == 0:
             # if num_remained_agent == 0:
-                file2 = open("weight.txt", 'w')
-                new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
-                file2.writelines(new_lines)
-                file2.close()
+                # file2 = open("weight.txt", 'w')
+                # new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
+                # file2.writelines(new_lines)
+                # file2.close()
 
 
             self.model.grid.move_agent(self, new_position)
@@ -1439,6 +1441,7 @@ class FightingAgent(Agent):
         
         
         selected_action = self.now_action[1]
+    
         #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
         #print('select_Q :', self.now_action)
         if selected_action == "GUIDE":
