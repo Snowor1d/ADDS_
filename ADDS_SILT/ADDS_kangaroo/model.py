@@ -520,7 +520,6 @@ class FightingModel(Model):
         self.exit_rec = [list(t) for t in self.exit_rec]
         self.space = [list(t) for t in self.space]
 
-        print("model A 생성")
         for i in range(len(self.exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
             b = FightingAgent(i, self, [0,0], 10) ## exit_rec 채우는 agents의 type 10으로 설정;  agent_juna.set_agent_type_settings 에서 확인 ㄱㄴ
             self.schedule_e.add(b)
@@ -541,7 +540,6 @@ class FightingModel(Model):
             self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1 
 
     def make_agents2(self):
-        print("model B 생성")
         self.wall = [list(t) for t in self.wall]
         self.exit_rec = [list(t) for t in self.exit_rec]
         self.space = [list(t) for t in self.space]
@@ -1377,85 +1375,6 @@ class FightingModel(Model):
         self.hazard_recur(x, y-1, depth-1, x_range, y_range)
        
 
-    def map_recur_divider(self, xy, x_unit, y_unit, num, space_list, room_list, is_room): # ex) xy = [[2,3], [4,5]]
-        x_diff = xy[1][0] - xy[0][0]
-        y_diff = xy[1][1] - xy[0][1]
-
-        real_xy =  [ [xy[0][0]*x_unit, xy[0][1]*y_unit], [xy[1][0]*x_unit, xy[1][1]*y_unit]]
-        if(is_room==0):
-            space_list.append(real_xy)
-            return
-                   
-        if(x_diff<4 or y_diff<4):
-            space_list.append(real_xy)
-            room_list.append(real_xy)
-            return
-        
-            
-        if(num==1): 
-            a = random.randint(1,20)
-            if(a<4):
-                space_list.append(real_xy)
-                room_list.append(real_xy)
-                return 
-        elif(num==2):
-            a = random.randint(1,10)
-            if(a<12):
-                space_list.append(real_xy)
-                room_list.append(real_xy)
-                return
-        elif(num==3):
-            a = random.randint(1,10)
-            if(a<15):
-                space_list.append(real_xy)
-                room_list.append(real_xy)
-                return #여기에 걸리면 방 만들고 종료.
-        elif(num==4):
-            a = random.randint(1,10)
-            if(a<20):
-                space_list.append(real_xy)
-                room_list.append(real_xy)
-                return #여기에 걸리면 방 만들고 종료.
-            
-        divide_num_y = random.randint(1, y_diff-1)
-        divide_num_x = random.randint(1, x_diff-1)
-
-        random_exist_room1 = random.randint(0,1)
-        random_exist_room2 = random.randint(0,1)
-        random_exist_room3 = random.randint(0,1)
-        random_exist_room4 = random.randint(0,1)
-
-        if (random_exist_room1 == 0):
-            random_exist_room2 = 1
-        if (random_exist_room3 == 0):
-            random_exist_room4 = 1
-        
-
-        special_hallway = random.randint(1, 4)
-        if(special_hallway < 3 and num<2):
-            if (num%2==0): #가로로 나눈다
-                left = int(x_diff/2)
-                self.map_recur_divider([[xy[0][0], xy[0][1]], [xy[0][0]+left, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
-                self.map_recur_divider([[xy[0][0]+left, xy[0][1]], [xy[0][0]+left+1, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 0)
-                self.map_recur_divider([[xy[0][0]+left+1, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
-            else: #세로로 나눈다
-                up = int(y_diff/2)
-                self.map_recur_divider([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+up]], x_unit, y_unit, num+1, space_list, room_list, 1)
-                self.map_recur_divider([[xy[0][0], xy[0][1]+up], [xy[1][0], xy[0][1]+up+1]], x_unit, y_unit, num+1, space_list, room_list, 0)
-                self.map_recur_divider([[xy[0][0], xy[0][1]+up+1], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
-
-        else:
-            if(num<1):
-                random_exist_room1 = random_exist_room2 = random_exist_room3 = random_exist_room4 = 1
-            if (num%2==0): #가로로 나눈다
-                self.map_recur_divider([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1)
-                self.map_recur_divider([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2)
-        
-            else: #세로로 나눈다
-                self.map_recur_divider([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3)
-                self.map_recur_divider([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4) 
-    
-
     def map_recur_divider_fine(self, xy, x_unit, y_unit, num, space_list, room_list, is_room): # ex) xy = [[2,3], [4,5]] # space 나누는 것. 나누고 방을 선택함
         x_diff = xy[1][0] - xy[0][0] # a점의 튜플은 (xy[0][0],xy[0][1])  b점의 튜플은 (xy[1][0],xy[1][1]) 
         y_diff = xy[1][1] - xy[0][1]
@@ -1485,13 +1404,13 @@ class FightingModel(Model):
                 return
         elif(num==3):
             a = random.randint(1,20)
-            if(a<4):
+            if(a<5):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.
         elif(num==4):
             a = random.randint(1,20)
-            if(a<10):
+            if(a<8):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.
@@ -1519,7 +1438,8 @@ class FightingModel(Model):
         if(num<3):
             if (num%2==0): #가로로 나눈다
                 left = int(x_diff*random.randint(1,3)/4)
-                hallway_size = random.randint(1,2)
+                #hallway_size = random.randint(1,2)
+                hallway_size = 1
                 if(xy[0][0]+left+hallway_size >= (xy[1][0]-2)):
                     self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                     return
@@ -1531,6 +1451,7 @@ class FightingModel(Model):
             else: #세로로 나눈다
                 up = int(y_diff*random.randint(1,3)/4)
                 hallway_size = random.randint(1,2)
+                hallway_size = 1
                 if(xy[0][1]+up+hallway_size >= (xy[1][1]-2)):
                     self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                     return

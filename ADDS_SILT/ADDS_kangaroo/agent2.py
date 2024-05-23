@@ -177,7 +177,6 @@ class FightingAgent2(Agent):
     def step(self) -> None:
         global exit_area
         global goal_list
-        print("model B : ", robot_xy)
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
@@ -330,7 +329,6 @@ class FightingAgent2(Agent):
 
             self.model.reward_distance_difficulty()
             
-            print("Model B에 robot이 있다")
             
             #new_position = self.model.robot_respawn()
             reward = self.reward_distance(robot_xy, "none", "none")

@@ -123,6 +123,8 @@ class FightingAgent(Agent):
         self.which_goal = 0
         self.previous_stage = []
         self.now_goal = [0,0]
+        self.robot_previous_xy = [0, 0]
+        self.robot_previous_goal = [0, 0]
         
         #self.robot_xy = [2,2]
         #self.robot_status = 0
@@ -144,6 +146,8 @@ class FightingAgent(Agent):
         self.save_point = 0
         self.robot_now_path = []
         self.robot_waypoint_index = 0
+    
+        self.previous_type = 0
 
         self.go_path_num= 0
         self.back_path_num = 0
@@ -251,8 +255,26 @@ class FightingAgent(Agent):
             self.goal_init = 1
             self.previous_stage = now_stage
         now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
-        if(self.previous_stage != self.check_stage_agent()):
-            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]] 
+        if(self.previous_stage != self.check_stage_agent() or self.previous_type != self.type):
+            if(self.previous_type!= self.type): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+                goal_candiate = self.model.space_goal_dict[now_stage]
+                min_d = 10000
+                min_i  = goal_candiate[0]
+                for i in goal_candiate : 
+                    goal_to_robot = math.sqrt(pow(self.robot_previous_goal[0]-i[0], 2)+pow(self.robot_previous_goal[1]-i[1], 2))
+                    if (goal_to_robot < min_d):
+                        min_d = goal_to_robot 
+                        min_i = i 
+                self.now_goal = i
+                self.previous_stage = now_stage 
+                self.previous_goal = self.now_goal
+                self.previous_type = self.type
+                return
+                    
+
+
+            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]]
+
             goal_candiate2 = []
             if(len(goal_candiate)>1):
                 min_d = 1000
@@ -281,6 +303,7 @@ class FightingAgent(Agent):
                 self.now_goal = goal_candiate[goal_index]
                 self.previous_stage = now_stage
             self.previous_goal = self.now_goal
+        self.previous_type = self.type 
 
             
 
@@ -321,12 +344,17 @@ class FightingAgent(Agent):
         or attacks other agent."""
 
         cells_with_agents = []
-
+        global robot_xy
         if (self.type == 3):
             self.robot_step += 1
             robot_space_tuple = tuple(map(tuple, self.robot_space))
-            if(self.model.dict_NoC[robot_space_tuple]==1):
+            robot_level = self.model.dict_NoC[robot_space_tuple]
+            if(robot_level<2):
                 new_position = self.model.robot_respawn()
+                robot_xy = new_position 
+            else :
+                self.robot_previous_xy = robot_xy
+            
             new_position = self.robot_policy_Q()
 
             self.model.reward_distance_difficulty()
@@ -538,6 +566,7 @@ class FightingAgent(Agent):
         global past_target
         self.drag = 1
         robot_status = 1
+        self.robot_previous_goal = robot_goal
         space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
         floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
         floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
@@ -575,9 +604,9 @@ class FightingAgent(Agent):
         desired_speed = 1.5
 
         if(self.drag == 0):
-            desired_speed = 4
+            desired_speed = 7
         else:
-            desired_speed = 4
+            desired_speed = 7
 
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -831,7 +860,10 @@ class FightingAgent(Agent):
         robot_x = robot_xy[0] - self.xy[0]
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
-        if(robot_d<robot_radius and robot_status == 1):
+        agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
+        now_level = self.model.dict_NoC[(tuple(map(tuple, agent_space)))]
+        #print("agent now level : ", now_level)
+        if(robot_d<robot_radius and robot_status == 1 and now_level>1):
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
@@ -847,7 +879,6 @@ class FightingAgent(Agent):
         else :
           desired_force = [0, 0]
         
-
         F_x += desired_force[0]
         F_y += desired_force[1]
         
@@ -1002,19 +1033,20 @@ class FightingAgent(Agent):
             next_robot_position[0] += one_foot
 
         result = floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
-        
-        if (result<10): 
-            return 0.1
-        if (result<30):
-            return 0.2
-        if (result<50):
-            return 0.3
-        if (result<70):
-            return 0.4
-        if (result<100):
-            return 0.5
-        else :
-            return 0.6
+        result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
+        return result * 0.01
+        # if (result<10): 
+        #     return 0.1
+        # if (result<30):
+        #     return 0.2
+        # if (result<50):
+        #     return 0.3
+        # if (result<70):
+        #     return 0.4
+        # if (result<100):
+        #     return 0.5
+        # else :
+        #     return 0.6
     
     def F2_near_agents(self, state, action, mode):
         global one_foot
@@ -1035,7 +1067,7 @@ class FightingAgent(Agent):
             robot_xyP[0] -= one_foot
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
 
-        return NumberOfAgents * 0.1
+        return NumberOfAgents * 0.01
 
 
     def reward_distance(self, state, action, mode):
@@ -1281,7 +1313,7 @@ class FightingAgent(Agent):
         for i in compartment_direction[action]:
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key]
-        return sum * 0.1
+        return sum * 0.01
     
     def F4_difficulty_avg(self, state, action, mode, compartment_direction): # 가까워지는(action 했을 때) 구역의 난이도 평균 return
         ## 가까워지는 구역이 없으면 return 0, 가까워지는 구역에 출구가 포함되어 있으면 출구 제외 난이도 평균 (출구는 난이도 -1)
