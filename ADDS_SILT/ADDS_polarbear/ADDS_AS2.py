@@ -24,132 +24,153 @@ visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 for j in range(run_iteration):
-    try:
-        print(f"{j} 번째 학습 ")
-        if visualization_mode == 'off':
-            s_model = model.FightingModel(5,50,50)
-            s_model_r = copy.deepcopy(s_model)     
-            
+
+    print(f"{j} 번째 학습 ")
+    if visualization_mode == 'off':
+        s_model = model.FightingModel(5,50,50)
+        s_model_r = copy.deepcopy(s_model)     
+        
+        ran_num = random.randint(10000,20000)
+        s_model.make_agents2()
+        s_model.random_agent_distribute_outdoor2(10,ran_num)
+        
+        s_model_r.make_robot()
+        s_model_r.make_agents()
+        s_model_r.random_agent_distribute_outdoor(10,ran_num)
+
+        if(run_iteration>0):
+            del s_model
+            del s_model_r
             ran_num = random.randint(10000,20000)
-            s_model.make_agents2()
-            s_model.random_agent_distribute_outdoor2(10,ran_num)
-            
+            s_model = model.FightingModel(5,50,50)
+            s_model_r = copy.deepcopy(s_model)
             s_model_r.make_robot()
             s_model_r.make_agents()
+            s_model.make_agents2()
             s_model_r.random_agent_distribute_outdoor(10,ran_num)
+            s_model.random_agent_distribute_outdoor2(10,ran_num)
 
-            if(run_iteration>0):
-                del s_model
-                del s_model_r
-                ran_num = random.randint(10000,20000)
-                s_model = model.FightingModel(5,50,50)
-                s_model_r = copy.deepcopy(s_model)
-                s_model_r.make_robot()
-                s_model_r.make_agents()
-                s_model.make_agents2()
-                s_model_r.random_agent_distribute_outdoor(10,ran_num)
-                s_model.random_agent_distribute_outdoor2(10,ran_num)
-
-            n = 500  # n을 반복하려는 횟수로 설정
-            #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
+        n = 500  # n을 반복하려는 횟수로 설정
+        #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
 
 
-            num_escaped_episodes = {
-                "50%": 0,
-                "80%": 0,
-                "100%": 0
-            }
-            start_time = time.time()
-            weight_update_flag = 0
-            for i in range(n): # 에피소드 n번 돌린다
-                
-                s_model.step()
-                print('num_remained_agent',s_model.num_remained_agent)
-            # robot 없는 모델의 agent 수 저장
-            #-----------------------------------------------------------------------------------------------------------------------
-                if i == 0: # 처음 생성된 agent 수 저장
-                    num_assigned_agent = s_model.num_remained_agent
+        num_escaped_episodes = {
+            "50%": 0,
+            "80%": 0,
+            "100%": 0
+        }
+        start_time = time.time()
+        weight_update_flag = 0
+        for i in range(n): # 에피소드 n번 돌린다
+            
+            s_model.step()
+            print('num_remained_agent',s_model.num_remained_agent)
+        # robot 없는 모델의 agent 수 저장
+        #-----------------------------------------------------------------------------------------------------------------------
+            if i == 0: # 처음 생성된 agent 수 저장
+                num_assigned_agent = s_model.num_remained_agent
 
-                if s_model.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
-                    if num_escaped_episodes["50%"] == 0:
-                        num_escaped_episodes["50%"] = i+1
+            if s_model.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["50%"] == 0:
+                    num_escaped_episodes["50%"] = i+1
 
-                if s_model.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
-                    if num_escaped_episodes["80%"] == 0:
-                        num_escaped_episodes["80%"] = i+1
-                
-                if s_model.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
-                    if num_escaped_episodes["100%"] == 0:
-                        num_escaped_episodes["100%"] = i+1
-                        print(num_escaped_episodes)
-                        with open("norobot.txt", "a") as f:
-                            f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+            if s_model.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["80%"] == 0:
+                    num_escaped_episodes["80%"] = i+1
+            
+            if s_model.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
+                if num_escaped_episodes["100%"] == 0:
+                    num_escaped_episodes["100%"] = i+1
+                    print(num_escaped_episodes)
+                    with open("norobot.txt", "a") as f:
+                        f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
-                        file2 = open("weight.txt", 'w')
+                    file2 = open("weight.txt", 'w')
+                    try : 
                         robot_agent = s_model_r.return_robot()
-                        if not (robot_agent == None):
-                            new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
-                            file2.writelines(new_lines)
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                    except :
                         file2.close()
-                    break
-                
-                    
-            #-----------------------------------------------------------------------------------------------------------------------
-
-
-                s_model_r.step()
-
-                
-                print('num_remained_agent_r',s_model_r.num_remained_agent)
-            # robot 있는 모델의 agent 수 저장
-            #-----------------------------------------------------------------------------------------------------------------------
-                if i == 0: # 처음 생성된 agent 수 저장
-                    num_assigned_agent = s_model_r.num_remained_agent
-
-                if s_model_r.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
-                    if num_escaped_episodes["50%"] == 0:
-                        num_escaped_episodes["50%"] = i+1
-
-                if s_model_r.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
-                    if num_escaped_episodes["80%"] == 0:
-                        num_escaped_episodes["80%"] = i+1
-                
-                if s_model_r.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
-                    if num_escaped_episodes["100%"] == 0:
-                        num_escaped_episodes["100%"] = i+1
-                        print(num_escaped_episodes)
-                        with open("robot.txt", "a") as f:
-                            f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
-
-                        file2 = open("weight.txt", 'w')
+                        continue
+                        
+                    if not (robot_agent == None):
                         new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
                         file2.writelines(new_lines)
-                        file2.close()
-                    break
+                    file2.close()
+                break
             
                 
-                print('에피소드 수',i+1)
-                
-                if i % 10 == 0:
-                    reward = s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty()
-                    
-                    (s_model_r.return_robot()).update_weight(reward)
+        #-----------------------------------------------------------------------------------------------------------------------
 
-                if i+1 == 500 :
-                    print("txt 저장 들어옴")
+
+            s_model_r.step()
+
+            
+            print('num_remained_agent_r',s_model_r.num_remained_agent)
+        # robot 있는 모델의 agent 수 저장
+        #-----------------------------------------------------------------------------------------------------------------------
+            if i == 0: # 처음 생성된 agent 수 저장
+                num_assigned_agent = s_model_r.num_remained_agent
+
+            if s_model_r.num_remained_agent <= int(num_assigned_agent*0.5): # 50% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["50%"] == 0:
+                    num_escaped_episodes["50%"] = i+1
+
+            if s_model_r.num_remained_agent <= int(num_assigned_agent*0.2): # 80% 이상 빠져나가면 그때 에피소드 수 저장
+                if num_escaped_episodes["80%"] == 0:
+                    num_escaped_episodes["80%"] = i+1
+            
+            if s_model_r.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
+
+                if num_escaped_episodes["100%"] == 0:
+                    num_escaped_episodes["100%"] = i+1
+                    print(num_escaped_episodes)
+                    with open("robot.txt", "a") as f:
+                        f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+
                     file2 = open("weight.txt", 'w')
+                    try : 
+                        robot_agent = s_model_r.return_robot()
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                    except :
+                        file2.close()
+                        continue
+                        
+                    if not (robot_agent == None):
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                        file2.writelines(new_lines)
+                    file2.close()
+                break
+        
+            
+            print('에피소드 수',i+1)
+            
+            if i % 10 == 0:
+                reward = s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty()
+                reward = reward / 10
+                (s_model_r.return_robot()).update_weight(reward)
+
+            if i+1 == 500 :
+                print("txt 저장 들어옴")
+                file2 = open("weight.txt", 'w')
+                try : 
+                    robot_agent = s_model_r.return_robot()
+                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                except :
+                    file2.close()
+                    continue
+                    
+                if not (robot_agent == None):
                     new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
                     file2.writelines(new_lines)
-                    file2.close()
-                
-                s_model.num_remained_agent = 0 # 초기화
-                s_model_r.num_remained_agent = 0 # 초기화
-                
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print("코드 실행 시간:", execution_time, "초")
-    except:
-        continue
+                file2.close()
+            
+            s_model.num_remained_agent = 0 # 초기화
+            s_model_r.num_remained_agent = 0 # 초기화
+            
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print("코드 실행 시간:", execution_time, "초")
 
 
 

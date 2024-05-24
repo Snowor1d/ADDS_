@@ -269,7 +269,6 @@ class FightingAgent(Agent):
         now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
         if(self.previous_stage != self.check_stage_agent() or self.previous_type != self.type):
             if(self.previous_type!= self.type): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
-                print("끊김!!")
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
@@ -278,7 +277,6 @@ class FightingAgent(Agent):
                     vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
-                        print("최소 각도 : " , degree)
                         min_d = degree
                         min_i = i
                 self.now_goal = i
@@ -362,6 +360,7 @@ class FightingAgent(Agent):
         cells_with_agents = []
         global robot_xy
         if (self.type == 3):
+            self.robot_previous_xy = robot_xy
             self.robot_step += 1
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             robot_level = self.model.dict_NoC[robot_space_tuple]
@@ -371,8 +370,6 @@ class FightingAgent(Agent):
                     new_position = self.model.robot_respawn()
                     robot_xy = new_position 
                     self.respawn_delay = 0
-            else :
-                self.robot_previous_xy = robot_xy
             
             new_position = self.robot_policy_Q()
 
