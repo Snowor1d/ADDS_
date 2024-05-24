@@ -274,7 +274,7 @@ class FightingAgent(Agent):
                 min_i  = goal_candiate[0]
                 vector1 = (self.robot_previous_xy[0]-self.xy[0], self.robot_previous_xy[1]-self.xy[1])
                 for i in goal_candiate :
-                    vector2 = (self.robot_previous_xy[0] - i[0], self.robot_previous_xy[0]-i[0])
+                    vector2 = (self.xy[0] - i[0], self.xy[0]-i[0])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
                         min_d = degree
