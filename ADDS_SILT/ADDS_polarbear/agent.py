@@ -269,14 +269,16 @@ class FightingAgent(Agent):
         now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
         if(self.previous_stage != self.check_stage_agent() or self.previous_type != self.type):
             if(self.previous_type!= self.type): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+                print("끊김!!")
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
                 vector1 = (self.robot_previous_xy[0]-self.xy[0], self.robot_previous_xy[1]-self.xy[1])
                 for i in goal_candiate :
-                    vector2 = (self.xy[0] - i[0], self.xy[0]-i[0])
+                    vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
+                        print("최소 각도 : " , degree)
                         min_d = degree
                         min_i = i
                 self.now_goal = i
@@ -1031,7 +1033,6 @@ class FightingAgent(Agent):
         
         if(exit!=0):
             next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
-            print("next goal",next_goal)
         else :
             next_goal = robot_xy
         now_space_x_center = (now_space[0][0] + now_space[1][0])/2
@@ -1515,12 +1516,12 @@ class FightingAgent(Agent):
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-            print("F1",f1)
-            print("F2",f2)
-            print("F3",f3)
-            print("reward",reward)
-            print("next_state_max_Q",next_state_max_Q)
-            print("present_state_Q",present_state_Q)
+            # print("F1",f1)
+            # print("F2",f2)
+            # print("F3",f3)
+            # print("reward",reward)
+            # print("next_state_max_Q",next_state_max_Q)
+            # print("present_state_Q",present_state_Q)
         if selected_action == "NOGUIDE":
             self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2

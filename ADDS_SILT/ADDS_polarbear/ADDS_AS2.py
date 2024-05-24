@@ -20,7 +20,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 for j in range(run_iteration):
@@ -82,7 +82,7 @@ for j in range(run_iteration):
                     num_escaped_episodes["100%"] = i+1
                     print(num_escaped_episodes)
                     with open("norobot.txt", "a") as f:
-                        f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+                        f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
                     file2 = open("weight.txt", 'w')
                     robot_agent = s_model_r.return_robot()
@@ -118,10 +118,10 @@ for j in range(run_iteration):
                     num_escaped_episodes["100%"] = i+1
                     print(num_escaped_episodes)
                     with open("robot.txt", "a") as f:
-                        f.write("{}, {}, {}\n".format(num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+                        f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
 
                     file2 = open("weight.txt", 'w')
-                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w0) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
                     file2.writelines(new_lines)
                     file2.close()
                 break
@@ -137,7 +137,7 @@ for j in range(run_iteration):
             if i+1 == 500 :
                 print("txt 저장 들어옴")
                 file2 = open("weight.txt", 'w')
-                new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w0) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
                 file2.writelines(new_lines)
                 file2.close()
             
