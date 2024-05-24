@@ -156,7 +156,9 @@ class FightingAgent(Agent):
         self.save_point = 0
         self.robot_now_path = []
         self.robot_waypoint_index = 0
-    
+
+        self.respawn_delay = 0
+
         self.previous_type = 0
 
         self.go_path_num= 0
@@ -172,11 +174,12 @@ class FightingAgent(Agent):
         self.w1 = float(lines[0].strip())
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
-        self.w4 = float(lines[3].strip())
-        self.w5 = float(lines[4].strip())
-        self.w6 = float(lines[5].strip()) 
+        self.w0 = float(lines[3].strip())
+        self.w4 = float(lines[4].strip())
+        self.w5 = float(lines[5].strip())
+        self.w6 = float(lines[6].strip()) 
 
-        self.feature_weights_guide = [self.w1, self.w2, self.w3]
+        self.feature_weights_guide = [self.w1, self.w2, self.w3, self.w0]
         self.feature_weights_not_guide = [self.w4, self.w5, self.w6]
 
 
@@ -271,7 +274,11 @@ class FightingAgent(Agent):
                 min_d = 10000
                 min_i  = goal_candiate[0]
                 vector1 = (self.robot_previous_xy[0]-self.xy[0], self.robot_previous_xy[1]-self.xy[1])
+<<<<<<< Updated upstream:ADDS_SILT/ADDS_kangaroo/agent.py
                 for i in goal_candiate :
+=======
+                for i in goal_candiate : 
+>>>>>>> Stashed changes:ADDS_SILT/ADDS_ganggaroo/agent.py
                     vector2 = (self.robot_previous_xy[0] - i[0], self.robot_previous_xy[0]-i[0])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
@@ -362,8 +369,11 @@ class FightingAgent(Agent):
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             robot_level = self.model.dict_NoC[robot_space_tuple]
             if(robot_level<2):
-                new_position = self.model.robot_respawn()
-                robot_xy = new_position 
+                self.respawn_delay += 1
+                if self.respawn_delay == 5:
+                    new_position = self.model.robot_respawn()
+                    robot_xy = new_position 
+                    self.respawn_delay = 0
             else :
                 self.robot_previous_xy = robot_xy
             
@@ -1026,6 +1036,7 @@ class FightingAgent(Agent):
         
         if(exit!=0):
             next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
+            print("next goal",next_goal)
         else :
             next_goal = robot_xy
         now_space_x_center = (now_space[0][0] + now_space[1][0])/2
@@ -1043,6 +1054,7 @@ class FightingAgent(Agent):
             next_robot_position[0] -= one_foot
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
+<<<<<<< Updated upstream:ADDS_SILT/ADDS_kangaroo/agent.py
         # now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
         # print(f"{action} 일때의 space : {now_space}")
         # next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
@@ -1056,6 +1068,15 @@ class FightingAgent(Agent):
             result -= 2
         #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
         #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
+=======
+        now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
+        next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
+        now_space_x_center = (now_space[0][0] + now_space[1][0])/2
+        now_space_y_center = (now_space[1][0] + now_space[1][1])/2
+
+        result = floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
+        
+>>>>>>> Stashed changes:ADDS_SILT/ADDS_ganggaroo/agent.py
         return result * 0.01
         # if (result<10): 
         #     return 0.1
@@ -1216,18 +1237,19 @@ class FightingAgent(Agent):
             f1 = self.F1_distance(state, action_list[j], "GUIDE")
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
-            f4 = self.F4_difficulty_avg(state, action_list[j], "GUIDE", direction_agents_num) ###f4 test
+            f0 = 0.1
             #print("\nf4 : ", f4, "action: ", action_list[j])
             #print(direction_agents_num)
             if True : # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2] + f0 * self.feature_weights_guide[3])
+                    
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
                 Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
-            exploration_rate = 0.1
+            exploration_rate = 0.2
             
             if random.random() <= exploration_rate:
                 #actions = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -1388,9 +1410,9 @@ class FightingAgent(Agent):
             f1 = self.F1_distance(state, action_list[j], "GUIDE")
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
-            
+            f0 = 0.1
 
-            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2] + f0 * self.feature_weights_guide[3])
             
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
@@ -1435,9 +1457,11 @@ class FightingAgent(Agent):
             f1 = self.F1_distance(state, action_list[j][0], action_list[j][1])
             f2 = self.F2_near_agents(state, action_list[j][0], action_list[j][1])
             f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
+            f0 = 0.1
             
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]+ f0 * self.feature_weights_guide[3])
+            
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
                 Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
@@ -1452,9 +1476,11 @@ class FightingAgent(Agent):
         f2 = self.F2_near_agents(state, action[0], action[1])
         direction_agents_num = self.four_direction_compartment()
         f3 = self.F3_direction_agents(state, action[0], action[1], direction_agents_num)
+        f0 = 0.1
         Q= 0
         if(action[1] == "GUIDE"):
-            Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
+            Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]+ f0 * self.feature_weights_guide[3]
+        
         else:
             Q = f1 * self.feature_weights_not_guide[0] + f2*self.feature_weights_not_guide[1] + f3*self.feature_weights_not_guide[2]
 
@@ -1491,7 +1517,7 @@ class FightingAgent(Agent):
         f1 = self.F1_distance(robot_xy, self.now_action[0], self.now_action[1])
         f2 = self.F2_near_agents(robot_xy, self.now_action[0], self.now_action[1])
         f3 = self.F3_direction_agents(robot_xy, self.now_action[0], self.now_action[1],direction_agents_num)
-        
+        f0 = 0.1
         
         
         selected_action = self.now_action[1]
@@ -1504,7 +1530,14 @@ class FightingAgent(Agent):
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-
+            self.w0 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f0
+            print("F1",f1)
+            print("F2",f2)
+            print("F3",f3)
+            print("F0",f0)
+            print("reward",reward)
+            print("next_state_max_Q",next_state_max_Q)
+            print("present_state_Q",present_state_Q)
         if selected_action == "NOGUIDE":
             self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w5 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
