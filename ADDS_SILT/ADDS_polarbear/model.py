@@ -22,7 +22,10 @@ max_specification = [20, 20]
 number_of_cases = 0 # 난이도 함수 ; 경우의 수
 started = 1
 
-def make_plane(xy1, xy2): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
+def make_plane(xy1: int, xy2: int): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
+    '''
+    xy1 =[x1, y1], xy2 =[x2, y2]
+    '''
     new_plane = []
     
     x1 = 0
