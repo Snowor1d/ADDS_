@@ -36,6 +36,16 @@ robot_ringing = 0
 robot_goal = [0, 0]
 past_target = ((0,0), (0,0))
 
+def calculate_degree(vector1, vector2):
+    dot_product = np.dot(vector1, vector2)
+    m1 = np.linalg.norm(vector1)
+    m2 = np.linalg.norm(vector2)
+    
+    cos_theta = dot_product / (m1 * m2)
+    angle_radians = np.arccos(cos_theta)
+    angle_degrees = np.degrees(angle_radians)
+    
+    return angle_degrees
 
 def Multiple_linear_regresssion(distance_ratio, remained_ratio, now_affected_agents_ratio, v_min, v_max):
     global theta_1, theta_2, theta_3
@@ -260,11 +270,13 @@ class FightingAgent(Agent):
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
-                for i in goal_candiate : 
-                    goal_to_robot = math.sqrt(pow(self.robot_previous_goal[0]-i[0], 2)+pow(self.robot_previous_goal[1]-i[1], 2))
-                    if (goal_to_robot < min_d):
-                        min_d = goal_to_robot 
-                        min_i = i 
+                vector1 = (self.robot_previous_xy[0]-self.xy[0], self.robot_previous_xy[1]-self.xy[1])
+                for i in goal_candiate :
+                    vector2 = (self.robot_previous_xy[0] - i[0], self.robot_previous_xy[0]-i[0])
+                    degree = calculate_degree(vector1, vector2)
+                    if(min_d > degree):
+                        min_d = degree
+                        min_i = i
                 self.now_goal = i
                 self.previous_stage = now_stage 
                 self.previous_goal = self.now_goal
@@ -1031,10 +1043,14 @@ class FightingAgent(Agent):
             next_robot_position[0] -= one_foot
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
+        now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
+        next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
+        now_space_x_center = (now_space[0][0] + now_space[1][0])/2
+        now_space_y_center = (now_space[1][0] + now_space[1][1])/2
 
         result = floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
-        result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
-        return result * 0.01
+        #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
+        return result * 0.03
         # if (result<10): 
         #     return 0.1
         # if (result<30):
