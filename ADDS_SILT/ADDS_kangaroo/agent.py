@@ -1044,6 +1044,7 @@ class FightingAgent(Agent):
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
         now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
+        print(f"{action} 일때의 space : {now_space}")
         next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
         now_space_x_center = (now_space[0][0] + now_space[1][0])/2
         now_space_y_center = (now_space[1][0] + now_space[1][1])/2
