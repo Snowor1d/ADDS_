@@ -1043,15 +1043,20 @@ class FightingAgent(Agent):
             next_robot_position[0] -= one_foot
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
-        now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
-        print(f"{action} 일때의 space : {now_space}")
-        next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
-        now_space_x_center = (now_space[0][0] + now_space[1][0])/2
-        now_space_y_center = (now_space[1][0] + now_space[1][1])/2
+        # now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
+        # print(f"{action} 일때의 space : {now_space}")
+        # next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
+        # now_space_x_center = (now_space[0][0] + now_space[1][0])/2
+        # now_space_y_center = (now_space[1][0] + now_space[1][1])/2
 
         result = floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
+        new_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
+        new_distance = floyd_distance[((new_space[0][0],new_space[0][1]), (new_space[1][0], new_space[1][1]))][exit]
+        if(new_distance< floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit]):
+            result -= 2
+        #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
         #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
-        return result * 0.03
+        return result * 0.01
         # if (result<10): 
         #     return 0.1
         # if (result<30):
