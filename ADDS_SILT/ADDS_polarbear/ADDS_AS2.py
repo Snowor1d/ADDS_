@@ -20,7 +20,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
+visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 500
 #-------------------------#
 for j in range(run_iteration):
@@ -147,7 +147,7 @@ for j in range(run_iteration):
             
             if i % 10 == 0:
                 reward = s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty()
-                reward = reward / 10
+                
                 (s_model_r.return_robot()).update_weight(reward)
 
             if i+1 == 500 :

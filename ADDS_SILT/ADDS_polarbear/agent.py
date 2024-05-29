@@ -279,7 +279,7 @@ class FightingAgent(Agent):
                     if(min_d > degree):
                         min_d = degree
                         min_i = i
-                self.now_goal = i
+                self.now_goal = min_i
                 self.previous_stage = now_stage 
                 self.previous_goal = self.now_goal
                 self.previous_type = self.type
@@ -366,7 +366,7 @@ class FightingAgent(Agent):
             robot_level = self.model.dict_NoC[robot_space_tuple]
             if(robot_level<2):
                 self.respawn_delay += 1
-                if self.respawn_delay == 5:
+                if self.respawn_delay == 15:
                     new_position = self.model.robot_respawn()
                     robot_xy = new_position 
                     self.respawn_delay = 0
@@ -1092,8 +1092,7 @@ class FightingAgent(Agent):
         elif action == "LEFT":
             robot_xyP[0] -= one_foot
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-
-        return NumberOfAgents * 0.01
+        return NumberOfAgents * 0.02
 
 
     def reward_distance(self, state, action, mode):
@@ -1219,13 +1218,13 @@ class FightingAgent(Agent):
         for j in range(len(action_list)):
             f1 = self.F1_distance(state, action_list[j], "GUIDE")
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
-            f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
+            #f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
             f0 = 0.1
             #print("\nf4 : ", f4, "action: ", action_list[j])
             #print(direction_agents_num)
             if True : # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
-                    
+                #Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1]   
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
                 Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
             
@@ -1395,8 +1394,8 @@ class FightingAgent(Agent):
             f3 = self.F3_direction_agents(state, action_list[j], "GUIDE", direction_agents_num)
             f0 = 0.1
 
-            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
-            
+            #Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1])
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
         return MAX_Q
@@ -1443,7 +1442,8 @@ class FightingAgent(Agent):
             f0 = 0.1
             
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                #Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 * self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2])
+                Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1])
             
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
                 Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
@@ -1462,8 +1462,8 @@ class FightingAgent(Agent):
         f0 = 0.1
         Q= 0
         if(action[1] == "GUIDE"):
-            Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
-        
+            #Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
+            Q = f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1]
         else:
             Q = f1 * self.feature_weights_not_guide[0] + f2*self.feature_weights_not_guide[1] + f3*self.feature_weights_not_guide[2]
 
@@ -1512,10 +1512,10 @@ class FightingAgent(Agent):
             #print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f1(", f1, ")")
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
-            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+            #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
             # print("F1",f1)
             # print("F2",f2)
-            # print("F3",f3)
+            #print("F3",f3)
             # print("reward",reward)
             # print("next_state_max_Q",next_state_max_Q)
             # print("present_state_Q",present_state_Q)
