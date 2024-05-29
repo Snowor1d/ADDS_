@@ -24,7 +24,7 @@ started = 1
 
 def make_plane(xy1: int, xy2: int): # 두 좌표를 받고, (이를 모서리로 하는 평면)을 구성하는 점들의 집합을 도출
     '''
-    xy1 =[x1, y1], xy2 =[x2, y2]
+    히히히 xy1 =[x1, y1], xy2 =[x2, y2]
     '''
     new_plane = []
     
@@ -1680,7 +1680,7 @@ class FightingModel(Model):
                 if self.dict_NoC[tuple(map(tuple, agent_space))] != -1:
                     s_difficulty += self.dict_NoC[tuple(map(tuple, agent_space))] #그 공간의 난이도 합산
 
-        a = 1
+        a = 0.1
         b = 1
         
         #print("reward_distance_difficulty (", a*s_distance + b*s_difficulty, ") = a(", a, ") * s_distance(", s_distance, ") + b(", b, ") * s_difficulty(", s_difficulty, ")\n")

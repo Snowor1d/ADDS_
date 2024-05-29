@@ -35,6 +35,7 @@ robot_status = 0
 robot_ringing = 0
 robot_goal = [0, 0]
 past_target = ((0,0), (0,0))
+robot_prev_xy = [0,0]
 
 def calculate_degree(vector1, vector2):
     dot_product = np.dot(vector1, vector2)
@@ -44,6 +45,7 @@ def calculate_degree(vector1, vector2):
     cos_theta = dot_product / (m1 * m2)
     angle_radians = np.arccos(cos_theta)
     angle_degrees = np.degrees(angle_radians)
+    print("계산된 각도 : ", angle_degrees)
     
     return angle_degrees
 
@@ -133,7 +135,7 @@ class FightingAgent(Agent):
         self.which_goal = 0
         self.previous_stage = []
         self.now_goal = [0,0]
-        self.robot_previous_xy = [0, 0]
+        global robot_prev_xy
         self.robot_previous_goal = [0, 0]
         
         #self.robot_xy = [2,2]
@@ -186,6 +188,7 @@ class FightingAgent(Agent):
         # self.xy[1] = self.random.randrange(self.model.grid.height)
         
         set_agent_type_settings(self, type)
+
 
     def __repr__(self) -> str:
         return f"{self.unique_id} -> {self.health}"
@@ -253,8 +256,94 @@ class FightingAgent(Agent):
             now_stage = ((0,0), (5, 45))
         return now_stage
 
+
+    def attackOrMove(self, cells_with_agents, possible_steps) -> None:
+        """Decides if the user is going to attack or just move.
+        Acts randomly.
+
+        Args:
+            cells_with_agents (list[FightingAgent]): The list of other agents nearby.
+            possible_steps (list[Coordinates]): The list of available cell where to go.
+        """
+        should_attack = self.random.randint(0, 1) ## 50% 확률로 attack
+        if should_attack:
+            self.attack(cells_with_agents)
+            return
+        new_position = self.random.choice(possible_steps) ## 다음 step에 이동할 위치 설정
+        self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+
+    def attack(self, cells_with_agents) -> None:
+        """Handles the attack of the agent.
+        Gets the list of cells with the agents the agent can attack.
+
+        Args:
+            cells_with_agents (list[FightingAgent]): The list of other agents nearby.
+        """
+        agentToAttack = self.random.choice(cells_with_agents) ## agent끼리 마주쳤을 때 맞을 애는 랜덤으로 고름
+        agentToAttack.attacked = True ## 맞은 애 attacked 됐다~ 
+        if agentToAttack.health <= 0: ## health 가 0보다 작으면 dead
+            agentToAttack.dead = True
+
+    def move(self) -> None:
+        global goal_list
+        global num_remained_agent
+        global robot_prev_xy
+        """Handles the movement behavior.
+        Here the agent decides   if it moves,
+        drinks the heal potion,
+        or attacks other agent."""
+
+        cells_with_agents = []
+        global robot_xy
+        if (self.type == 3):
+            robot_prev_xy[0] = robot_xy[0]
+            robot_prev_xy[1] = robot_xy[1]
+            self.robot_step += 1
+            robot_space_tuple = tuple(map(tuple, self.robot_space))
+            robot_level = self.model.dict_NoC[robot_space_tuple]
+            if(robot_level<2):
+                self.respawn_delay += 1
+                if self.respawn_delay == 5:
+                    new_position = self.model.robot_respawn()
+                    robot_xy = new_position 
+                    self.respawn_delay = 0
+            new_position = self.robot_policy_Q()
+
+            self.model.reward_distance_difficulty()
+            
+            #new_position = self.model.robot_respawn()
+            reward = self.reward_distance(robot_xy, "none", "none")
+            #print("reward : ", reward)
+            self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
+            #reward += self.reward_difficulty_space
+
+## 여기 아래에서 weight 변경하는 코드 넣어주세용
+            
+
+            #print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
+            ""
+            #self.update_weight(reward)
+
+            # self.model.step() 
+
+            # from ADDS_AS import n
+            # if self.robot_step == 500 or num_remained_agent == 0:
+            # if num_remained_agent == 0:
+                # file2 = open("weight.txt", 'w')
+                # new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
+                # file2.writelines(new_lines)
+                # file2.close()
+
+
+            self.model.grid.move_agent(self, new_position)
+            return
+        new_position = self.test_modeling()
+        if(self.type ==0 or self.type==1):
+            self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+
+
     def which_goal_agent_want(self):
-        
+        global robot_prev_xy
 
         if(self.goal_init == 0):
             now_stage = self.check_stage_agent()
@@ -272,14 +361,16 @@ class FightingAgent(Agent):
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
-                vector1 = (self.robot_previous_xy[0]-self.xy[0], self.robot_previous_xy[1]-self.xy[1])
+                print("agent 현재 위치 : \n", self.xy)
+                
+                vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
                 for i in goal_candiate :
                     vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
                         min_d = degree
                         min_i = i
-                self.now_goal = i
+                self.now_goal = min_i
                 self.previous_stage = now_stage 
                 self.previous_goal = self.now_goal
                 self.previous_type = self.type
@@ -321,90 +412,6 @@ class FightingAgent(Agent):
 
             
 
-
-    def attackOrMove(self, cells_with_agents, possible_steps) -> None:
-        """Decides if the user is going to attack or just move.
-        Acts randomly.
-
-        Args:
-            cells_with_agents (list[FightingAgent]): The list of other agents nearby.
-            possible_steps (list[Coordinates]): The list of available cell where to go.
-        """
-        should_attack = self.random.randint(0, 1) ## 50% 확률로 attack
-        if should_attack:
-            self.attack(cells_with_agents)
-            return
-        new_position = self.random.choice(possible_steps) ## 다음 step에 이동할 위치 설정
-        self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
-
-    def attack(self, cells_with_agents) -> None:
-        """Handles the attack of the agent.
-        Gets the list of cells with the agents the agent can attack.
-
-        Args:
-            cells_with_agents (list[FightingAgent]): The list of other agents nearby.
-        """
-        agentToAttack = self.random.choice(cells_with_agents) ## agent끼리 마주쳤을 때 맞을 애는 랜덤으로 고름
-        agentToAttack.attacked = True ## 맞은 애 attacked 됐다~ 
-        if agentToAttack.health <= 0: ## health 가 0보다 작으면 dead
-            agentToAttack.dead = True
-
-    def move(self) -> None:
-        global goal_list
-        global num_remained_agent
-        """Handles the movement behavior.
-        Here the agent decides   if it moves,
-        drinks the heal potion,
-        or attacks other agent."""
-
-        cells_with_agents = []
-        global robot_xy
-        if (self.type == 3):
-            self.robot_previous_xy = robot_xy
-            self.robot_step += 1
-            robot_space_tuple = tuple(map(tuple, self.robot_space))
-            robot_level = self.model.dict_NoC[robot_space_tuple]
-            if(robot_level<2):
-                self.respawn_delay += 1
-                if self.respawn_delay == 5:
-                    new_position = self.model.robot_respawn()
-                    robot_xy = new_position 
-                    self.respawn_delay = 0
-            
-            new_position = self.robot_policy_Q()
-
-            self.model.reward_distance_difficulty()
-            
-            #new_position = self.model.robot_respawn()
-            reward = self.reward_distance(robot_xy, "none", "none")
-            #print("reward : ", reward)
-            self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
-            #reward += self.reward_difficulty_space
-
-## 여기 아래에서 weight 변경하는 코드 넣어주세용
-            
-
-            #print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
-            ""
-            #self.update_weight(reward)
-
-            # self.model.step() 
-
-            # from ADDS_AS import n
-            # if self.robot_step == 500 or num_remained_agent == 0:
-            # if num_remained_agent == 0:
-                # file2 = open("weight.txt", 'w')
-                # new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
-                # file2.writelines(new_lines)
-                # file2.close()
-
-
-            self.model.grid.move_agent(self, new_position)
-            return
-
-        new_position = self.test_modeling()
-        if(self.type ==0 or self.type==1):
-            self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
   
     
     def robot_policy2(self):
@@ -582,6 +589,7 @@ class FightingAgent(Agent):
         global past_target
         self.drag = 1
         robot_status = 1
+        global robot_prev_xy
         self.robot_previous_goal = robot_goal
         space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
         floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
@@ -804,7 +812,6 @@ class FightingAgent(Agent):
         global robot_status
         #from model import Model
         global random_disperse
-
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
         #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
@@ -819,7 +826,6 @@ class FightingAgent(Agent):
             if len(near_agents):
                 for near_agent in near_agents:
                     near_agents_list.append(near_agent) #kinetic 모델과 동일
-
         F_x = 0
         F_y = 0
         k = 3
