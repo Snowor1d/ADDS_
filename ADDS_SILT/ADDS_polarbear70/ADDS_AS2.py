@@ -27,7 +27,7 @@ for j in range(run_iteration):
 
     print(f"{j} 번째 학습 ")
     if visualization_mode == 'off':
-        s_model = model.FightingModel(5,50,50)
+        s_model = model.FightingModel(5,70,70)
         s_model_r = copy.deepcopy(s_model)     
         
         ran_num = random.randint(10000,20000)
@@ -204,7 +204,7 @@ for j in range(run_iteration):
 
 
     if visualization_mode == 'on':
-        s_model = model.FightingModel(5,50,50)
+        s_model = model.FightingModel(5,70,70)
         s_model_r = copy.deepcopy(s_model)     
         
         ran_num = random.randint(10000,20000)
@@ -218,7 +218,7 @@ for j in range(run_iteration):
         
 
         ## grid size
-        NUMBER_OF_CELLS = 50 ## square # 한 셀당 50cm x 50cm로 하겠음. 이 시뮬레이션 모델에서는 한 셀당 하나의 사람만 허용 cell 개수가 100개 -> 50m x 50m 크기의 맵
+        NUMBER_OF_CELLS = 70 ## square # 한 셀당 50cm x 50cm로 하겠음. 이 시뮬레이션 모델에서는 한 셀당 하나의 사람만 허용 cell 개수가 100개 -> 50m x 50m 크기의 맵
         SIZE_OF_CANVAS_IN_PIXELS_X = 1000
         SIZE_OF_CANVAS_IN_PIXELS_Y = 1000
 
@@ -243,17 +243,7 @@ for j in range(run_iteration):
                     "text_color": "black",
                 }
                 return portrayal
-            if agent.type == 20: ## for exit_rec 
-                portrayal = {
-                    "Shape": "circle",
-                    "Filled": "true",
-                    "Color": "lightblue", 
-                    "r": 1,
-                    "text": "",
-                    "Layer": 0,
-                    "text_color": "black",
-                }
-                return portrayal
+            
             if agent.type == 10: ## exit_rec 채우는 agent 
                 portrayal = {
                     "Shape": "circle",
@@ -288,8 +278,6 @@ for j in range(run_iteration):
                     "text_color": "black",
                 }
                 return portrayal
-
-                
             
                 
 

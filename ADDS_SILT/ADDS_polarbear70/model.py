@@ -291,8 +291,8 @@ class FightingModel(Model):
     """A model with some number of agents."""
 
     def __init__(self, number_agents: int, width: int, height: int):
-        self.exit_way_rec =  [[0]*51 for _ in range(51)]
         self.robot = None 
+        self.exit_way_rec =  [[0]*51 for _ in range(51)]
         self.simulation_type = 0 #0->outdoor, #1->indoor
         self.room_list = [] # ex) [((1, 2), (3,4)), ((4,5), (5,6))]
         self.map_divide =  [[[0,0], [0,0]]*10 for _ in range(10)]
@@ -329,10 +329,10 @@ class FightingModel(Model):
         self.only_one_wall = list()
         self.indoor_connect = list() # 방과 방 사이를 연결하는 문을 만들기 위한 리스트
         self.valid_space = list() 
-        for i in range(51):
+        for i in range(71):
             tmp = []
             tmp2 = []
-            for j in range(51):
+            for j in range(71):
                 tmp.append(0)
                 tmp2.append(1)
             self.wall_matrix.append(tmp)
@@ -340,7 +340,7 @@ class FightingModel(Model):
             self.indoor_connect.append(tmp) #50x50 맵 초기화 
             self.valid_space.append(tmp2)
         
-        NUMBER_OF_CELLS = 50
+        NUMBER_OF_CELLS = 70
 
         for i in range(int(NUMBER_OF_CELLS)): #최외각 벽 세우기
             wall.append((i, 0))
@@ -522,7 +522,6 @@ class FightingModel(Model):
         
         self.wall = [list(t) for t in self.wall]
         self.exit_rec = [list(t) for t in self.exit_rec]
-        self.exit_way_rec =  [list(t) for t in self.exit_way_rec]
         self.space = [list(t) for t in self.space]
 
         for i in range(len(self.exit_rec)): ## exit_rec 안에 agents 채워넣어서 출구 표현
@@ -543,17 +542,6 @@ class FightingModel(Model):
             self.schedule_w.add(c)
             self.grid.place_agent(c, self.space[i])
             self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1 
-
-        count = 0
-        for i in range(50):
-            for j in range(50):
-                if(self.exit_way_rec[i][j]==1):
-                    b = FightingAgent(count+20300, self, [0,0], 20)
-                    print("!!!!!!!!!!!!!!!!! 생성됨 !!!!!!!!!!!!!!!!!!!")
-                    count += 1
-                    self.schedule_e.add(b) 
-                    self.grid.place_agent(b, [i, j])
-
 
     def make_agents2(self):
         self.wall = [list(t) for t in self.wall]
@@ -576,16 +564,7 @@ class FightingModel(Model):
             c = FightingAgent2(10000+i, self, self.space[i], 12)
             self.schedule_w.add(c)
             self.grid.place_agent(c, self.space[i])
-            self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1  
-        count = 0
-        for i in range(50):
-            for j in range(50):
-                if(self.exit_way_rec[i][j]==1):
-                    b = FightingAgent(count+20300, self, [0,0], 20)
-                    count += 1
-                    self.schedule_e.add(b) 
-                    self.grid.place_agent(b, [i, j])
-          
+            self.only_one_wall[self.space[i][0]][self.space[i][1]] = 1            
 
     def make_exit(self):
         exit_rec = []
@@ -617,7 +596,7 @@ class FightingModel(Model):
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
             exit_size = random.randint(10, 30) #출구 사이즈를 30~70 정한다 
-            start_exit_cell = random.randint(0, 49-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
+            start_exit_cell = random.randint(0, 69-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
             for i in range(0, 5): 
                 for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
                     exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
@@ -632,8 +611,8 @@ class FightingModel(Model):
         self.right_exit_goal = [0,0]
         if(self.is_right_exit):
             exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
-            for i in range(45, 50):
+            start_exit_cell = random.randint(0, 69-exit_size)
+            for i in range(65, 70):
                 for j in range(start_exit_cell, start_exit_cell+exit_size):
                     exit_rec.append((i,j))
                     self.right_exit_goal[0] += i
@@ -647,7 +626,7 @@ class FightingModel(Model):
         self.down_exit_goal = [0,0]
         if(self.is_down_exit):
             exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
+            start_exit_cell = random.randint(0, 69-exit_size)
             for i in range(start_exit_cell, start_exit_cell+exit_size):
                 for j in range(0, 5):
                     exit_rec.append((i,j))
@@ -662,9 +641,9 @@ class FightingModel(Model):
         self.up_exit_goal = [0,0]
         if(self.is_up_exit):
             exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
+            start_exit_cell = random.randint(0, 69-exit_size)
             for i in range(start_exit_cell, start_exit_cell+exit_size):
-                for j in range(45, 50):
+                for j in range(65, 70):
                     exit_rec.append((i,j))
                     self.up_exit_goal[0] += i
                     self.up_exit_goal[1] += j
@@ -693,6 +672,7 @@ class FightingModel(Model):
             return 0
         else:
             return 1
+
     def way_to_exit(self):
         visible_distance = 4
         x1=100 
@@ -708,55 +688,40 @@ class FightingModel(Model):
                 y2 = i[1]
             if i[1]<y1:
                 y1 = i[1]
+
         for i in range(y1, y2+1):
-            #self.recur_exit(x1, i, visible_distance, "ul")
             self.recur_exit(x1, i, visible_distance, "l")
-            #self.recur_exit(x1, i, visible_distance, "dl")
         for i in range(x1, x2+1):
-            #self.recur_exit(i, y2, visible_distance, "lu")
-            #self.recur_exit(i, y2, visible_distance, "ru")
             self.recur_exit(i, y2, visible_distance, "u")
         for i in range(x1, x2+1):
-            #self.recur_exit(i, y1, visible_distance, "ld")
-            #self.recur_exit(i, y1, visible_distance, "rd")
             self.recur_exit(i, y1, visible_distance, "d")
         for i in range(y1, y2+1):
-            #self.recur_exit(x2, i, visible_distance, "ur")
             self.recur_exit(x2, i, visible_distance, "r")
-            #self.recur_exit(x2, i, visible_distance, "dr")
-        # for i in range(0, 50):
-        #     for j in range(0, 50):
-        #         if(self.exit_way_rec[i][j] == 1):
-        #             print("x, y :", i, j)
-                    
+        print("exit_way_rec : ", self.exit_way_rec)
 
     def recur_exit(self, x, y, visible_distance, direction):
-        if(visible_distance < 1):
+        if(visible_distance == 0):
             return 
         if(x==0 or y==0 or x==49 or y==49):
             return
+        print("x, y : ", x, y)
         if(self.grid_to_space[x][y] in self.room_list):
             return
         self.exit_way_rec[x][y] = 1         
         if direction=="l":
-            self.recur_exit(x-1, y-1, visible_distance-2, "l")
             self.recur_exit(x-1, y, visible_distance-1, "l")
-            self.recur_exit(x-1, y+1, visible_distance-2, "l")
         elif direction =="r":
-            self.recur_exit(x+1, y+1, visible_distance-2, "r")
+                
             self.recur_exit(x+1, y, visible_distance-1, "r")
-            self.recur_exit(x+1, y-1, visible_distance-2, "r")
         elif direction =="u":
-            self.recur_exit(x-1, y+1, visible_distance-2, "u")
             self.recur_exit(x, y+1, visible_distance-1, "u")
-            self.recur_exit(x+1, y+1, visible_distance-2, "u")
         else :
-            self.recur_exit(x+1, y-1, visible_distance-2, "d")
             self.recur_exit(x, y-1, visible_distance-1, "d")
-            self.recur_exit(x-1, y-1, visible_distance-2, "d")
+            
         
 
-
+        # for i in self.space_graph[self.exit_compartment]: #exit_compartment : tuple, 출구 공간 좌표 #i 는 list
+        #     self.space_goal_dict[tuple(map(tuple, i))] = [goal_extend(tuple(map(tuple, i)), space_connected_linear(i, list(map(list, self.exit_compartment))))]
 
     def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
         inner_space = []
@@ -1530,9 +1495,11 @@ class FightingModel(Model):
                 #hallway_size = random.randint(1,2)
                 hallway_size = 1
                 if(xy[0][0]+left+hallway_size >= (xy[1][0]-2)):
+                    print("xy[0][0]+left+hallway_size :",xy[0][0]+left+hallway_size)
+                    print("xy[1][0]-2 :",xy[1][0]-2)
                     self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                     return
-                # if(x_diff<13):5
+                # if(x_diff<13):
                 #     left = int(x_diff*(1/2))
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+left, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                 self.map_recur_divider_fine([[xy[0][0]+left, xy[0][1]], [xy[0][0]+left+hallway_size, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 0)
@@ -1556,10 +1523,12 @@ class FightingModel(Model):
             if(num<1):
                 random_exist_room1 = random_exist_room2 = random_exist_room3 = random_exist_room4 = 1
             if (num%2==0): #가로로 나눈다
+                print("divide_num_x: ", divide_num_x)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1)
                 self.map_recur_divider_fine([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2)
         
             else: #세로로 나눈다
+                print("divide_num_y: ", divide_num_y)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4) 
     
