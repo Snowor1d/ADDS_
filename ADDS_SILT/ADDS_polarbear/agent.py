@@ -36,7 +36,6 @@ robot_ringing = 0
 robot_goal = [0, 0]
 past_target = ((0,0), (0,0))
 robot_prev_xy = [0,0]
-
 def calculate_degree(vector1, vector2):
     dot_product = np.dot(vector1, vector2)
     m1 = np.linalg.norm(vector1)
@@ -45,7 +44,7 @@ def calculate_degree(vector1, vector2):
     cos_theta = dot_product / (m1 * m2)
     angle_radians = np.arccos(cos_theta)
     angle_degrees = np.degrees(angle_radians)
-    print("계산된 각도 : ", angle_degrees)
+    # print("계산된 각도 : ", angle_degrees)
     
     return angle_degrees
 
@@ -160,7 +159,8 @@ class FightingAgent(Agent):
         self.robot_waypoint_index = 0
 
         self.respawn_delay = 0
-
+        self.xy1 = [0,0]
+        self.xy2 = [0,0]
         self.previous_type = 0
 
         self.go_path_num= 0
@@ -295,9 +295,12 @@ class FightingAgent(Agent):
 
         cells_with_agents = []
         global robot_xy
+        # robot_prev_xy[0] = robot_xy[0]
+        # robot_prev_xy[1] = robot_xy[1]
         if (self.type == 3):
             robot_prev_xy[0] = robot_xy[0]
             robot_prev_xy[1] = robot_xy[1]
+            
             self.robot_step += 1
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             robot_level = self.model.dict_NoC[robot_space_tuple]
@@ -307,6 +310,9 @@ class FightingAgent(Agent):
                     new_position = self.model.robot_respawn()
                     robot_xy = new_position 
                     self.respawn_delay = 0
+            
+            
+                   
             new_position = self.robot_policy_Q()
 
             self.model.reward_distance_difficulty()
@@ -344,7 +350,6 @@ class FightingAgent(Agent):
 
     def which_goal_agent_want(self):
         global robot_prev_xy
-
         if(self.goal_init == 0):
             now_stage = self.check_stage_agent()
             goal_candiate = self.model.space_goal_dict[now_stage]
@@ -357,13 +362,23 @@ class FightingAgent(Agent):
             self.previous_stage = now_stage
         now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
         if(self.previous_stage != self.check_stage_agent() or self.previous_type != self.type):
-            if(self.previous_type!= self.type): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+            if(self.previous_type != self.type ): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+                # print("self.previous_type:",self.previous_type)
+                # print("self.type: ",self.type)
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
-                print("agent 현재 위치 : \n", self.xy)
+                # print("agent 현재 위치 : \n", self.xy)
                 
                 vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
+                # print("robot_prev_xy[0]",robot_prev_xy[0])
+                # print("robot_prev_xy[1]",robot_prev_xy[1])
+                # print("self.xy[0]",self.xy[0])
+                # print("self.xy[1]",self.xy[1])
+                # print("vector1, ", vector1)
+                
+        
+
                 for i in goal_candiate :
                     vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
                     degree = calculate_degree(vector1, vector2)
@@ -375,7 +390,7 @@ class FightingAgent(Agent):
                 self.previous_goal = self.now_goal
                 self.previous_type = self.type
                 return
-                    
+              
 
 
             goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]]
@@ -409,7 +424,7 @@ class FightingAgent(Agent):
                 self.previous_stage = now_stage
             self.previous_goal = self.now_goal
         self.previous_type = self.type 
-
+        
             
 
   
@@ -625,7 +640,7 @@ class FightingAgent(Agent):
             robot_status = 0
 
         intend_force = 2
-        desired_speed = 1.5
+        desired_speed = 2
 
         if(self.drag == 0):
             desired_speed = 7
@@ -872,9 +887,8 @@ class FightingAgent(Agent):
                     repulsive_force = [-1, 1] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
                     random_disperse = 1
 
-             
-        self.which_goal_agent_want() # agent의 다음 골 목표 설정 
-
+        
+        
         goal_x = self.now_goal[0] - self.xy[0]
         goal_y = self.now_goal[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
@@ -895,6 +909,7 @@ class FightingAgent(Agent):
         else :
             self.type = 0
 
+        self.which_goal_agent_want() # agent의 다음 골 목표 설정 
 
         if(goal_d != 0):
           desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -1098,7 +1113,7 @@ class FightingAgent(Agent):
         elif action == "LEFT":
             robot_xyP[0] -= one_foot
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-        return NumberOfAgents * 0.02
+        return NumberOfAgents * 0.01
 
 
     def reward_distance(self, state, action, mode):
@@ -1146,7 +1161,7 @@ class FightingAgent(Agent):
     def reward_difficulty_space(self,state,action,mode):
         global DifficultyList
 
-        # gray spcce의 좌표만 가진 list 생성
+        # gray space의 좌표만 가진 list 생성
         space_list = self.model.space_list #space list 저장
         room_list = self.model.room_list #room list 저장
         semi_safe_zone_list = [[[0, 0], [5, 45]], [[0, 45], [45, 49]], [[45, 5], [49, 49]], [[5, 0], [49, 5]]] # 후보 safe zone list 저장
@@ -1184,6 +1199,7 @@ class FightingAgent(Agent):
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
         return reward
+    
     def select_Q(self, state) :
         global robot_xy
         global one_foot
@@ -1237,7 +1253,7 @@ class FightingAgent(Agent):
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
-            exploration_rate = 0.2
+            exploration_rate = 0.05
             
             if random.random() <= exploration_rate:
                 #actions = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -1479,7 +1495,7 @@ class FightingAgent(Agent):
         global robot_xy
 
         alpha = 0.1
-        discount_factor = 0.2
+        discount_factor = 0.1
         next_robot_xy = [0,0]
         next_robot_xy[0] = robot_xy[0]
         next_robot_xy[1] = robot_xy[1]
@@ -1515,13 +1531,17 @@ class FightingAgent(Agent):
         #print('select_Q :', self.now_action)
         if selected_action == "GUIDE":
             ### 아래는 얘네 각각 출력..
-            #print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f1(", f1, ")")
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+            self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
+            self.feature_weights_guide[1] = self.w2
+
+            print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
+            print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
             #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
             # print("F1",f1)
             # print("F2",f2)
-            #print("F3",f3)
+            # print("F3",f3)
             # print("reward",reward)
             # print("next_state_max_Q",next_state_max_Q)
             # print("present_state_Q",present_state_Q)

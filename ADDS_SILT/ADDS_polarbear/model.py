@@ -1489,13 +1489,15 @@ class FightingModel(Model):
                 return
         elif(num==3):
             a = random.randint(1,20)
+            # if(a<5):
             if(a<5):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.
         elif(num==4):
             a = random.randint(1,20)
-            if(a<8):
+            # if(a<8):
+            if(a<17):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.

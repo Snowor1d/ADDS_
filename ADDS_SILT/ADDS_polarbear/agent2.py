@@ -1183,7 +1183,7 @@ class FightingAgent2(Agent):
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
-            exploration_rate = 0.1
+            exploration_rate = 0.05
             
             if random.random() <= exploration_rate:
                 #actions = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -1420,7 +1420,7 @@ class FightingAgent2(Agent):
         global robot_xy
 
         alpha = 0.1
-        discount_factor = 0.2
+        discount_factor = 0.1
         next_robot_xy = [0,0]
         next_robot_xy[0] = robot_xy[0]
         next_robot_xy[1] = robot_xy[1]
@@ -1460,6 +1460,8 @@ class FightingAgent2(Agent):
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+            self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
+            self.feature_weights_guide[1] = self.w2
 
         if selected_action == "NOGUIDE":
             self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
