@@ -1448,8 +1448,8 @@ class FightingModel(Model):
                 #hallway_size = random.randint(1,2)
                 hallway_size = 1
                 if(xy[0][0]+left+hallway_size >= (xy[1][0]-2)):
-                    print("xy[0][0]+left+hallway_size :",xy[0][0]+left+hallway_size)
-                    print("xy[1][0]-2 :",xy[1][0]-2)
+                    # print("xy[0][0]+left+hallway_size :",xy[0][0]+left+hallway_size)
+                    # print("xy[1][0]-2 :",xy[1][0]-2)
                     self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
                     return
                 # if(x_diff<13):
@@ -1476,12 +1476,12 @@ class FightingModel(Model):
             if(num<1):
                 random_exist_room1 = random_exist_room2 = random_exist_room3 = random_exist_room4 = 1
             if (num%2==0): #가로로 나눈다
-                print("divide_num_x: ", divide_num_x)
+                # print("divide_num_x: ", divide_num_x)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1)
                 self.map_recur_divider_fine([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2)
         
             else: #세로로 나눈다
-                print("divide_num_y: ", divide_num_y)
+                # print("divide_num_y: ", divide_num_y)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3)
                 self.map_recur_divider_fine([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4) 
     

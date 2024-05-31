@@ -45,7 +45,7 @@ def calculate_degree(vector1, vector2):
     cos_theta = dot_product / (m1 * m2)
     angle_radians = np.arccos(cos_theta)
     angle_degrees = np.degrees(angle_radians)
-    print("계산된 각도 : ", angle_degrees)
+    # print("계산된 각도 : ", angle_degrees)
     
     return angle_degrees
 
@@ -361,7 +361,7 @@ class FightingAgent(Agent):
                 goal_candiate = self.model.space_goal_dict[now_stage]
                 min_d = 10000
                 min_i  = goal_candiate[0]
-                print("agent 현재 위치 : \n", self.xy)
+                # print("agent 현재 위치 : \n", self.xy)
                 
                 vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
                 for i in goal_candiate :
@@ -1146,7 +1146,7 @@ class FightingAgent(Agent):
     def reward_difficulty_space(self,state,action,mode):
         global DifficultyList
 
-        # gray spcce의 좌표만 가진 list 생성
+        # gray space의 좌표만 가진 list 생성
         space_list = self.model.space_list #space list 저장
         room_list = self.model.room_list #room list 저장
         semi_safe_zone_list = [[[0, 0], [5, 45]], [[0, 45], [45, 49]], [[45, 5], [49, 49]], [[5, 0], [49, 5]]] # 후보 safe zone list 저장
@@ -1184,6 +1184,7 @@ class FightingAgent(Agent):
 
         reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
         return reward
+    
     def select_Q(self, state) :
         global robot_xy
         global one_foot
@@ -1237,7 +1238,7 @@ class FightingAgent(Agent):
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
                 selected = action_list[j]
-            exploration_rate = 0.2
+            exploration_rate = 0.05
             
             if random.random() <= exploration_rate:
                 #actions = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -1479,7 +1480,7 @@ class FightingAgent(Agent):
         global robot_xy
 
         alpha = 0.1
-        discount_factor = 0.2
+        discount_factor = 0.1
         next_robot_xy = [0,0]
         next_robot_xy[0] = robot_xy[0]
         next_robot_xy[1] = robot_xy[1]
@@ -1515,13 +1516,17 @@ class FightingAgent(Agent):
         #print('select_Q :', self.now_action)
         if selected_action == "GUIDE":
             ### 아래는 얘네 각각 출력..
-            #print("//self.w1(", self.w1, ") += alpha(0.1) * (reward(", reward, ") + discount_factor(0.2) * next_state_max_Q(", next_state_max_Q, ") - present_state_Q(", present_state_Q, ")) * f1(", f1, ")")
             self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+            self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
+            self.feature_weights_guide[1] = self.w2
+
+            print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
+            print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
             #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
             # print("F1",f1)
             # print("F2",f2)
-            #print("F3",f3)
+            # print("F3",f3)
             # print("reward",reward)
             # print("next_state_max_Q",next_state_max_Q)
             # print("present_state_Q",present_state_Q)
