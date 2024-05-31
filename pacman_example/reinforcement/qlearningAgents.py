@@ -235,6 +235,7 @@ class ApproximateQAgent(PacmanQAgent):
             print( "maxQFromNextState : ", maxQFromNextState)
             print( "actionQValue : ", actionQValue)
             print( "featureVector[feature] : ",featureVector)
+            print( "weights[", feature, "] : ", self.weights[feature])
             print( "self.weights[feature] : ", self.weights)
 
     def final(self, state):
