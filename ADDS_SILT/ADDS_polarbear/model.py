@@ -549,7 +549,6 @@ class FightingModel(Model):
             for j in range(50):
                 if(self.exit_way_rec[i][j]==1):
                     b = FightingAgent(count+20300, self, [0,0], 20)
-                    print("!!!!!!!!!!!!!!!!! 생성됨 !!!!!!!!!!!!!!!!!!!")
                     count += 1
                     self.schedule_e.add(b) 
                     self.grid.place_agent(b, [i, j])
@@ -590,7 +589,7 @@ class FightingModel(Model):
     def make_exit(self):
         exit_rec = []
         only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
-        
+        self.exit_goal = [0,0]
         self.is_down_exit = 0
         self.is_left_exit = 0
         self.is_up_exit = 0
@@ -627,7 +626,7 @@ class FightingModel(Model):
             self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num #출구 좌표의 평균 
             self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
             self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
-
+            self.exit_goal = [self.left_exit_goal[0], self.left_exit_goal[1]]
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
         if(self.is_right_exit):
@@ -642,6 +641,7 @@ class FightingModel(Model):
             self.right_exit_goal[0] = self.right_exit_goal[0]/right_exit_num
             self.right_exit_goal[1] = self.right_exit_goal[1]/right_exit_num
             self.right_exit_area = [[45, start_exit_cell], [49, start_exit_cell+exit_size]]
+            self.exit_goal = [self.right_exit_goal[0], self.right_exit_goal[1]]
 
         down_exit_num = 0    
         self.down_exit_goal = [0,0]
@@ -657,6 +657,7 @@ class FightingModel(Model):
             self.down_exit_goal[0] = self.down_exit_goal[0]/down_exit_num
             self.down_exit_goal[1] = self.down_exit_goal[1]/down_exit_num
             self.down_exit_area = [[start_exit_cell, 0], [start_exit_cell+exit_size, 5]]
+            self.exit_goal = [self.down_exit_goal[0], self.down_exit_goal[1]]
 
         up_exit_num = 0    
         self.up_exit_goal = [0,0]
@@ -672,6 +673,7 @@ class FightingModel(Model):
             self.up_exit_goal[0] = self.up_exit_goal[0]/up_exit_num
             self.up_exit_goal[1] = self.up_exit_goal[1]/up_exit_num
             self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
+            self.exit_goal = [self.up_exit_goal[0], self.up_exit_goal[1]]
         #exit_rec에는 탈출 점들의 좌표가 쌓임
         return exit_rec
 
@@ -694,7 +696,7 @@ class FightingModel(Model):
         else:
             return 1
     def way_to_exit(self):
-        visible_distance = 4
+        visible_distance = 6
         x1=100 
         x2= 0
         y1= 100

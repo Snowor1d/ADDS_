@@ -350,6 +350,14 @@ class FightingAgent(Agent):
 
     def which_goal_agent_want(self):
         global robot_prev_xy
+        exit_confirmed_area = self.model.exit_way_rec
+        if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
+            self.now_goal = self.model.exit_goal
+            return 
+
+
+
+
         if(self.goal_init == 0):
             now_stage = self.check_stage_agent()
             goal_candiate = self.model.space_goal_dict[now_stage]
@@ -897,9 +905,8 @@ class FightingAgent(Agent):
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
         agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
-        now_level = self.model.dict_NoC[(tuple(map(tuple, agent_space)))]
         #print("agent now level : ", now_level)
-        if(robot_d<robot_radius and robot_status == 1 and now_level>1):
+        if(robot_d<robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
@@ -1535,9 +1542,12 @@ class FightingAgent(Agent):
             self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
             self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
             self.feature_weights_guide[1] = self.w2
-
-            print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
-            print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
+            with open ('log.txt', 'a') as f:
+                f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
+                f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
+                f.close()
+            #print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
+            #print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
             #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
             # print("F1",f1)
             # print("F2",f2)

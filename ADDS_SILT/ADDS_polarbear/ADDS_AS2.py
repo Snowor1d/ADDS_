@@ -145,7 +145,7 @@ for j in range(run_iteration):
             
             print('에피소드 수',i+1)
             
-            if i % 10 == 0:
+            if i % 100 == 0:
                 a = 1
                 reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
                 if(reward<0):
