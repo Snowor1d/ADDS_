@@ -137,6 +137,7 @@ class FightingAgent(Agent):
         self.now_goal = [0,0]
         global robot_prev_xy
         self.robot_previous_goal = [0, 0]
+        self.robot_initialized = 0
         
         #self.robot_xy = [2,2]
         #self.robot_status = 0
@@ -296,6 +297,7 @@ class FightingAgent(Agent):
 
         cells_with_agents = []
         global robot_xy
+        print("type : ", self.type) 
         # robot_prev_xy[0] = robot_xy[0]
         # robot_prev_xy[1] = robot_xy[1]
         if (self.type == 3):
@@ -312,14 +314,12 @@ class FightingAgent(Agent):
             
             #new_position = self.model.robot_respawn()
             #reward = self.reward_distance(robot_xy, "none", "none")
-            #print("reward : ", reward)
             #self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
             #reward += self.reward_difficulty_space
 
 ## 여기 아래에서 weight 변경하는 코드 넣어주세용
             
 
-            #print("weights update ~~ ^^ ", self.w1, self.w2, self.w3, self.w4, self.w5, self.w6)
             ""
             #self.update_weight(reward)
 
@@ -337,6 +337,7 @@ class FightingAgent(Agent):
             self.model.grid.move_agent(self, new_position)
             return
         new_position = self.test_modeling()
+        #print("now_goal : ",self.now_goal)
         if(self.type ==0 or self.type==1):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
 
@@ -349,16 +350,6 @@ class FightingAgent(Agent):
             return 
 
         now_stage = self.check_stage_agent()
-        if(self.goal_init == 0):
-            
-            goal_candiate = self.model.space_goal_dict[now_stage]
-            if(len(goal_candiate)==1):
-                goal_index = 0
-            else:
-                goal_index = random.randint(0, len(goal_candiate)-1)
-            self.now_goal = goal_candiate[goal_index]
-            self.goal_init = 1
-            self.previous_stage = now_stage
         if(self.previous_stage != now_stage or self.previous_type != self.type):
             if(self.previous_type != self.type ): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
                 # print("self.previous_type:",self.previous_type)
@@ -369,12 +360,6 @@ class FightingAgent(Agent):
                 # print("agent 현재 위치 : \n", self.xy)
                 
                 vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
-                # print("robot_prev_xy[0]",robot_prev_xy[0])
-                # print("robot_prev_xy[1]",robot_prev_xy[1])
-                # print("self.xy[0]",self.xy[0])
-                # print("self.xy[1]",self.xy[1])
-                # print("vector1, ", vector1)
-                
         
 
                 for i in goal_candiate :
@@ -447,6 +432,12 @@ class FightingAgent(Agent):
 
         self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
 
+        if(self.robot_initialized ==0 ):
+            self.robot_initialized = 1
+            robot_xy[0] = self.model.robot.xy[0]
+            robot_xy[1] = self.model.robot.xy[1]
+            return (self.model.robot.xy[0], self.model.robot.xy[1])
+        
         next_action = self.select_Q(robot_xy)
         #print("next action ", next_action)
         goal_x = 0
@@ -683,7 +674,7 @@ class FightingAgent(Agent):
                         # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
         #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
         #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
-        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
+        desired_speed = 0 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
         for near_agent in near_agents_list:
@@ -706,7 +697,6 @@ class FightingAgent(Agent):
 
                 elif(near_agent.type == 1 or near_agent.type==3): ## agents
                     if(near_agent.type==3):
-                        print("robot이 있음!")
                         repulsive_force[0] += 1*np.exp(-(d/2))*(d_x/d) 
                         repulsive_force[1] += 1*np.exp(-(d/2))*(d_y/d)
                     repulsive_force[0] += 1*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
@@ -733,6 +723,16 @@ class FightingAgent(Agent):
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
         agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
+        now_stage = self.check_stage_agent()
+        if(self.goal_init == 0):
+            goal_candiate = self.model.space_goal_dict[now_stage]
+            if(len(goal_candiate)==1):
+                goal_index = 0
+            else:
+                goal_index = random.randint(0, len(goal_candiate)-1)
+            self.now_goal = goal_candiate[goal_index]
+            self.goal_init = 1
+            self.previous_stage = now_stage
         #print("agent now level : ", now_level)
         if(robot_d<robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
             goal_x = robot_x
@@ -742,8 +742,8 @@ class FightingAgent(Agent):
             self.now_goal = robot_goal
             
         else :
-            self.type = 0
             self.which_goal_agent_want()
+            self.type = 0
 
         if(goal_d != 0):
           desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -779,7 +779,7 @@ class FightingAgent(Agent):
         if(next_y>49):
             next_y = 49
 
-
+        print("next_x : ", next_x, "next_y : ", next_y)
         self.robot_guide = 0
         return (next_x, next_y)
     
@@ -1150,7 +1150,6 @@ class FightingAgent(Agent):
                     selected = random.choice(action_list)
             
                 self.now_action = [selected, "GUIDE"]
-            print("mode : ", mode)
             return self.now_action
         elif(mode=="NOT_GUIDE"):
             for j in range(len(action_list)):
@@ -1171,7 +1170,6 @@ class FightingAgent(Agent):
                     selected = random.choice(action_list)
             
                 self.now_action = [selected, "NOT_GUIDE"]
-            print("mode : ", mode)
             return self.now_action
             
             

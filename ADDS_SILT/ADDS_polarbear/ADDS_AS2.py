@@ -344,8 +344,6 @@ for j in range(run_iteration):
                 portrayal["Layer"] = 1
                 return portrayal
             if agent.type == 3: #robot
-                portrayal['w'] = 1
-                portrayal['h'] = 1
                 if agent.drag == 1: #끌고갈때
                     portrayal["Color"] = "purple" #빨강!!!!!!!!!!!1
                 else:
