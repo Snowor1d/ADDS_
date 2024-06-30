@@ -297,7 +297,7 @@ class FightingAgent(Agent):
 
         cells_with_agents = []
         global robot_xy
-        print("type : ", self.type) 
+
         # robot_prev_xy[0] = robot_xy[0]
         # robot_prev_xy[1] = robot_xy[1]
         if (self.type == 3):
@@ -308,35 +308,16 @@ class FightingAgent(Agent):
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             
                    
-            new_position = self.robot_policy_Q()
+            new_position2 = self.robot_policy_Q()
 
             self.model.reward_distance_difficulty()
-            
-            #new_position = self.model.robot_respawn()
-            #reward = self.reward_distance(robot_xy, "none", "none")
-            #self.reward_difficulty_space(robot_xy, "none", "none") ###여기야!!!!!!! 여기다가 reward 계산해야댕
-            #reward += self.reward_difficulty_space
-
-## 여기 아래에서 weight 변경하는 코드 넣어주세용
-            
-
-            ""
-            #self.update_weight(reward)
-
-            # self.model.step() 
-
-            # from ADDS_AS import n
-            # if self.robot_step == 500 or num_remained_agent == 0:
-            # if num_remained_agent == 0:
-                # file2 = open("weight.txt", 'w')
-                # new_lines = [str(self.w1) + '\n', str(self.w2) + '\n', str(self.w3) + '\n', str(self.w4) + '\n', str(self.w5) + '\n', str(self.w6) + '\n']
-                # file2.writelines(new_lines)
-                # file2.close()
 
 
-            self.model.grid.move_agent(self, new_position)
+            self.model.grid.move_agent(self, new_position2)
             return
         new_position = self.test_modeling()
+        print("xy : ", self.xy)
+        print("\n")
         #print("now_goal : ",self.now_goal)
         if(self.type ==0 or self.type==1):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
@@ -407,7 +388,7 @@ class FightingAgent(Agent):
                 self.previous_stage = now_stage
             self.previous_goal = self.now_goal
         self.previous_type = self.type 
-        
+    
     
     def robot_policy_Q(self):
         time_step = 0.2
@@ -423,12 +404,6 @@ class FightingAgent(Agent):
         #robot_status = 1
         global robot_prev_xy
         self.robot_previous_goal = robot_goal
-        # space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
-        # floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
-        # floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
-        #                                    #floyd_path[stage_x][stage_2] = stage_y 
-        #                                    #floyd_path[stage_y][stage_2] = ste... 
-        #                                    # s1 -> sx -> sy -> .. stage
 
         self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
 
@@ -439,7 +414,8 @@ class FightingAgent(Agent):
             return (self.model.robot.xy[0], self.model.robot.xy[1])
         
         next_action = self.select_Q(robot_xy)
-        #print("next action ", next_action)
+
+
         goal_x = 0
         goal_y = 0
         goal_d =2 
@@ -455,12 +431,7 @@ class FightingAgent(Agent):
         elif(next_action[0] == "DOWN"):
             goal_x = 0
             goal_y = -2
-        # if(next_action[1]== "GUIDE"):
-        #     self.drag = 1
-        #     robot_status = 1
-        # else :
-        #     self.drag = 0
-        #     robot_status = 0
+
 
         intend_force = 2
         desired_speed = 2
@@ -480,7 +451,6 @@ class FightingAgent(Agent):
         y=int(round(robot_xy[1]))
 
         temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        # temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
             if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
@@ -525,6 +495,7 @@ class FightingAgent(Agent):
         
         F_x += desired_force[0]
         F_y += desired_force[1]
+        
 
         F_x += repulsive_force[0]
         F_y += repulsive_force[1]
@@ -551,8 +522,8 @@ class FightingAgent(Agent):
             
         #self.robot_guide = 0
         robot_goal = [robot_xy[0]+goal_x, robot_xy[1]+goal_y]
-        self.robot_xy = robot_xy
         return (next_x, next_y)
+    
 
     def agents_in_each_space(self):
         global num_remained_agent
@@ -674,7 +645,7 @@ class FightingAgent(Agent):
                         # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
         #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
         #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
-        desired_speed = 0 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
+        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
         for near_agent in near_agents_list:
@@ -724,15 +695,15 @@ class FightingAgent(Agent):
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
         agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
         now_stage = self.check_stage_agent()
-        if(self.goal_init == 0):
-            goal_candiate = self.model.space_goal_dict[now_stage]
-            if(len(goal_candiate)==1):
-                goal_index = 0
-            else:
-                goal_index = random.randint(0, len(goal_candiate)-1)
-            self.now_goal = goal_candiate[goal_index]
-            self.goal_init = 1
-            self.previous_stage = now_stage
+        # if(self.goal_init == 0):
+        #     goal_candiate = self.model.space_goal_dict[now_stage]
+        #     if(len(goal_candiate)==1):
+        #         goal_index = 0
+        #     else:
+        #         goal_index = random.randint(0, len(goal_candiate)-1)
+        #     self.now_goal = goal_candiate[goal_index]
+        #     self.goal_init = 1
+        #     self.previous_stage = now_stage
         #print("agent now level : ", now_level)
         if(robot_d<robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
             goal_x = robot_x
@@ -1046,11 +1017,11 @@ class FightingAgent(Agent):
         r_x = robot_xy[0]
         r_y = robot_xy[1]
         robot_step_num += 1
-        a = 0.5
+        a = 0.1
         b = 2
         alpha = 2
-        beta = 0.5
-        if(robot_step_num%20==0):
+        beta = 0.6
+        if(robot_step_num%10==0):
                 # s1 계산
             space_list = self.model.space_list #space list 저장
             room_list = self.model.room_list #room list 저장
@@ -1064,7 +1035,8 @@ class FightingAgent(Agent):
                 area = (i[1][0]-i[0][0])*(i[1][1]-i[0][1])
                 each_space_agent_num = self.agents_in_each_space2()
                 tuple_key = tuple(map(tuple, i))
-                s0 = a * self.model.dict_NoC[tuple_key] + b * each_space_agent_num.get(tuple_key) / area
+                #s0 = a * self.model.dict_NoC[tuple_key] + b * each_space_agent_num.get(tuple_key) / area
+                s0 = a * self.model.dict_NoC[tuple_key] + b * self.model.dict_NoC[tuple_key]*each_space_agent_num.get(tuple_key) / area
                 if s0 > s1:
                     s1 = s0
 
@@ -1074,8 +1046,8 @@ class FightingAgent(Agent):
             robot_space = self.model.grid_to_space[int(round(robot_x))][int(round(robot_y))]
             
             robot_area = math.pi * pow(robot_radius, 2)
-            s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
-
+            #s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
+            s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.model.dict_NoC[tuple(map(tuple, robot_space))]* self.agents_in_robot_area(robot_xy) /  robot_area
             # switch 여부 계산
             if self.drag == 1 : # guide mode
                 if s1 >= alpha * s2: # guide -> noguide switch

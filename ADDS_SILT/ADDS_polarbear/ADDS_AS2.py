@@ -345,10 +345,10 @@ for j in range(run_iteration):
                 return portrayal
             if agent.type == 3: #robot
                 if agent.drag == 1: #끌고갈때
-                    portrayal["Color"] = "purple" #빨강!!!!!!!!!!!1
+                    portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
                 else:
-                    portrayal["Color"] = "red"
-                portrayal["Layer"] = 1
+                    portrayal["Color"] = "purple"
+                portrayal["Layer"] = 2
                 return portrayal
 
             portrayal["Color"] = "blue"
