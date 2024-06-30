@@ -144,10 +144,30 @@ for j in range(run_iteration):
         
             
             print('에피소드 수',i+1)
-            
+            file3 = open("correlation.txt", "a")
             if i % 100 == 0:
                 a = 1
-                reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
+                try: 
+                    robot_agent = s_model_r.return_robot()
+                    reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
+                    if(reward>50):
+                        reward = 4
+                    elif (reward>5):
+                        reward = 2
+                    elif (reward>-5):
+                        reward = -2
+                    elif (reward>-50):
+                        reward = -4
+                    else :
+                        reward = -6
+                    
+                    
+                    file3 = open("correlation.txt", "a")
+                    file3.write(f"{robot_agent.w1} {reward}\n")
+                except : 
+                    file3.close()
+                    continue
+
                 if(reward<0):
                     reward = -math.log2(-reward)
                 if(reward>0):
@@ -324,10 +344,12 @@ for j in range(run_iteration):
                 portrayal["Layer"] = 1
                 return portrayal
             if agent.type == 3: #robot
+                portrayal['w'] = 1
+                portrayal['h'] = 1
                 if agent.drag == 1: #끌고갈때
-                    portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
+                    portrayal["Color"] = "purple" #빨강!!!!!!!!!!!1
                 else:
-                    portrayal["Color"] = "orange"
+                    portrayal["Color"] = "red"
                 portrayal["Layer"] = 1
                 return portrayal
 

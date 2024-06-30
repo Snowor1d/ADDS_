@@ -236,10 +236,9 @@ class FightingAgent2(Agent):
         return now_stage
 
     def which_goal_agent_want(self):
-        
+        now_stage = self.check_stage_agent()
 
         if(self.goal_init == 0):
-            now_stage = self.check_stage_agent()
             goal_candiate = self.model.space_goal_dict[now_stage]
             if(len(goal_candiate)==1):
                 goal_index = 0
@@ -248,8 +247,7 @@ class FightingAgent2(Agent):
             self.now_goal = goal_candiate[goal_index]
             self.goal_init = 1
             self.previous_stage = now_stage
-        now_stage = self.check_stage_agent() #now_stage -> agent가 현재 어느 space에 있는가 
-        if(self.previous_stage != self.check_stage_agent()):
+        if(self.previous_stage != now_stage):
             goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]] 
             goal_candiate2 = []
             if(len(goal_candiate)>1):
@@ -362,308 +360,6 @@ class FightingAgent2(Agent):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
   
     
-    def robot_policy2(self):
-        from model import space_connected_linear
-        time_step = 0.2
-        from model import Model
-        global random_disperse
-        global robot_status
-        global robot_xy 
-        global robot_radius
-        global robot_ringing
-        global robot_goal
-        global past_target
-        self.drag = 1
-        robot_status = 1
-        space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
-        floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
-        floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
-                                           #floyd_path[stage_x][stage_2] = stage_y 
-                                           #floyd_path[stage_y][stage_2] = ste... 
-                                           # s1 -> sx -> sy -> .. stage
-        
-    
-        
-
-        self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
-
-        if(self.mission_complete == 1): #새로운 탈출 path를 찾는다
-            self.robot_now_path = [] # [[1,3], [4,5], [5,1]] 
-            agent_max = 0 #agent가 가장 많은 stage 
-            self.find_target(space_agent_num, floyd_distance)
-
-            past_target = self.save_target
-
-            go_path = self.model.get_path(floyd_path, self.robot_space, self.save_target) #로봇의 초기 위치 -> save_target까지 가는데 최단 경로 stage 리스트 
-            
-            back_path = self.model.get_path(floyd_path, self.save_target, self.save_point) # save_target(인구가 가장 많은 곳)에서 save_point(safe zone) 까지의 최단 경로 
-            self.go_path_num = len(go_path) #guide를 하기 위해서 ~ 
-
-            for i in range(len(go_path)-1):
-                self.robot_now_path.append(space_connected_linear(go_path[i], go_path[i+1])) #(stage1 stage2) -> 중간 goal을 알려준다  
-            self.robot_now_path.append([(self.save_target[0][0]+self.save_target[1][0])/2, (self.save_target[0][1]+self.save_target[1][1])/2]) #save target 중점까지 간다 
-            for i in range(len(back_path)-1):
-                self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  #back path도 넣는다 
-            self.mission_complete = 0 
-        
-        if(self.robot_waypoint_index > self.go_path_num-1): # 돌아오는 상황 
-            robot_status = 1 #robot_status가 1일때 -> guide함, 로봇 색깔바뀜(빨간색), 로봇에 영향받는 agent 색깔 바뀜(주황색) 
-            self.drag = 1 
-        else:
-            robot_status = 0
-            self.drag = 0
-
-        
-        d = (pow(self.robot_now_path[self.robot_waypoint_index][0]-robot_xy[0],2) + pow(self.robot_now_path[self.robot_waypoint_index][1]-robot_xy[1],2)) #현재 위치와 goal까지의 거리 구하기
-        if (d<1):
-            self.robot_waypoint_index = self.robot_waypoint_index + 1
-
-        if(self.robot_waypoint_index == len(self.robot_now_path)):
-            self.mission_complete = 1 #미션을 새로 만들어야해 (끝났으니까)
-            self.robot_waypoint_index = 0
-            return [int(round(robot_xy[0])), int(round(robot_xy[1]))]
-
-        goal_x = self.robot_now_path[self.robot_waypoint_index][0] - robot_xy[0] #역학을 위한.. 
-        goal_y = self.robot_now_path[self.robot_waypoint_index][1] - robot_xy[1]
-        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
-        
-        intend_force = 2
-        desired_speed = 1.5
-
-        if(self.drag == 0):
-            desired_speed = 4
-        else:
-            desired_speed = 4
-
-        if(goal_d != 0):
-            desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
-        else :
-            desired_force = [0, 0]
-    
-        
-        x=int(round(robot_xy[0]))
-        y=int(round(robot_xy[1]))
-
-        #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        near_loc = []
-        for i in temp_loc:
-            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
-                near_loc.append(i)
-        near_agents_list = []
-        for i in near_loc:
-            near_agents = self.model.grid.get_cell_list_contents([i])
-            if len(near_agents):
-                for near_agent in near_agents:
-                    near_agents_list.append(near_agent) #kinetic 모델과 동일
-        repulsive_force = [0, 0]
-        obstacle_force = [0, 0]
-
-        k=4
-
-        for near_agent in near_agents_list:
-            n_x = near_agent.xy[0]
-            n_y = near_agent.xy[1]
-            d_x = robot_xy[0] - n_x
-            d_y = robot_xy[1] - n_y
-            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
-
-
-            if(near_agent.dead == True):
-                continue
-                
-            if(d!=0):
-                if(near_agent.type == 12): ## 가상 벽
-                    repulsive_force[0] += 0
-                    repulsive_force[1] += 0
-
-                elif(near_agent.type == 1): ## agents
-                    repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
-                    repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
-
-                elif(near_agent.type == 11):## 검정벽 
-                    repulsive_force[0] += 5*np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 5*np.exp(-(d/2))*(d_y/d)
-            else :
-                if(random_disperse):
-                    repulsive_force = [1, -1]
-                    random_disperse = 0
-                else:
-                    repulsive_force = [-1, 1] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
-                    random_disperse = 1
-        
-        F_x = 0
-        F_y = 0
-        
-        F_x += desired_force[0]
-        F_y += desired_force[1]
-
-        F_x += repulsive_force[0]
-        F_y += repulsive_force[1]
-        vel = [0,0]
-        vel[0] = F_x/self.mass
-        vel[1] = F_y/self.mass
-
-        robot_xy[0] += vel[0] * time_step
-        robot_xy[1] += vel[1] * time_step
-        self.move_to_valid_robot()
-        
-        next_x = int(round(robot_xy[0]))
-        next_y = int(round(robot_xy[1]))
-
-        if(next_x<0):
-            next_x = 0
-        if(next_y<0):
-            next_y = 0
-        if(next_x>49):
-            next_x = 49
-        if(next_y>49):
-            next_y = 49
-
-            
-        #self.robot_guide = 0
-        robot_goal = self.robot_now_path[self.robot_waypoint_index]
-        return (next_x, next_y)
-    
-    def robot_policy_Q(self):
-        time_step = 0.2
-        #from model import Model
-        global random_disperse
-        global robot_status
-        global robot_xy 
-        global robot_radius
-        global robot_ringing
-        global robot_goal
-        global past_target
-        self.drag = 1
-        robot_status = 1
-        space_agent_num = self.agents_in_each_space() #어느 stage에 몇명이 있는가
-        floyd_distance = self.model.floyd_distance # floyd_distance[stage1][stage2] = 최단거리 
-        floyd_path = self.model.floyd_path #floyd_path[stage1][stage2] = stage_x 
-                                           #floyd_path[stage_x][stage_2] = stage_y 
-                                           #floyd_path[stage_y][stage_2] = ste... 
-                                           # s1 -> sx -> sy -> .. stage
-        
-    
-        
-
-        self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
-
-        next_action = self.select_Q(robot_xy)
-        #print("next action ", next_action)
-        goal_x = 0
-        goal_y = 0
-        goal_d =2 
-        if(next_action[0] == "UP"):
-            goal_x = 0 
-            goal_y = 2
-        elif(next_action[0] == "LEFT"):
-            goal_x = -2
-            goal_y = 0
-        elif(next_action[0] == "RIGHT"):
-            goal_x = 2
-            goal_y = 0
-        elif(next_action[0] == "DOWN"):
-            goal_x = 0
-            goal_y = -2
-        if(next_action[1]== "GUIDE"):
-            self.drag = 1
-            robot_status = 1
-        else :
-            self.drag = 0
-            robot_status = 0
-
-        intend_force = 2
-        desired_speed = 1.5
-
-        if(self.drag == 0):
-            desired_speed = 4
-        else:
-            desired_speed = 4
-
-        if(goal_d != 0):
-            desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
-        else :
-            desired_force = [0, 0]
-    
-        
-        x=int(round(robot_xy[0]))
-        y=int(round(robot_xy[1]))
-
-        #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        near_loc = []
-        for i in temp_loc:
-            if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
-                near_loc.append(i)
-        near_agents_list = []
-        for i in near_loc:
-            near_agents = self.model.grid.get_cell_list_contents([i])
-            if len(near_agents):
-                for near_agent in near_agents:
-                    near_agents_list.append(near_agent) #kinetic 모델과 동일
-        repulsive_force = [0, 0]
-        obstacle_force = [0, 0]
-
-        k=4
-
-        for near_agent in near_agents_list:
-            n_x = near_agent.xy[0]
-            n_y = near_agent.xy[1]
-            d_x = robot_xy[0] - n_x
-            d_y = robot_xy[1] - n_y
-            d = math.sqrt(pow(d_x, 2) + pow(d_y, 2))
-
-
-            if(near_agent.dead == True):
-                continue
-                
-            if(d!=0):
-                if(near_agent.type == 12): ## 가상 벽
-                    repulsive_force[0] += 0
-                    repulsive_force[1] += 0
-
-                elif(near_agent.type == 1): ## agents
-                    repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
-                    repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
-
-                elif(near_agent.type == 11):## 검정벽 
-                    repulsive_force[0] += 5*np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 5*np.exp(-(d/2))*(d_y/d)
-
-        F_x = 0
-        F_y = 0
-        
-        F_x += desired_force[0]
-        F_y += desired_force[1]
-
-        F_x += repulsive_force[0]
-        F_y += repulsive_force[1]
-        vel = [0,0]
-        vel[0] = F_x/self.mass
-        vel[1] = F_y/self.mass
-
-        robot_xy[0] += vel[0] * time_step
-        robot_xy[1] += vel[1] * time_step
-        self.move_to_valid_robot()
-        
-        next_x = int(round(robot_xy[0]))
-        next_y = int(round(robot_xy[1]))
-
-        if(next_x<0):
-            next_x = 0
-        if(next_y<0):
-            next_y = 0
-        if(next_x>49):
-            next_x = 49
-        if(next_y>49):
-            next_y = 49
-
-            
-        #self.robot_guide = 0
-        robot_goal = [robot_xy[0]+goal_x, robot_xy[1]+goal_y]
-        return (next_x, next_y)
-
     def agents_in_each_space(self):
         global num_remained_agent
         #from model import Model
@@ -763,8 +459,8 @@ class FightingAgent2(Agent):
 
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
-        #temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
+        #temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
             if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
@@ -829,18 +525,6 @@ class FightingAgent2(Agent):
         goal_y = self.now_goal[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
 
-        robot_x = robot_xy[0] - self.xy[0]
-        robot_y = robot_xy[1] - self.xy[1]
-        robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
-        if(robot_d<robot_radius and robot_status == 1):
-            goal_x = robot_x
-            goal_y = robot_y
-            goal_d = robot_d
-            self.type = 1
-            self.now_goal = robot_goal
-            
-        else :
-            self.type = 0
 
 
         if(goal_d != 0):
