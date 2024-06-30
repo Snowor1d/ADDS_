@@ -312,8 +312,7 @@ class FightingAgent(Agent):
                     self.respawn_delay = 0
             
             
-                   
-            new_position = self.robot_policy_Q()
+            new_position = self.decide_switch()
 
             self.model.reward_distance_difficulty()
             
@@ -1561,3 +1560,58 @@ class FightingAgent(Agent):
             self.w6 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
         
         return
+    
+    def decide_switch(self):
+        # s1 : a * 난이도 + b * 해당 난이도 구역의 단위 면적 당 사람 수
+        # s2 :  a* 로봇이 있는 공간의 난이도 + b * 로봇이 boundary의 단위 면적 당 사람 수
+        # s1 >= alpha * s2 면 guide 모드에서 noguide 모드로 전환
+        # s2 >= beta * s1 면 guide 모드에서 noguide 모드로 전환
+        global robot_xy
+        global robot_radius
+        a = 1
+        b = 1
+        alpha = 1.2
+        beta = 0.8
+
+        # s1 계산
+        space_list = self.model.space_list #space list 저장
+        room_list = self.model.room_list #room list 저장
+        pure_gray_space = [] 
+        for sublist_a in space_list:
+            if sublist_a not in room_list and sublist_a :
+                pure_gray_space.append(sublist_a)
+
+        s1 = -9999999
+        for i in pure_gray_space:
+            area = (i[1][0]-i[0][0])*(i[1][1]-i[0][1])
+            each_space_agent_num = self.agents_in_each_space2()
+            tuple_key = tuple(map(tuple, i))
+            s0 = a * self.model.dict_NoC[tuple_key] + b * each_space_agent_num.get(tuple_key) / area
+            if s0 > s1:
+                s1 = s0
+
+        # s2 계산
+        robot_x = robot_xy[0]
+        robot_y = robot_xy[1]
+        robot_space = self.model.grid_to_space[int(round(robot_x))][int(round(robot_y))]
+        
+        robot_area = math.pi * pow(robot_radius, 2)
+        s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
+
+        # switch 여부 계산
+        if self.drag == 1 : # guide mode
+            if s1 >= alpha * s2: # guide -> noguide switch
+                self.drag = 0     
+                return ## 여기에 그 알고리즘 넣어주기
+            elif (self.exit_way_rec[int(round(robot_x))][int(round(robot_y))] )== 1:
+                self.drag = 0
+                return ## 여기에 그 알고리즘 넣어주기
+            else:
+                return self.robot_policy_Q()
+        
+        else: # noguide mode
+            if s2 >= beta * s1: # noguide -> guide switch
+                self.drag = 1
+                return self.robot_policy_Q()
+            else:
+                return ## 여기에 그 알고리즘 넣어주기
