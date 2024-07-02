@@ -308,19 +308,22 @@ class FightingAgent(Agent):
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             
                    
-            new_position2 = self.robot_policy_Q()
+            new_position2 = self.robot_policy_Q()  ## 수상한 녀석...
+            # new_position2 = (30, 30)
 
             self.model.reward_distance_difficulty()
 
 
             self.model.grid.move_agent(self, new_position2)
+
+            print("robot_id", self.unique_id , "robot_xy : ", robot_xy)
             return
         new_position = self.test_modeling()
-        print("xy : ", self.xy)
-        print("\n")
-        #print("now_goal : ",self.now_goal)
+        # print("xy : ", self.xy, "\n")
+        
         if(self.type ==0 or self.type==1):
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
+            print("id : ", self.unique_id, ", self.xy : ", self.xy)
 
 
     def which_goal_agent_want(self):
@@ -393,12 +396,12 @@ class FightingAgent(Agent):
     def robot_policy_Q(self):
         time_step = 0.2
         #from model import Model
-        global random_disperse
-        global robot_status
+        global random_disperse ## random_disperse 는 있는데.. 2는 뭐임? 어디에도 없음 ### 원래는 2가 아니었네
+        global robot_status ## robot이 no guide 일 때 0, guide 일 때 1
         global robot_xy 
-        global robot_radius
-        global robot_ringing
-        global robot_goal
+        global robot_radius ## 7
+        global robot_ringing ## 0 ,, 이거 뭐임?
+        global robot_goal 
         global past_target
         #self.drag = 1
         #robot_status = 1
@@ -407,18 +410,19 @@ class FightingAgent(Agent):
 
         self.robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))] #로봇이 어느 stage에 있는지 나온다 
 
-        if(self.robot_initialized ==0 ):
+        if(self.robot_initialized == 0 ):
             self.robot_initialized = 1
             robot_xy[0] = self.model.robot.xy[0]
             robot_xy[1] = self.model.robot.xy[1]
-            return (self.model.robot.xy[0], self.model.robot.xy[1])
+            return (self.model.robot.xy[0], self.model.robot.xy[1]) ## 오호라... 처음에 리스폰 되는 거 피하려고 
         
         next_action = self.select_Q(robot_xy)
 
 
         goal_x = 0
         goal_y = 0
-        goal_d =2 
+        goal_d = 2 
+
         if(next_action[0] == "UP"):
             goal_x = 0 
             goal_y = 2
@@ -436,7 +440,7 @@ class FightingAgent(Agent):
         intend_force = 2
         desired_speed = 2
 
-        if(self.drag == 0):
+        if(self.drag == 0): ## not guide 일 때
             desired_speed = 5
         else:
             desired_speed = 5
@@ -521,7 +525,7 @@ class FightingAgent(Agent):
 
             
         #self.robot_guide = 0
-        robot_goal = [robot_xy[0]+goal_x, robot_xy[1]+goal_y]
+        robot_goal = [robot_xy[0] + goal_x, robot_xy[1] + goal_y]
         return (next_x, next_y)
     
 
@@ -688,7 +692,7 @@ class FightingAgent(Agent):
         
         goal_x = self.now_goal[0] - self.xy[0]
         goal_y = self.now_goal[1] - self.xy[1]
-        goal_d = math.sqrt(pow(goal_x,2)+pow(goal_y,2))
+        goal_d = math.sqrt(pow(goal_x,2) + pow(goal_y,2))
 
         robot_x = robot_xy[0] - self.xy[0]
         robot_y = robot_xy[1] - self.xy[1]
@@ -705,12 +709,12 @@ class FightingAgent(Agent):
         #     self.goal_init = 1
         #     self.previous_stage = now_stage
         #print("agent now level : ", now_level)
-        if(robot_d<robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
+        if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
             self.type = 1
-            self.now_goal = robot_goal
+            self.now_goal = robot_goal        
             
         else :
             self.which_goal_agent_want()
@@ -750,7 +754,7 @@ class FightingAgent(Agent):
         if(next_y>49):
             next_y = 49
 
-        print("next_x : ", next_x, "next_y : ", next_y)
+        # print("next_x : ", next_x, "next_y : ", next_y)
         self.robot_guide = 0
         return (next_x, next_y)
     

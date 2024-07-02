@@ -16,7 +16,7 @@ import math
 
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
-total_crowd = 10 
+total_crowd = 10
 max_specification = [20, 20]
 
 number_of_cases = 0 # 난이도 함수 ; 경우의 수
@@ -518,6 +518,7 @@ class FightingModel(Model):
 
     def make_robot(self):
         self.robot_placement() #로봇 배치 
+
     def make_agents(self):
         
         self.wall = [list(t) for t in self.wall]
@@ -812,6 +813,7 @@ class FightingModel(Model):
 
 
         return [x, y]
+    
 
     
     
@@ -1680,8 +1682,16 @@ class FightingModel(Model):
     def step(self):
         """Advance the model by one step."""
         global started
+        max_id = 1
         if(started):
+            for agent in self.agents:
+                if(agent.type==1 or agent.type==0):
+                    if(agent.unique_id > max_id):
+                        max_id = agent.unique_id
             #self.difficulty_f()
+            for agent in self.agents:
+                if(max_id == agent.unique_id):
+                    agent.dead = True
             started = 0
     
         self.schedule.step()
