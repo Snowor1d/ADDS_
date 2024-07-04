@@ -199,7 +199,8 @@ class ApproximateQAgent(PacmanQAgent):
     def __init__(self, extractor='IdentityExtractor', **args):   # 디폴트 ectractor는 identityExtractor이고, 이거로 해서 잘 되면 custom extractor를 사용하라고함.
         self.featExtractor = util.lookup(extractor, globals())()
         PacmanQAgent.__init__(self, **args)
-        self.weights = util.Counter() # features에 대한 가중치 
+        self.weights = util.Counter() # features에 대한 가중치 딕셔너리
+        
 
     def getWeights(self):
         return self.weights
@@ -224,20 +225,20 @@ class ApproximateQAgent(PacmanQAgent):
         #util.raiseNotDefined()
         
         featureVector = self.featExtractor.getFeatures(state,action) #현 state에서 action에 대한 features를 추출하고..
-        
+        # feature 종류와 그에 해당하는 값이 할당되어 있는 딕셔너리
+
         maxQFromNextState = self.computeValueFromQValues(nextState) # 다음 state에 대한 가치를 가져온다 
         actionQValue = self.getQValue(state,action) # 또한 행동에 대한 가치도 가져온다 
-
+        #print("featureVector", featureVector)
         for feature in featureVector: # 이것들을 이용해서 feature에 대한 가중치를 업데이트 한다 
             self.weights[feature] += self.alpha * (reward + self.discount * maxQFromNextState - actionQValue) * \
                                      featureVector[feature]
-            print( "reward : ", reward )
-            print( "maxQFromNextState : ", maxQFromNextState)
-            print( "actionQValue : ", actionQValue)
-            print( "featureVector[feature] : ",featureVector)
-            print( "weights[", feature, "] : ", self.weights[feature])
-            print( "self.weights[feature] : ", self.weights)
-
+            file_path = 'reward.txt'
+    
+            # 'a' 모드를 사용하여 파일에 값을 추가
+            with open(file_path, 'a') as file:
+                file.write(f'{reward}\n')
+        print('self.weights', self.weights)
     def final(self, state):
         """Called at the end of each game."""
         # call the super-class final method

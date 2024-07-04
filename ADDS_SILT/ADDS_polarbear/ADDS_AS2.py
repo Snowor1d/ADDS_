@@ -268,7 +268,7 @@ for j in range(run_iteration):
                     "text_color": "black",
                 }
                 return portrayal
-            if agent.type == 20: ## for exit_rec 
+            if agent.type == 20: ## for exit_way_rec 
                 portrayal = {
                     "Shape": "circle",
                     "Filled": "true",
@@ -286,7 +286,7 @@ for j in range(run_iteration):
                     "Color": "green", 
                     "r": 1,
                     "text": "",
-                    "Layer": 0,
+                    "Layer": 1,
                     "text_color": "black",
                 }
                 return portrayal
@@ -298,7 +298,7 @@ for j in range(run_iteration):
                     "Color": "black", 
                     "r": 1,
                     "text": "",
-                    "Layer": 0,
+                    "Layer": 2,
                     "text_color": "black",
                 }
                 return portrayal

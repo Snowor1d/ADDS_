@@ -316,10 +316,8 @@ class FightingModel(Model):
             }
         )
         
-
         exit_rec = self.make_exit() 
         self.exit_rec = exit_rec
-
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
 
 
@@ -508,7 +506,7 @@ class FightingModel(Model):
         
         self.wall = wall 
         self.space = space
-        self.exit_rec = exit_rec
+        #self.exit_rec = exit_rec
 
         # self.make_agents()
         # self.random_agent_distribute_outdoor(10)
@@ -613,6 +611,7 @@ class FightingModel(Model):
         else:
             self.is_right_exit = 0
 
+        
         left_exit_num = 0
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
@@ -676,6 +675,7 @@ class FightingModel(Model):
             self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
             self.exit_goal = [self.up_exit_goal[0], self.up_exit_goal[1]]
         #exit_rec에는 탈출 점들의 좌표가 쌓임
+
         return exit_rec
 
 
@@ -782,10 +782,11 @@ class FightingModel(Model):
 
         x = random.randint(xy[0][0]+1, xy[1][0]-1)
         y = random.randint(xy[0][1]+1, xy[1][1]-1)
+        
 
 
         self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
-        self.agent_id = self.agent_id + 1
+        self.agent_id = self.agent_id + 10
         self.schedule.add(self.robot)
         self.grid.place_agent(self.robot, (x, y))
 

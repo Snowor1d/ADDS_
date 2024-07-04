@@ -160,7 +160,7 @@ class FightingAgent(Agent):
         self.robot_now_path = []
         self.robot_waypoint_index = 0
 
-        self.respawn_delay = 0
+        self.delay = 0
         self.xy1 = [0,0]
         self.xy2 = [0,0]
         self.previous_type = 0
@@ -300,7 +300,9 @@ class FightingAgent(Agent):
 
         # robot_prev_xy[0] = robot_xy[0]
         # robot_prev_xy[1] = robot_xy[1]
+        
         if (self.type == 3):
+            
             robot_prev_xy[0] = robot_xy[0]
             robot_prev_xy[1] = robot_xy[1]
             
@@ -308,22 +310,25 @@ class FightingAgent(Agent):
             robot_space_tuple = tuple(map(tuple, self.robot_space))
             
                    
+
             new_position2 = self.robot_policy_Q()  ## 수상한 녀석...
             # new_position2 = (30, 30)
+
 
             self.model.reward_distance_difficulty()
 
 
             self.model.grid.move_agent(self, new_position2)
 
-            print("robot_id", self.unique_id , "robot_xy : ", robot_xy)
+            
             return
-        new_position = self.test_modeling()
-        # print("xy : ", self.xy, "\n")
         
+        new_position = self.test_modeling()
+
         if(self.type ==0 or self.type==1):
+            
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
-            print("id : ", self.unique_id, ", self.xy : ", self.xy)
+            
 
 
     def which_goal_agent_want(self):
@@ -453,6 +458,7 @@ class FightingAgent(Agent):
         
         x=int(round(robot_xy[0]))
         y=int(round(robot_xy[1]))
+        
 
         temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
@@ -754,7 +760,7 @@ class FightingAgent(Agent):
         if(next_y>49):
             next_y = 49
 
-        # print("next_x : ", next_x, "next_y : ", next_y)
+
         self.robot_guide = 0
         return (next_x, next_y)
     
@@ -1053,15 +1059,20 @@ class FightingAgent(Agent):
             #s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
             s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.model.dict_NoC[tuple(map(tuple, robot_space))]* self.agents_in_robot_area(robot_xy) /  robot_area
             # switch 여부 계산
+            
             if self.drag == 1 : # guide mode
-                if s1 >= alpha * s2: # guide -> noguide switch
-                    self.drag = 0     
-                    mode = "NOT_GUIDE"
-                    robot_status = 0
-                elif (self.model.exit_way_rec[int(round(robot_x))][int(round(robot_y))] )== 1:
-                    self.drag = 0
-                    robot_status = 0
-                    mode = "NOT_GUIDE"
+                # if s1 >= alpha * s2: # guide -> noguide switch
+                #     self.drag = 0     
+                #     mode = "NOT_GUIDE"
+                #     robot_status = 0
+                
+                if (self.model.exit_way_rec[int(round(robot_x))][int(round(robot_y))] )== 1:
+                    self.delay += 1
+                    if self.delay >= 3:
+                        self.drag = 0
+                        robot_status = 0
+                        mode = "NOT_GUIDE" 
+                        self.delay = 0 
                 else:
                     self.drag = 1
                     robot_status = 1
@@ -1246,6 +1257,7 @@ class FightingAgent(Agent):
     def F3_direction_agents(self, state, action, mode, compartment_direction):
         sum = 0 
         each_space_agents_num = self.agents_in_each_space2()
+        #print("compartment_direction : ", compartment_direction[action])
         for i in compartment_direction[action]:
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key]
