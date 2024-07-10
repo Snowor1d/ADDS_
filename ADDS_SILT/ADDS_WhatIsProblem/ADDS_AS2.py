@@ -22,7 +22,6 @@ import time
 #-------------------------#
 visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 500
-number_of_agents = 11 # agents 수
 #-------------------------#
 for j in range(run_iteration):
 
@@ -31,16 +30,13 @@ for j in range(run_iteration):
         s_model = model.FightingModel(5,50,50)
         s_model_r = copy.deepcopy(s_model)     
         
-        s_model_r.make_robot() ## 자리를 옮겨봤어
-        s_model_r.make_agents()
-
         ran_num = random.randint(10000,20000)
         s_model.make_agents2()
-        s_model.random_agent_distribute_outdoor2(number_of_agents,ran_num)
+        s_model.random_agent_distribute_outdoor2(10,ran_num)
         
-        # s_model_r.make_robot()
-        # s_model_r.make_agents()
-        s_model_r.random_agent_distribute_outdoor(number_of_agents,ran_num)
+        s_model_r.make_robot()
+        s_model_r.make_agents()
+        s_model_r.random_agent_distribute_outdoor(10,ran_num)
 
         if(run_iteration>0):
             del s_model
@@ -51,8 +47,8 @@ for j in range(run_iteration):
             s_model_r.make_robot()
             s_model_r.make_agents()
             s_model.make_agents2()
-            s_model_r.random_agent_distribute_outdoor(number_of_agents,ran_num)
-            s_model.random_agent_distribute_outdoor2(number_of_agents,ran_num)
+            s_model_r.random_agent_distribute_outdoor(10,ran_num)
+            s_model.random_agent_distribute_outdoor2(10,ran_num)
 
         n = 500  # n을 반복하려는 횟수로 설정
         #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
@@ -231,13 +227,14 @@ for j in range(run_iteration):
     if visualization_mode == 'on':
         s_model = model.FightingModel(5,50,50)
         s_model_r = copy.deepcopy(s_model)     
+        
         ran_num = random.randint(10000,20000)
         s_model.make_agents2()
-        s_model.random_agent_distribute_outdoor2(number_of_agents,ran_num)
+        s_model.random_agent_distribute_outdoor2(10,ran_num)
         
         s_model_r.make_robot()
         s_model_r.make_agents()
-        s_model_r.random_agent_distribute_outdoor(number_of_agents,ran_num)
+        s_model_r.random_agent_distribute_outdoor(10,ran_num)
         
         
 
@@ -267,7 +264,7 @@ for j in range(run_iteration):
                     "text_color": "black",
                 }
                 return portrayal
-            if agent.type == 20: ## for exit_way_rec 
+            if agent.type == 20: ## for exit_rec 
                 portrayal = {
                     "Shape": "circle",
                     "Filled": "true",
@@ -285,7 +282,7 @@ for j in range(run_iteration):
                     "Color": "green", 
                     "r": 1,
                     "text": "",
-                    "Layer": 1,
+                    "Layer": 0,
                     "text_color": "black",
                 }
                 return portrayal
@@ -297,7 +294,7 @@ for j in range(run_iteration):
                     "Color": "black", 
                     "r": 1,
                     "text": "",
-                    "Layer": 2,
+                    "Layer": 0,
                     "text_color": "black",
                 }
                 return portrayal

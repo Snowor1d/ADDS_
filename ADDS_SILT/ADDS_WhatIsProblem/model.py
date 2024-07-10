@@ -16,7 +16,7 @@ import math
 
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
-total_crowd = 10
+total_crowd = 10 
 max_specification = [20, 20]
 
 number_of_cases = 0 # 난이도 함수 ; 경우의 수
@@ -316,8 +316,10 @@ class FightingModel(Model):
             }
         )
         
+
         exit_rec = self.make_exit() 
         self.exit_rec = exit_rec
+
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
 
 
@@ -350,7 +352,6 @@ class FightingModel(Model):
             self.wall_matrix[0][i] = 1
             self.wall_matrix[i][int(NUMBER_OF_CELLS)-1] = 1
             self.wall_matrix[int(NUMBER_OF_CELLS)-1][0] = 1
-        
 
         #wall = wall+self.random_map_generator2(3, 5, 2, 100)
         self.space_list = []
@@ -503,21 +504,20 @@ class FightingModel(Model):
                     continue
                 goal_matrix[i][j] = space_connected_linear(i, j) # 공간 i 와 공간 j 사이에 골 찍기 
         self.dict_NoC = {}
-        self.difficulty_d()
+        self.difficulty_f()
         
         self.wall = wall 
         self.space = space
-        #self.exit_rec = exit_rec
+        self.exit_rec = exit_rec
 
         # self.make_agents()
         # self.random_agent_distribute_outdoor(10)
         # self.make_robot()
 
-        print("exit : ", self.exit_compartment)
+        
 
     def make_robot(self):
         self.robot_placement() #로봇 배치 
-
     def make_agents(self):
         
         self.wall = [list(t) for t in self.wall]
@@ -612,7 +612,6 @@ class FightingModel(Model):
         else:
             self.is_right_exit = 0
 
-        
         left_exit_num = 0
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
@@ -676,7 +675,6 @@ class FightingModel(Model):
             self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
             self.exit_goal = [self.up_exit_goal[0], self.up_exit_goal[1]]
         #exit_rec에는 탈출 점들의 좌표가 쌓임
-
         return exit_rec
 
 
@@ -783,11 +781,10 @@ class FightingModel(Model):
 
         x = random.randint(xy[0][0]+1, xy[1][0]-1)
         y = random.randint(xy[0][1]+1, xy[1][1]-1)
-        
 
-        self.agent_id = self.agent_id + 10
+
         self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
-        self.agent_id = self.agent_id + 10
+        self.agent_id = self.agent_id + 1
         self.schedule.add(self.robot)
         self.grid.place_agent(self.robot, (x, y))
 
@@ -815,7 +812,6 @@ class FightingModel(Model):
 
 
         return [x, y]
-    
 
     
     
@@ -1577,8 +1573,7 @@ class FightingModel(Model):
         n = len(vertices)
         distance_matrix = {start: {end: float('infinity') for end in vertices} for start in vertices}  
         next_vertex_matrix = {start: {end: None for end in vertices} for start in vertices}
-        
-    
+
         for start in self.space_graph.keys():
             for end in self.space_graph[start]:
                 end_t = ((end[0][0], end[0][1]), (end[1][0],end[1][1]))
@@ -1685,24 +1680,10 @@ class FightingModel(Model):
     def step(self):
         """Advance the model by one step."""
         global started
-        max_id = 1
         if(started):
-            for agent in self.agents:
-                if(agent.type==1 or agent.type==0):
-                    if(agent.unique_id > max_id):
-                        max_id = agent.unique_id
             #self.difficulty_f()
-            for agent in self.agents:
-                if(max_id == agent.unique_id):
-                    agent.dead = True
             started = 0
-            max_id = 1
-            for agent in self.agents:
-                if (agent.unique_id > max_id and (agent.type== 0 or agent.type==1)):
-                    max_id = agent.unique_id
-            for agent in self.agents:
-                if(max_id == agent.unique_id):
-                    agent.dead = True 
+    
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
         # if(self.robot != None):
@@ -1733,18 +1714,7 @@ class FightingModel(Model):
                 p_list = [key]
                 self.dfs(key, self.space_graph[key], p_list) #튜플, 리스트, 리스트 속 튜플
                 self.dict_NoC[key] = number_of_cases
-    def difficulty_d(self): # 공간을 넣으면 해당 공간의 난이도 출력
-        global number_of_cases
-
-
-        for key, val in self.space_graph.items():
-            if len(val) != 0 : #닫힌 공간 제외 val 0으로 초기화
-                self.dict_NoC[key] = 0
-
-        for key in self.dict_NoC.keys(): # key 공간이 출구와 맞닿아 있으면 value 1
-            self.dict_NoC[self.exit_compartment] = 0
-            if list(map(list, self.exit_compartment)) in self.space_graph[key]: 
-               self.dict_NoC[key] = self.floyd_distance[key][self.exit_compartment] 
+        
 
     def space_specification(self):
 
