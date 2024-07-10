@@ -254,10 +254,10 @@ class FightingAgent(Agent):
                     self.health = 0
                     self.dead = True 
 
-        if(self.type == 0 or self.type==1):
-            print("agent 위치 : ", self.xy)
-            print("robot과의 거리 : ", self.agent_to_agent_distance_real(self.xy, robot_xy))
-            print("--------------------")
+        # if(self.type == 0 or self.type==1):
+        #     print("agent 위치 : ", self.xy)
+        #     print("robot과의 거리 : ", self.agent_to_agent_distance_real(self.xy, robot_xy))
+        #     print("--------------------")
 
         self.move()
         
@@ -918,9 +918,15 @@ class FightingAgent(Agent):
         distance = 0
         from_space = tuple(map(tuple, from_space))
         to_space = tuple(map(tuple, to_space))
+        next_vertex_matrix = self.model.floyd_warshall()[0]
         current_point = from_agent
         current_space = from_space
-        next_vertex_matrix = self.model.floyd_warshall()[0]
+        next_space = next_vertex_matrix[current_space][to_space]
+        next_point = space_connected_linear(current_space, next_space)
+        distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
+        current_point = next_point 
+        current_space = next_space
+
         while(current_space != to_space):
             next_space = next_vertex_matrix[current_space][to_space]
             if(next_space != to_space):
@@ -1131,8 +1137,8 @@ class FightingAgent(Agent):
         a = 0.1
         b = 2
         alpha = 2
-        beta = 0.7
-        dict_danger = self.how_urgent_space_is()
+        beta = 0.5
+        dict_danger = self.how_urgent_another_space_is()
         if(robot_step_num%3==0):
                 # s1 계산
             space_list = self.model.space_list #space list 저장
@@ -1160,19 +1166,15 @@ class FightingAgent(Agent):
             robot_area = math.pi * pow(robot_radius, 2)
             #s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
             s2 = self.how_urgent_robot_space_is()/  robot_area
-
-            print("S1 : ", s1)
-            print("S2 : ", s2)
-            print("------------------")
             # switch 여부 계산
             
             if self.drag == 1 : # guide mode
-                # if s1 >= alpha * s2: # guide -> noguide switch
-                #     self.drag = 0     
-                #     mode = "NOT_GUIDE"
-                #     robot_status = 0
+                if s1 >= alpha * s2: # guide -> noguide switch
+                    self.drag = 0     
+                    mode = "NOT_GUIDE"
+                    robot_status = 0
                 
-                if (self.model.exit_way_rec[int(round(robot_x))][int(round(robot_y))] )== 1:
+                elif (self.model.exit_way_rec[int(round(robot_x))][int(round(robot_y))] )== 1:
                     self.delay += 1
                     if self.delay >= 3:
                         self.drag = 0
@@ -1260,8 +1262,8 @@ class FightingAgent(Agent):
                 self.now_action = [selected, "NOT_GUIDE"]
             return self.now_action
         
-    def how_urgent_space_is(self):
-        
+    def how_urgent_another_space_is(self):
+        global robot_xy 
         dict_urgent = {}
 
         for key, val in self.model.space_graph.items():
@@ -1269,19 +1271,24 @@ class FightingAgent(Agent):
                 dict_urgent[key] = 0
             else :
                 dict_urgent[key] = -1
-            
+        robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
+        
         for agent in self.model.agents:
-            if agent.type==0 or agent.type==1:
+            if (agent.type==0 or agent.type==1) and agent.dead==False:
                 space = self.model.grid_to_space[int(round(agent.xy[0]))][int(round(agent.xy[1]))]
+                if(space==robot_space):
+
+                    continue
                 dict_urgent[tuple(map(tuple, space))] += agent.danger
         return dict_urgent
     def how_urgent_robot_space_is(self):
         global robot_xy
         global robot_radius
         urgent = 0
+        
             
         for agent in self.model.agents:
-            if (agent.type==0 or agent.type==1) and math.sqrt((pow(agent.xy[0]-robot_xy[0],2)+pow(agent.xy[1]-robot_xy[1],2))<robot_radius):
+            if ((agent.type==0 or agent.type==1) and (math.sqrt((pow(agent.xy[0]-robot_xy[0],2)+pow(agent.xy[1]-robot_xy[1],2)))<robot_radius) and agent.dead==False):
                 urgent += agent.danger
         return urgent
 
@@ -1415,7 +1422,7 @@ class FightingAgent(Agent):
                 if (after_d < d):
                     result += i.danger
                     count += 1 
-        print(f"{action}으로 가면, {count}명의 agent와 가까워짐, F3값 : {result}")
+        #print(f"{action}으로 가면, {count}명의 agent와 가까워짐, F3값 : {result}")
         return result
                     
                 
