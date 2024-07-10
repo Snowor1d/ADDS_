@@ -158,12 +158,9 @@ class FightingAgent2(Agent):
         self.w1 = float(lines[0].strip())
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
-        self.w4 = float(lines[3].strip())
-        self.w5 = float(lines[2].strip())
-        self.w6 = float(lines[3].strip()) 
 
-        self.feature_weights_guide = [self.w1, self.w2, self.w3]
-        self.feature_weights_not_guide = [self.w4, self.w5, self.w6]
+        self.feature_weights_guide = [self.w1, self.w2]
+        self.feature_weights_not_guide = [self.w3]
 
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)

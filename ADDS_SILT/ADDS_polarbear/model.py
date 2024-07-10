@@ -363,7 +363,40 @@ class FightingModel(Model):
         self.init_outside() #외곽지대 탈출로 구현 
         
         self.door_list = [] #일단 무시
-        self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1) # recursion을 이용해 랜덤으로 맵을 나눔 
+        
+        map_ran_num = random.randint(1, 5)
+        if map_ran_num == 1:
+            self.number = 12576813123456
+            self.x_number = 1354792
+            self.y_number = 7854621
+            self.left_number = 797331
+            self.up_number = 684131
+        elif map_ran_num == 2:
+            self.number = 125768131234
+            self.x_number = 135479
+            self.y_number = 785462
+            self.left_number = 797331
+            self.up_number = 684132
+        elif map_ran_num == 3:
+            self.number = 65822387379
+            self.x_number = 4338513
+            self.y_number = 5825845
+            self.left_number = 79103
+            self.up_number = 283235 
+        elif map_ran_num == 4:
+            self.number = 6582238
+            self.x_number = 4338511
+            self.y_number = 582584
+            self.left_number = 79103
+            self.up_number = 283233
+        else:
+            self.number = 87631535
+            self.x_number = 43383212
+            self.y_number = 58232119
+            self.left_number = 79103321
+            self.up_number = 28323331    
+        
+        self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1,self.number) # recursion을 이용해 랜덤으로 맵을 나눔 
         #print(self.space_list)
         notvalid_list = []
         for i in self.room_list:
@@ -1466,7 +1499,7 @@ class FightingModel(Model):
         self.hazard_recur(x, y-1, depth-1, x_range, y_range)
        
 
-    def map_recur_divider_fine(self, xy, x_unit, y_unit, num, space_list, room_list, is_room): # ex) xy = [[2,3], [4,5]] # space 나누는 것. 나누고 방을 선택함
+    def map_recur_divider_fine(self, xy, x_unit, y_unit, num, space_list, room_list, is_room,rand_num): # ex) xy = [[2,3], [4,5]] # space 나누는 것. 나누고 방을 선택함
         x_diff = xy[1][0] - xy[0][0] # a점의 튜플은 (xy[0][0],xy[0][1])  b점의 튜플은 (xy[1][0],xy[1][1]) 
         y_diff = xy[1][1] - xy[0][1]
 
@@ -1480,73 +1513,85 @@ class FightingModel(Model):
             room_list.append(real_xy)
             return
         
-            
+        a = (rand_num * 12321) % 20 + 1    
         if(num==1): 
-            a = random.randint(1,20)
+            # a = random.randint(1,20)
             if(a<1):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return 
         elif(num==2):
-            a = random.randint(1,20)
+            # a = random.randint(1,20)
             if(a<3):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return
         elif(num==3):
-            a = random.randint(1,20)
+            # a = random.randint(1,20)
             # if(a<5):
             if(a<5):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.
         elif(num==4):
-            a = random.randint(1,20)
+            # a = random.randint(1,20)
             # if(a<8):
             if(a<17):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return #여기에 걸리면 방 만들고 종료.
         elif(num==5):
-            a = random.randint(1,20)
+            # a = random.randint(1,20)
             if(a<20):
                 space_list.append(real_xy)
                 room_list.append(real_xy)
                 return
             
-        divide_num_y = random.randint(1, y_diff-1)
-        divide_num_x = random.randint(1, x_diff-1)
+        # divide_num_y = random.randint(1, y_diff-1)
+        # divide_num_x = random.randint(1, x_diff-1)
 
-        random_exist_room1 = random.randint(0,1)
+        divide_num_x = self.x_number * 123456 % (x_diff-1) + 1
+        divide_num_y = self.y_number * 123456 % (y_diff-1) + 1
+
+
+        # random_exist_room1 = random.randint(0,1)
         #random_exist_room2 = random.randint(0,1)
-        random_exist_room3 = random.randint(0,1)
+        # random_exist_room3 = random.randint(0,1)
         #random_exist_room4 = random.randint(0,1)
 
-        if (random_exist_room1 == 0):
-            random_exist_room2 = 1
-        else:
-            random_exist_room2 = 0
-        if (random_exist_room3 == 0):
-            random_exist_room4 = 1
-        else:
-            random_exist_room4 = 0
+        
+        # if (random_exist_room1 == 0):
+        #     random_exist_room2 = 1
+        # else:
+        #     random_exist_room2 = 0
+        # if (random_exist_room3 == 0):
+        #     random_exist_room4 = 1
+        # else:
+        #     random_exist_room4 = 0
+
+        random_exist_room1 = 0
+        random_exist_room2 = 1
+        random_exist_room3 = 0
+        random_exist_room4 = 1
     
         special_hallway = random.randint(1, 2) #가운데 나눠지는 길을 만들기 위함(일반적인 건물배치도 생성 유도)
         if(num<3):
             if (num%2==0): #가로로 나눈다
-                left = int(x_diff*random.randint(1,3)/4)
+                #left = int(x_diff*random.randint(1,3)/4)
+                left = int(x_diff* ((self.left_number * 486647) % 3 + 1) /4)
                 #hallway_size = random.randint(1,2)
                 hallway_size = 1
                 if(xy[0][0]+left+hallway_size >= (xy[1][0]-2)):
-                    self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
+                    self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1,self.number)
                     return
                 # if(x_diff<13):5
                 #     left = int(x_diff*(1/2))
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+left, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
-                self.map_recur_divider_fine([[xy[0][0]+left, xy[0][1]], [xy[0][0]+left+hallway_size, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 0)
-                self.map_recur_divider_fine([[xy[0][0]+left+hallway_size, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+left, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1,self.number)
+                self.map_recur_divider_fine([[xy[0][0]+left, xy[0][1]], [xy[0][0]+left+hallway_size, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 0,self.number)
+                self.map_recur_divider_fine([[xy[0][0]+left+hallway_size, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1,self.number)
             else: #세로로 나눈다
-                up = int(y_diff*random.randint(1,3)/4)
+                #up = int(y_diff*random.randint(1,3)/4)
+                up = int(y_diff* ((self.up_number * 48664247) % 3 + 1) /4)
                 hallway_size = random.randint(1,2)
                 hallway_size = 1
                 # if(xy[0][1]+up+hallway_size >= (xy[1][1]-2)):
@@ -1556,20 +1601,20 @@ class FightingModel(Model):
                 #     return
                 # if(y_diff<13):
                 #     up = int(y_diff*(1/2))
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+up]], x_unit, y_unit, num+1, space_list, room_list, 1)
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up], [xy[1][0], xy[0][1]+up+hallway_size]], x_unit, y_unit, num+1, space_list, room_list, 0)
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up+hallway_size], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+up]], x_unit, y_unit, num+1, space_list, room_list, 1,self.number)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up], [xy[1][0], xy[0][1]+up+hallway_size]], x_unit, y_unit, num+1, space_list, room_list, 0,self.number)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+up+hallway_size], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, 1,self.number)
 
         else:
             if(num<1):
                 random_exist_room1 = random_exist_room2 = random_exist_room3 = random_exist_room4 = 1
             if (num%2==0): #가로로 나눈다
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1)
-                self.map_recur_divider_fine([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[0][0]+divide_num_x, xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room1,self.number)
+                self.map_recur_divider_fine([[xy[0][0]+divide_num_x, xy[0][1]], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room2,self.number)
         
             else: #세로로 나눈다
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3)
-                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4) 
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]], [xy[1][0], xy[0][1]+divide_num_y]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room3,self.number)
+                self.map_recur_divider_fine([[xy[0][0], xy[0][1]+divide_num_y], [xy[1][0], xy[1][1]]], x_unit, y_unit, num+1, space_list, room_list, random_exist_room4,self.number)
     
     def floyd_warshall(self): #공간과 공간사이의 최단 경로를 구하는 알고리즘 
 
