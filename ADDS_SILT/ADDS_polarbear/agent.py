@@ -254,6 +254,12 @@ class FightingAgent(Agent):
                 if (self.xy[0] > self.model.down_exit_area[0][0] and self.xy[0] < self.model.down_exit_area[1][0] and self.xy[1] > self.model.down_exit_area[0][1] and self.xy[1]<self.model.down_exit_area[1][1]):
                     self.health = 0
                     self.dead = True 
+
+        if(self.type == 0 or self.type==1):
+            print("agent 위치 : ", self.xy)
+            print("robot과의 거리 : ", self.agent_to_agent_distance_real(self.xy, robot_xy))
+            print("--------------------")
+
         self.move()
         
 
@@ -890,8 +896,38 @@ class FightingAgent(Agent):
                 d += (d_1 + d_2 + d_3 + d_4)
                 if(d < min_d):
                     min_d = d 
-        return min_d 
-        
+        return min_d
+
+    def agent_to_agent_distance_real(self, from_agent, to_agent):
+        from model import space_connected_linear
+        start = from_agent
+        end = to_agent 
+
+        from_grid_to_space = self.model.grid_to_space
+        from_space = from_grid_to_space[int(round(from_agent[0]))][int(round(from_agent[1]))]
+        to_space = from_grid_to_space[int(round(to_agent[0]))][int(round(to_agent[1]))]
+
+        if(from_space==to_space): #같은 공간
+            return math.sqrt(pow(from_agent[0]-to_agent[0],2)+pow(from_agent[1]-to_agent[1],2))
+        distance = 0
+        from_space = tuple(map(tuple, from_space))
+        to_space = tuple(map(tuple, to_space))
+        current_point = from_agent
+        current_space = from_space
+        next_vertex_matrix = self.model.floyd_warshall()[0]
+        while(current_space != to_space):
+            next_space = next_vertex_matrix[current_space][to_space]
+            if(next_space != to_space):
+                next_next_space = next_vertex_matrix[next_space][to_space]
+                next_point = space_connected_linear(next_space, next_next_space)
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                current_point = next_point
+                current_space = next_space
+            else:
+                next_point = to_agent
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                break
+        return distance
 
     def F1_distance(self, state, action, mode):
         from model import space_connected_linear
