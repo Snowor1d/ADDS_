@@ -317,6 +317,43 @@ class FightingModel(Model):
             }
         )
         
+        map_ran_num = random.randint(1, 5)
+        if map_ran_num == 1:
+            self.number = 12576813123456
+            self.x_number = 1354792
+            self.y_number = 7854621
+            self.left_number = 797331
+            self.up_number = 684131
+            self.only_one_exit = 2
+        elif map_ran_num == 2:
+            self.number = 125768131234
+            self.x_number = 135479
+            self.y_number = 785462
+            self.left_number = 797331
+            self.up_number = 684132
+            self.only_one_exit = 1
+        elif map_ran_num == 3:
+            self.number = 65822387379
+            self.x_number = 4338513
+            self.y_number = 5825845
+            self.left_number = 79103
+            self.up_number = 283235 
+            self.only_one_exit = 4
+        elif map_ran_num == 4:
+            self.number = 6582238
+            self.x_number = 4338511
+            self.y_number = 582584
+            self.left_number = 79103
+            self.up_number = 283233
+            self.only_one_exit = 3
+        else:
+            self.number = 87631535
+            self.x_number = 43383212
+            self.y_number = 58232119
+            self.left_number = 79103321
+            self.up_number = 28323331
+            self.only_one_exit = 2
+
         exit_rec = self.make_exit() 
         self.exit_rec = exit_rec
         # 벽을 agent로 표현하게 됨. agent 10이 벽이다.
@@ -364,38 +401,7 @@ class FightingModel(Model):
         self.init_outside() #외곽지대 탈출로 구현 
         
         self.door_list = [] #일단 무시
-        
-        map_ran_num = random.randint(1, 5)
-        if map_ran_num == 1:
-            self.number = 12576813123456
-            self.x_number = 1354792
-            self.y_number = 7854621
-            self.left_number = 797331
-            self.up_number = 684131
-        elif map_ran_num == 2:
-            self.number = 125768131234
-            self.x_number = 135479
-            self.y_number = 785462
-            self.left_number = 797331
-            self.up_number = 684132
-        elif map_ran_num == 3:
-            self.number = 65822387379
-            self.x_number = 4338513
-            self.y_number = 5825845
-            self.left_number = 79103
-            self.up_number = 283235 
-        elif map_ran_num == 4:
-            self.number = 6582238
-            self.x_number = 4338511
-            self.y_number = 582584
-            self.left_number = 79103
-            self.up_number = 283233
-        else:
-            self.number = 87631535
-            self.x_number = 43383212
-            self.y_number = 58232119
-            self.left_number = 79103321
-            self.up_number = 28323331    
+          
         
         self.map_recur_divider_fine([[1, 1], [9, 9]], 5, 5, 0, self.space_list, self.room_list, 1,self.number) # recursion을 이용해 랜덤으로 맵을 나눔 
         #print(self.space_list)
@@ -629,20 +635,19 @@ class FightingModel(Model):
 
     def make_exit(self):
         exit_rec = []
-        only_one_exit = random.randint(1,4) #현재는 출구가 하나만 있게 함 
         self.exit_goal = [0,0]
         self.is_down_exit = 0
         self.is_left_exit = 0
         self.is_up_exit = 0
         self.is_right_exit = 0
 
-        if(only_one_exit == 1):
+        if(self.only_one_exit == 1):
             self.is_down_exit = 1
-        elif(only_one_exit == 2):
+        elif(self.only_one_exit == 2):
             self.is_left_exit = 1
-        elif(only_one_exit == 3):
+        elif(self.only_one_exit == 3):
             self.is_up_exit = 1
-        elif(only_one_exit == 4):
+        elif(self.only_one_exit == 4):
             self.is_right_exit = 1
         # self.is_down_exit = random.randint(0,1)
         # self.is_left_exit = random.randint(0,1) #0이면 출구없음 #1이면 출구있음
@@ -657,8 +662,10 @@ class FightingModel(Model):
         left_exit_num = 0
         self.left_exit_goal = [0,0]
         if(self.is_left_exit): #left에 존재하면?
-            exit_size = random.randint(10, 30) #출구 사이즈를 30~70 정한다 
-            start_exit_cell = random.randint(0, 49-exit_size) #출구가 어디부터 시작되는가? #넘어갈까봐
+            # exit_size = random.randint(10, 30) #출구 사이즈를 30~70 정한다  ## 원래 이거 였음 
+            exit_size = 15
+            start_exit_cell = 20 #출구가 어디부터 시작되는가? #넘어갈까봐
+            # start_exit_cell = random.randint(0, 49-exit_size)  ### 원래 이거 였음
             for i in range(0, 5): 
                 for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
                     exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
@@ -672,8 +679,8 @@ class FightingModel(Model):
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
         if(self.is_right_exit):
-            exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
+            exit_size = 20
+            start_exit_cell = 20
             for i in range(45, 50):
                 for j in range(start_exit_cell, start_exit_cell+exit_size):
                     exit_rec.append((i,j))
@@ -688,8 +695,8 @@ class FightingModel(Model):
         down_exit_num = 0    
         self.down_exit_goal = [0,0]
         if(self.is_down_exit):
-            exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
+            exit_size = 20
+            start_exit_cell = 20
             for i in range(start_exit_cell, start_exit_cell+exit_size):
                 for j in range(0, 5):
                     exit_rec.append((i,j))
@@ -704,8 +711,8 @@ class FightingModel(Model):
         up_exit_num = 0    
         self.up_exit_goal = [0,0]
         if(self.is_up_exit):
-            exit_size = random.randint(10, 30)
-            start_exit_cell = random.randint(0, 49-exit_size)
+            exit_size = 20
+            start_exit_cell = 20
             for i in range(start_exit_cell, start_exit_cell+exit_size):
                 for j in range(45, 50):
                     exit_rec.append((i,j))
