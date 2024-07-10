@@ -88,19 +88,21 @@ for j in range(run_iteration):
                     print(num_escaped_episodes)
                     with open("norobot.txt", "a") as f:
                         f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+                    
+                    # robot 이 없는 모델에서 모두 탈출했다고 해서
 
-                    file2 = open("weight.txt", 'w')
-                    try : 
-                        robot_agent = s_model_r.return_robot()
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
-                    except :
-                        file2.close()
-                        continue
+                    # file2 = open("weight.txt", 'w')
+                    # try : 
+                    #     robot_agent = s_model_r.return_robot()
+                    #     new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                    # except :
+                    #     file2.close()
+                    #     continue
                         
-                    if not (robot_agent == None):
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
-                        file2.writelines(new_lines)
-                    file2.close()
+                    # if not (robot_agent == None):
+                    #     new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                    #     file2.writelines(new_lines)
+                    # file2.close()
                 break
             
                 
@@ -135,14 +137,13 @@ for j in range(run_iteration):
                     file2 = open("weight.txt", 'w')
                     try : 
                         robot_agent = s_model_r.return_robot()
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
                     except :
                         file2.close()
                         continue
                         
                     if not (robot_agent == None):
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
-                        file2.writelines(new_lines)
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
                     file2.close()
                 break
         
@@ -183,13 +184,13 @@ for j in range(run_iteration):
                 file2 = open("weight.txt", 'w')
                 try : 
                     robot_agent = s_model_r.return_robot()
-                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
                 except :
                     file2.close()
                     continue
                     
                 if not (robot_agent == None):
-                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) + '\n', str(robot_agent.w4) + '\n', str(robot_agent.w5) + '\n', str(robot_agent.w6)]
+                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
                     file2.writelines(new_lines)
                 file2.close()
             
