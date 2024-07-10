@@ -158,6 +158,7 @@ class FightingAgent2(Agent):
         self.w1 = float(lines[0].strip())
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
+        
 
         self.feature_weights_guide = [self.w1, self.w2]
         self.feature_weights_not_guide = [self.w3]

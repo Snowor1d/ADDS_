@@ -131,6 +131,7 @@ class FightingAgent(Agent):
         self.attack_damage = ATTACK_DAMAGE
         self.attacked = False
         self.dead = False
+        self.danger = 0
         self.robot_guide = 0
         self.drag = 0
         self.dead_count = 0
@@ -675,6 +676,7 @@ class FightingAgent(Agent):
         desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
+        self.danger = self.agent_to_agent_distance_real(self.model.exit_goal, self.xy)
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -1129,7 +1131,8 @@ class FightingAgent(Agent):
         a = 0.1
         b = 2
         alpha = 2
-        beta = 0.3
+        beta = 0.7
+        dict_danger = self.how_urgent_space_is()
         if(robot_step_num%3==0):
                 # s1 계산
             space_list = self.model.space_list #space list 저장
@@ -1145,7 +1148,7 @@ class FightingAgent(Agent):
                 each_space_agent_num = self.agents_in_each_space2()
                 tuple_key = tuple(map(tuple, i))
                 #s0 = a * self.model.dict_NoC[tuple_key] + b * each_space_agent_num.get(tuple_key) / area
-                s0 = self.model.dict_NoC[tuple_key]*each_space_agent_num.get(tuple_key) / area
+                s0 = dict_danger[tuple_key] / area
                 if s0 > s1:
                     s1 = s0
 
@@ -1156,8 +1159,11 @@ class FightingAgent(Agent):
             
             robot_area = math.pi * pow(robot_radius, 2)
             #s2 = a * self.model.dict_NoC[tuple(map(tuple, robot_space))] + b * self.agents_in_robot_area(robot_xy) /  robot_area
-            s2 = self.model.dict_NoC[tuple(map(tuple, robot_space))]* self.agents_in_robot_area(robot_xy) /  robot_area
-            
+            s2 = self.how_urgent_robot_space_is()/  robot_area
+
+            print("S1 : ", s1)
+            print("S2 : ", s2)
+            print("------------------")
             # switch 여부 계산
             
             if self.drag == 1 : # guide mode
@@ -1176,7 +1182,7 @@ class FightingAgent(Agent):
                 else:
                     self.drag = 1
                     robot_status = 1
-                    mode  = "GUIDE"
+                    mode = "GUIDE"
             
             else: # noguide mode
                 if s2 >= beta * s1: # noguide -> guide switch
@@ -1238,11 +1244,11 @@ class FightingAgent(Agent):
             return self.now_action
         elif(mode=="NOT_GUIDE"):
             for j in range(len(action_list)):
-                f3 = self.F3_direction_agents_NOC(state, action_list[j], "NOT_GUIDE", direction_agents_num)
-                
-                # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = f3 * self.feature_weights_not_guide[0] 
-                
+                f3 = self.F3_direction_agents_danger(state, action_list[j], "NOT_GUIDE")
+                f0 = 0.1
+                if True : # guide 모드일때 weight는 feature_weights_guide
+                    Q_list[j] = f3 * self.feature_weights_not_guide[0]
+            
                 if (Q_list[j]>MAX_Q):
                     MAX_Q= Q_list[j]
                     selected = action_list[j]
@@ -1253,8 +1259,31 @@ class FightingAgent(Agent):
             
                 self.now_action = [selected, "NOT_GUIDE"]
             return self.now_action
+        
+    def how_urgent_space_is(self):
+        
+        dict_urgent = {}
+
+        for key, val in self.model.space_graph.items():
+            if len(val) != 0 : #닫힌 공간 제외 val 0으로 초기화
+                dict_urgent[key] = 0
+            else :
+                dict_urgent[key] = -1
             
+        for agent in self.model.agents:
+            if agent.type==0 or agent.type==1:
+                space = self.model.grid_to_space[int(round(agent.xy[0]))][int(round(agent.xy[1]))]
+                dict_urgent[tuple(map(tuple, space))] += agent.danger
+        return dict_urgent
+    def how_urgent_robot_space_is(self):
+        global robot_xy
+        global robot_radius
+        urgent = 0
             
+        for agent in self.model.agents:
+            if (agent.type==0 or agent.type==1) and math.sqrt((pow(agent.xy[0]-robot_xy[0],2)+pow(agent.xy[1]-robot_xy[1],2))<robot_radius):
+                urgent += agent.danger
+        return urgent
 
 
     def four_direction_compartment(self):
@@ -1349,8 +1378,6 @@ class FightingAgent(Agent):
     
     def F3_direction_agents(self, state, action, mode, compartment_direction):
 
-        
-
         sum = 0 
         each_space_agents_num = self.agents_in_each_space2()
         #print("compartment_direction : ", compartment_direction[action])
@@ -1365,6 +1392,33 @@ class FightingAgent(Agent):
             key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
             sum += each_space_agents_num[key] * self.model.dict_NoC[key]
         return sum * 0.01
+    
+    def F3_direction_agents_danger(self, state, action, mode):
+        result = 0
+        x = state[0]
+        y = state[1]
+        after_x = x 
+        after_y = y
+        if (action=="UP"):
+            after_y = y+1
+        elif (action=="DOWN"):
+            after_y = y-1 
+        elif (action=="LEFT"):
+            after_x = x-1
+        elif (action=="RIGHT"):
+            after_x = x+1
+        count = 0
+        for i in self.model.agents:
+            if(i.dead == False and (i.type==0 or i.type==1)):
+                d = self.agent_to_agent_distance_real([x,y], [i.xy[0], i.xy[1]])
+                after_d = self.agent_to_agent_distance_real([after_x, after_y], [i.xy[0], i.xy[1]])
+                if (after_d < d):
+                    result += i.danger
+                    count += 1 
+        print(f"{action}으로 가면, {count}명의 agent와 가까워짐, F3값 : {result}")
+        return result
+                    
+                
     
     def F4_difficulty_avg(self, state, action, mode, compartment_direction): # 가까워지는(action 했을 때) 구역의 난이도 평균 return
         ## 가까워지는 구역이 없으면 return 0, 가까워지는 구역에 출구가 포함되어 있으면 출구 제외 난이도 평균 (출구는 난이도 -1)
