@@ -1245,12 +1245,9 @@ class FightingAgent(Agent):
         elif(mode=="NOT_GUIDE"):
             for j in range(len(action_list)):
                 f3 = self.F3_direction_agents_danger(state, action_list[j], "NOT_GUIDE")
-                f4 = self.F4_difficulty_avg(state, action_list[j], "NOT_GUIDE", direction_agents_num)
                 f0 = 0.1
                 if True : # guide 모드일때 weight는 feature_weights_guide
-                    Q_list[j] = f3 * self.feature_weights_not_guide[0] + f4 *self.feature_weights_not_guide[1]   
-                else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                    Q_list[j] = (f1 * self.feature_weights_not_guide[0] + f2 * self.feature_weights_not_guide[1] + f3 * self.feature_weights_not_guide[2])
+                    Q_list[j] = f3 * self.feature_weights_not_guide[0]
             
                 if (Q_list[j]>MAX_Q):
                     MAX_Q= Q_list[j]
