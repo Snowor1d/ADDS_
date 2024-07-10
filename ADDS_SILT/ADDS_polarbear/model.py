@@ -292,6 +292,7 @@ class FightingModel(Model):
 
     def __init__(self, number_agents: int, width: int, height: int):
         self.exit_way_rec =  [[0]*51 for _ in range(51)]
+        self.exit_point = [0, 0]
         self.robot = None 
         self.simulation_type = 0 #0->outdoor, #1->indoor
         self.room_list = [] # ex) [((1, 2), (3,4)), ((4,5), (5,6))]
@@ -586,6 +587,13 @@ class FightingModel(Model):
                     count += 1
                     self.schedule_e.add(b) 
                     self.grid.place_agent(b, [i, j])
+
+    def reward_distance_sum(self):
+        result = 0
+        for i in self.model.agents:
+            if(i.dead == False and (i.type==0 or i.type==1)):
+                result += i.danger
+        return result 
           
 
     def make_exit(self):
@@ -1711,6 +1719,7 @@ class FightingModel(Model):
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
         self.num_remained_agents()
+
 
     def difficulty_f(self): # 공간을 넣으면 해당 공간의 난이도 출력
         global number_of_cases
