@@ -13,6 +13,7 @@ from agent import WallAgent
 import random
 import copy
 import math
+import numpy as np
 
 # goal_list = [[0,50], [49, 50]]
 hazard_id = 5000
@@ -564,12 +565,42 @@ class FightingModel(Model):
         
                         
                 
-                
+        #self.all_graph = self.init_all_graph()
+
         print("exit : ", self.exit_compartment)
 
-    # def init_all_graph(self):
+    def init_all_graph(self):
+        N = 50
+        INF = float('inf')
+        all_space = np.zeros((N, N), dtype=int)
         
-        
+        for i in self.room_list:
+            first_x = i[0][0]
+            first_y = i[0][1]
+            second_x = i[1][0]
+            second_y = i[1][1]
+            for x in range(first_x, second_x+1):
+                for y in range(first_y, second_y+1):
+                    all_space[x][y] = 1
+        dist = np.full((N*N, N*N), INF)
+
+        for i in range(N):
+            for j in range(N):
+                if all_space[i][j] == 0:
+                    index1 = i * N + j
+                    dist[index1][index1] = 0
+                    for dx, dy in [(-1,0), (1,0), (0, -1), (0, 1)]:
+                        ni, nj = i + dx, j + dy
+                        if 0 <= ni < N and 0 <= nj < N and all_space[ni][nj] == 0:
+                            index2 = ni * N + nj
+                            dist[index1][index2] = 1
+        for k in range(N * N):
+            for i in range(N * N):
+                for j in range(N * N):
+                    if dist[i][j] > dist[i][k] + dist[k][j]:
+                        dist[i][j] = dist[i][k] + dist[k][j]
+        return dist
+                                  
     def make_robot(self):
         self.robot_placement() #로봇 배치 
 

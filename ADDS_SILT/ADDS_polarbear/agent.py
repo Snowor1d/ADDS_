@@ -127,6 +127,7 @@ class FightingAgent(Agent):
         robot_xy = pos
         self.goal_init = 0
         self.type = type
+        self.robot_previous_action = "UP"
         self.health = INITIAL_HEALTH
         self.attack_damage = ATTACK_DAMAGE
         self.attacked = False
@@ -354,6 +355,7 @@ class FightingAgent(Agent):
         exit_confirmed_area = self.model.exit_way_rec
         if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
             self.now_goal = self.model.exit_goal
+            self.danger = 0
             return 
 
         now_stage = self.check_stage_agent()
@@ -906,8 +908,6 @@ class FightingAgent(Agent):
 
     def agent_to_agent_distance_real(self, from_agent, to_agent):
         from model import space_connected_linear
-        start = from_agent
-        end = to_agent 
 
         from_grid_to_space = self.model.grid_to_space
         from_space = from_grid_to_space[int(round(from_agent[0]))][int(round(from_agent[1]))]
@@ -919,27 +919,51 @@ class FightingAgent(Agent):
         from_space = tuple(map(tuple, from_space))
         to_space = tuple(map(tuple, to_space))
         next_vertex_matrix = self.model.floyd_warshall()[0]
+
         current_point = from_agent
         current_space = from_space
         next_space = next_vertex_matrix[current_space][to_space]
         next_point = space_connected_linear(current_space, next_space)
+
         distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
+        
         current_point = next_point 
         current_space = next_space
 
+        if(current_space != to_space and next_vertex_matrix[current_space][to_space] == to_space):
+            next_point = space_connected_linear(current_space, to_space)
+            distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
+            current_point = next_point
+            distance += math.sqrt(pow(current_point[0]-to_agent[0],2)+pow(current_point[1]-to_agent[1],2))
+            return distance
+
         while(current_space != to_space):
             next_space = next_vertex_matrix[current_space][to_space]
+            next_point = space_connected_linear(current_space, next_space)
+            
+            # print(f"{current_space}에서 {to_space}로 가려면 {next_space}를 지나야 합니다.")
             if(next_space != to_space):
-                next_next_space = next_vertex_matrix[next_space][to_space]
-                next_point = space_connected_linear(next_space, next_next_space)
                 distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                # next_next_space = next_vertex_matrix[next_space][to_space]
+
                 current_point = next_point
                 current_space = next_space
+
+                next_point = space_connected_linear(current_space, next_space)
+                next_space = next_vertex_matrix[current_space][to_space]
+                # distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                # current_point = next_point
+                # current_space = next_space
             else:
+                next_point = space_connected_linear(current_space, to_space)
+                current_point = next_point
                 next_point = to_agent
                 distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-                break
+                return distance
+
+        distance += math.sqrt(pow(current_point[0]-to_agent[0],2)+pow(current_point[1]-to_agent[1],2))
         return distance
+    
     def F1_distance(self, state, action, mode):
         from model import space_connected_linear
         global robot_xy
@@ -1084,6 +1108,9 @@ class FightingAgent(Agent):
         global one_foot
         global robot_status
         global NUMBER_OF_CELLS
+
+        consistency_mul = 1.2
+
         action_list = ["UP", "DOWN", "LEFT", "RIGHT"]
         r_x = robot_xy[0]
         r_y = robot_xy[1]
@@ -1204,7 +1231,8 @@ class FightingAgent(Agent):
                 f0 = 0.1
                 if True : # guide 모드일때 weight는 feature_weights_guide
                     Q_list[j] = f3 * self.feature_weights_not_guide[0]
-            
+                if(action_list[j] == self.robot_previous_action):
+                    Q_list[j] *= consistency_mul
                 if (Q_list[j]>MAX_Q):
                     MAX_Q= Q_list[j]
                     selected = action_list[j]
@@ -1214,6 +1242,7 @@ class FightingAgent(Agent):
                     selected = random.choice(action_list)
             
                 self.now_action = [selected, "NOT_GUIDE"]
+                self.robot_previous_action = selected
             return self.now_action
         
     def how_urgent_another_space_is(self):
