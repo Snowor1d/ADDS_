@@ -442,6 +442,7 @@ class FightingAgent(Agent):
             return (self.model.robot.xy[0], self.model.robot.xy[1]) ## 오호라... 처음에 리스폰 되는 거 피하려고 
         
         next_action = self.select_Q(robot_xy)
+        # print("next_action : ", next_action)
 
 
         goal_x = 0
@@ -468,7 +469,7 @@ class FightingAgent(Agent):
         if(self.drag == 0): ## not guide 일 때
             desired_speed = 5
         else:
-            desired_speed = 5
+            desired_speed = 3
 
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -924,18 +925,9 @@ class FightingAgent(Agent):
         current_space = from_space
         next_space = next_vertex_matrix[current_space][to_space]
         next_point = space_connected_linear(current_space, next_space)
-
         distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
-        
         current_point = next_point 
         current_space = next_space
-
-        if(current_space != to_space and next_vertex_matrix[current_space][to_space] == to_space):
-            next_point = space_connected_linear(current_space, to_space)
-            distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
-            current_point = next_point
-            distance += math.sqrt(pow(current_point[0]-to_agent[0],2)+pow(current_point[1]-to_agent[1],2))
-            return distance
 
         while(current_space != to_space):
             next_space = next_vertex_matrix[current_space][to_space]
@@ -944,18 +936,15 @@ class FightingAgent(Agent):
             # print(f"{current_space}에서 {to_space}로 가려면 {next_space}를 지나야 합니다.")
             if(next_space != to_space):
                 distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-                # next_next_space = next_vertex_matrix[next_space][to_space]
 
                 current_point = next_point
                 current_space = next_space
 
+                next_space = next_vertex_matrix[current_space][to_space]    
                 next_point = space_connected_linear(current_space, next_space)
-                next_space = next_vertex_matrix[current_space][to_space]
-                # distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-                # current_point = next_point
-                # current_space = next_space
+                
             else:
-                next_point = space_connected_linear(current_space, to_space)
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
                 current_point = next_point
                 next_point = to_agent
                 distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
@@ -1218,6 +1207,8 @@ class FightingAgent(Agent):
                 if (Q_list[j]>MAX_Q):
                     MAX_Q= Q_list[j]
                     selected = action_list[j]
+                # print(" Q_list[j]", Q_list[j], " = f1", f1, " * self.feature_weights_guide[0]", self.feature_weights_guide[0]," + f2", f2, " *self.feature_weights_guide[1]", self.feature_weights_guide[1])  
+                
                 exploration_rate = 0.05
             
                 if random.random() <= exploration_rate:

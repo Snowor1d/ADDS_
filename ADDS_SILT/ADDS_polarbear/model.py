@@ -318,6 +318,7 @@ class FightingModel(Model):
             }
         )
         
+        # map_ran_num = 2
         map_ran_num = random.randint(1, 5)
         if map_ran_num == 1:
             self.number = 12576813123456
