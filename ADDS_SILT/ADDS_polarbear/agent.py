@@ -940,45 +940,17 @@ class FightingAgent(Agent):
                 distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
                 break
         return distance
-
     def F1_distance(self, state, action, mode):
         from model import space_connected_linear
         global robot_xy
         global one_foot
 
         now_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
-        evacuation_points = []
-        if(self.model.is_left_exit): 
-            evacuation_points.append(((0,0), (5, 45)))
-            exit = ((0,0), (5, 45))
-        if(self.model.is_up_exit):
-            evacuation_points.append(((0,45), (45, 49)))
-            exit = ((0,45), (45, 49))
-        if(self.model.is_right_exit):
-            evacuation_points.append(((45,5), (49, 49)))
-            exit = ((45,5), (49, 49))
-        if(self.model.is_down_exit):
-            evacuation_points.append(((5,0), (49, 5))) #evacuation_points에 탈출구들 저장 ##?? 근데 왜 초록 구역이 아니고 사이드 구역 전체일까? 그것은 여기로 오면 탈출하기 때문이지요?
-            exit = ((5,0), (49, 5))
+        
         min_distance = 1000
-        floyd_distance = self.model.floyd_distance 
-
-        
-        next_vertex_matrix = self.model.floyd_warshall()[0] ## 이중 딕셔너리, start space 부터 end space 까지의 경로
-        for i in evacuation_points: #space_target에서 가장 가까운 탈출구를 찾기 
-            if(floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][i] < min_distance): ##floyd_distance[start(now space)][end(i;출구)] 
-                exit = i ##지금은 출구가 하나라서 exit이 evacuation_points이지만 출구가 많아진다면 ~
-        
-        if(exit!=0):
-            next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
-        else :
-            next_goal = robot_xy
-        now_space_x_center = (now_space[0][0] + now_space[1][0])/2
-        now_space_y_center = (now_space[1][0] + now_space[1][1])/2
-
         next_robot_position = [0, 0]
-        next_robot_position[0] += robot_xy[0]
-        next_robot_position[1] += robot_xy[1]
+        next_robot_position[0] = robot_xy[0]
+        next_robot_position[1] = robot_xy[1]
 
         if (action=="UP"):
             next_robot_position[1] += one_foot
@@ -988,33 +960,15 @@ class FightingAgent(Agent):
             next_robot_position[0] -= one_foot
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
-        # now_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
-        # print(f"{action} 일때의 space : {now_space}")
-        # next_goal = space_connected_linear(((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1])), next_vertex_matrix[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit])
-        # now_space_x_center = (now_space[0][0] + now_space[1][0])/2
-        # now_space_y_center = (now_space[1][0] + now_space[1][1])/2
 
-        result = floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] - math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2)) + math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))
-        new_space = self.model.grid_to_space[int(round(next_robot_position[0]))][int(round(next_robot_position[1]))]
-        new_distance = floyd_distance[((new_space[0][0],new_space[0][1]), (new_space[1][0], new_space[1][1]))][exit]
-        if(new_distance< floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit]):
-            result -= 2
+        result = self.agent_to_agent_distance_real(next_robot_position, self.model.exit_goal)
         #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
         #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
+        print(f"{action}으로 가면 {result} 거리")
         return result * 0.01
-        # if (result<10): 
-        #     return 0.1
-        # if (result<30):
-        #     return 0.2
-        # if (result<50):
-        #     return 0.3
-        # if (result<70):
-        #     return 0.4
-        # if (result<100):
-        #     return 0.5
-        # else :
-        #     return 0.6
-    
+
+
+
     def F2_near_agents(self, state, action, mode):
         global one_foot
         robot_xyP = [0, 0]

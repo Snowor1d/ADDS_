@@ -400,6 +400,7 @@ class FightingModel(Model):
 
         self.init_outside() #외곽지대 탈출로 구현 
         
+        
         self.door_list = [] #일단 무시
           
         
@@ -553,8 +554,22 @@ class FightingModel(Model):
         # self.random_agent_distribute_outdoor(10)
         # self.make_robot()
 
+        # for x in range(10):
+        #     for y in range(10):
+        #         for i in range(10):
+        #             self.init_all_graph[(x,y)] = {}
+        #             for j in range(10):
+        #                 self.init_all_graph[(x,y)][(i,j)] = []
+        # 언젠가 해보는 걸로
+        
+                        
+                
+                
         print("exit : ", self.exit_compartment)
 
+    # def init_all_graph(self):
+        
+        
     def make_robot(self):
         self.robot_placement() #로봇 배치 
 
