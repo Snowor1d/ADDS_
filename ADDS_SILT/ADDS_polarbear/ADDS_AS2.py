@@ -21,7 +21,7 @@ import time
 
 #-------------------------#
 visualization_mode = 'off' # choose your visualization mode 'on / off
-run_iteration = 500
+run_iteration = 1000
 number_of_agents = 11 # agents 수
 #-------------------------#
 for j in range(run_iteration):
@@ -54,7 +54,7 @@ for j in range(run_iteration):
             s_model_r.random_agent_distribute_outdoor(number_of_agents,ran_num)
             s_model.random_agent_distribute_outdoor2(number_of_agents,ran_num)
 
-        n = 500  # n을 반복하려는 횟수로 설정
+        n = run_iteration  # n을 반복하려는 횟수로 설정
         #### 만약 n을 바꾼다면.. agent.py에 있는 robot_step 도 함께 바꿔주세요 ㅠㅠ####
 
 
@@ -141,13 +141,16 @@ for j in range(run_iteration):
                         try: 
                             robot_agent = s_model_r.return_robot()
                             if robot_agent is not None:
-                                new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                                new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)+'\n', str(robot_agent.w4)]
                                 file2.writelines(new_lines)
                         except:
+                            print("********************************")
+                            print("ERROR 147")
+                            print("********************************")
                             continue
                         
                     if not (robot_agent == None):
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)+'\n', str(robot_agent.w4)]
                     file2.close()
                 break
         
@@ -160,15 +163,15 @@ for j in range(run_iteration):
                     robot_agent = s_model_r.return_robot()
                     reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
                     if(reward>50):
-                        reward = 4
+                        reward = 5
                     elif (reward>5):
-                        reward = 2
+                        reward = 1
                     elif (reward>-5):
-                        reward = -2
+                        reward = -1
                     elif (reward>-50):
-                        reward = -4
+                        reward = -3
                     else :
-                        reward = -6
+                        reward = -5
                     
                     
                     file3 = open("correlation.txt", "a")
@@ -188,14 +191,17 @@ for j in range(run_iteration):
                     "ERROR OCCURED"
                     continue
 
-            if i+1 == 500 :
+            if i+1 == run_iteration :
                 with open("weight.txt", 'w') as file2:
                     try: 
                         robot_agent = s_model_r.return_robot()
                         if robot_agent is not None:
-                            new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                            new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3) +'\n', str(robot_agent.w4)]
                             file2.writelines(new_lines)
                     except:
+                        print("********************************")
+                        print("ERROR 202")
+                        print("********************************")                        
                         continue
                 with open("result.txt", "a") as f:
                         f.write(str((num_assigned_agent-s_model_r.num_remained_agent)/n)+"\n")

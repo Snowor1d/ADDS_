@@ -183,10 +183,11 @@ class FightingAgent(Agent):
         self.w1 = float(lines[0].strip())
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
+        self.w4 = float(lines[3].strip())
         
 
         self.feature_weights_guide = [self.w1, self.w2]
-        self.feature_weights_not_guide = [self.w3]
+        self.feature_weights_not_guide = [self.w3, self.w4]
 
 
         # self.xy[0] = self.random.randrange(self.model.grid.width)
@@ -976,8 +977,7 @@ class FightingAgent(Agent):
 
         result = self.agent_to_agent_distance_real(next_robot_position, self.model.exit_goal)
         #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
-        #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2))
-        print(f"{action}으로 가면 {result} 거리")
+        #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2)
         return result * 0.01
 
 
@@ -1139,7 +1139,7 @@ class FightingAgent(Agent):
             # switch 여부 계산
             
             if self.drag == 1 : # guide mode
-                if s1 >= alpha * s2: # guide -> noguide switch
+                if s1 >= alpha * s2: # guide -> NOT_GUIDE switch
                     self.drag = 0     
                     mode = "NOT_GUIDE"
                     robot_status = 0
@@ -1156,8 +1156,8 @@ class FightingAgent(Agent):
                     robot_status = 1
                     mode = "GUIDE"
             
-            else: # noguide mode
-                if s2 >= beta * s1: # noguide -> guide switch
+            else: # NOT_GUIDE mode
+                if s2 >= beta * s1: # NOT_GUIDE -> guide switch
                     self.drag = 1
                     robot_status = 1
                     mode = "GUIDE" 
@@ -1209,7 +1209,7 @@ class FightingAgent(Agent):
                     selected = action_list[j]
                 # print(" Q_list[j]", Q_list[j], " = f1", f1, " * self.feature_weights_guide[0]", self.feature_weights_guide[0]," + f2", f2, " *self.feature_weights_guide[1]", self.feature_weights_guide[1])  
                 
-                exploration_rate = 0.05
+                exploration_rate = 0.1
             
                 if random.random() <= exploration_rate:
                     selected = random.choice(action_list)
@@ -1218,10 +1218,11 @@ class FightingAgent(Agent):
             return self.now_action
         elif(mode=="NOT_GUIDE"):
             for j in range(len(action_list)):
-                f3 = self.F3_direction_agents_danger(state, action_list[j], "NOT_GUIDE")
-                f0 = 0.1
+                f3_f4 = self.F3_F4_direction_agents_danger(state, action_list[j], "NOT_GUIDE")
+                f3 = f3_f4[0]
+                f4 = f3_f4[1]
                 if True : # guide 모드일때 weight는 feature_weights_guide
-                    Q_list[j] = f3 * self.feature_weights_not_guide[0]
+                    Q_list[j] = f3 * self.feature_weights_not_guide[0] + f4 * self.feature_weights_not_guide[1]
                 if(action_list[j] == self.robot_previous_action):
                     Q_list[j] *= consistency_mul
                 if (Q_list[j]>MAX_Q):
@@ -1357,25 +1358,9 @@ class FightingAgent(Agent):
             four_compartment[min_direction].append(i)
         return four_compartment
     
-    def F3_direction_agents(self, state, action, mode, compartment_direction):
-
-        sum = 0 
-        each_space_agents_num = self.agents_in_each_space2()
-        #print("compartment_direction : ", compartment_direction[action])
-        for i in compartment_direction[action]:
-            key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
-            sum += each_space_agents_num[key]
-        return sum * 0.01
-    def F3_direction_agents_NOC(self, state, action, mode, compartment_direction):
-        sum = 0 
-        each_space_agents_num = self.agents_in_each_space2()
-        for i in compartment_direction[action]:
-            key = ((i[0][0], i[0][1]), (i[1][0], i[1][1]))
-            sum += each_space_agents_num[key] * self.model.dict_NoC[key]
-        return sum * 0.01
     
-    def F3_direction_agents_danger(self, state, action, mode):
-        result = 0
+    def F3_F4_direction_agents_danger(self, state, action, mode):
+        result = [0, 0] 
         x = state[0]
         y = state[1]
         after_x = x 
@@ -1394,8 +1379,12 @@ class FightingAgent(Agent):
                 d = self.agent_to_agent_distance_real([x,y], [i.xy[0], i.xy[1]])
                 after_d = self.agent_to_agent_distance_real([after_x, after_y], [i.xy[0], i.xy[1]])
                 if (after_d < d):
-                    result += i.danger
-                    count += 1 
+                    result[0] += i.danger
+                    count += 1
+        result[1] = count
+        result[0] = result[0] * 0.003
+        result[1] = result[1] * 0.02
+                 
         #print(f"{action}으로 가면, {count}명의 agent와 가까워짐, F3값 : {result}")
         return result
                     
@@ -1414,53 +1403,10 @@ class FightingAgent(Agent):
         
 
 
-    def calculate_Guide_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
-        global robot_xy
-        global one_foot
-        action_list = ["UP", "DOWN", "LEFT", "RIGHT"]
-        r_x = robot_xy[0]
-        r_y = robot_xy[1]
-        
-        del_object = []
-        for k in action_list:
-            if (k == "UP"):
-                if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
-                    del_object.append("UP")
-                    
-            elif (k == "DOWN"):
-                if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
-                    del_object.append("DOWN")
-
-            elif (k == "LEFT"):
-                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y))]==0 or (r_x-one_foot)<0):
-                    del_object.append("LEFT")
-            elif (k == "RIGHT"):
-                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
-                    del_object.append("RIGHT")
-        del_object= list(set(del_object))
-        for i in del_object:
-            action_list.remove(i)
-            action_list.remove(i)
-
-        Q_list = []
-        for i in range(len(action_list)):
-            Q_list.append(0)
-        MAX_Q = -9999999
-
-        direction_agents_num = self.four_direction_compartment()
-        for j in range(len(action_list)):
-            f1 = self.F1_distance(state, action_list[j], "GUIDE")
-            f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
-    
-            Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1])
-            if (Q_list[j]>MAX_Q):
-                MAX_Q= Q_list[j]
-        return MAX_Q
-
     def calculate_Max_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
         global robot_xy
         global one_foot
-        action_list = [["UP", "GUIDE"], ["UP", "NOGUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOGUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOGUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOGUIDE"]]
+        action_list = [["UP", "GUIDE"], ["UP", "NOT_GUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOT_GUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOT_GUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOT_GUIDE"]]
         
         r_x = robot_xy[0]
         r_y = robot_xy[1]
@@ -1484,26 +1430,25 @@ class FightingAgent(Agent):
         del_object= list(set(del_object))
         for i in del_object:
             action_list.remove([i, "GUIDE"])
-            action_list.remove([i, "NOGUIDE"])
+            action_list.remove([i, "NOT_GUIDE"])
 
         Q_list = []
         for i in range(len(action_list)):
             Q_list.append(0)
         MAX_Q = -9999999
 
-        direction_agents_num = self.four_direction_compartment()
         for j in range(len(action_list)):
-            f1 = self.F1_distance(state, action_list[j][0], action_list[j][1])
-            f2 = self.F2_near_agents(state, action_list[j][0], action_list[j][1])
-            f3 = self.F3_direction_agents(state, action_list[j][0], action_list[j][1], direction_agents_num)
-            
             
             if action_list[j][1] == "GUIDE": # guide 모드일때 weight는 feature_weights_guide
+                f1 = self.F1_distance(state, action_list[j][0], action_list[j][1])
+                f2 = self.F2_near_agents(state, action_list[j][0], action_list[j][1])                
                 Q_list[j] = (f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1])
             
             else :                           # not guide 모드일때 weight는 feature_weights_not_guide 
-                Q_list[j] = f3 * self.feature_weights_not_guide[0]
-            
+                f3_f4 = self.F3_F4_direction_agents_danger(state, action_list[j][0], action_list[j][1])
+                f3 = f3_f4[0]
+                f4 = f3_f4[1]
+                Q_list[j] = f3 * self.feature_weights_not_guide[0] + f4 * self.feature_weights_not_guide[1]
             if (Q_list[j]>MAX_Q):
                 MAX_Q= Q_list[j]
         return MAX_Q
@@ -1514,14 +1459,16 @@ class FightingAgent(Agent):
         f1 = self.F1_distance(state, action[0], action[1])
         f2 = self.F2_near_agents(state, action[0], action[1])
         direction_agents_num = self.four_direction_compartment()
-        f3 = self.F3_direction_agents(state, action[0], action[1], direction_agents_num)
+        f3_f4 = self.F3_F4_direction_agents_danger(state, action[0], action[1])
+        f3 = f3_f4[0]
+        f4 = f3_f4[1]
         
         Q= 0
         if(action[1] == "GUIDE"):
             #Q = f1 * self.feature_weights_guide[0] + f2*self.feature_weights_guide[1] + f3 * self.feature_weights_guide[2]
             Q = f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1]
         else:
-            Q = f3 * self.feature_weights_not_guide[0]
+            Q = f3 * self.feature_weights_not_guide[0] + f4*self.feature_weights_not_guide[1]
 
         return Q
 
@@ -1551,26 +1498,27 @@ class FightingAgent(Agent):
         #print('good?',next_state_max_Q,present_state_Q)
 
         # 여기부터 실제 업데이트 진행
-        direction_agents_num = self.four_direction_compartment()
+        #direction_agents_num = self.four_direction_compartment()
         
         f1 = self.F1_distance(robot_xy, self.now_action[0], self.now_action[1])
         f2 = self.F2_near_agents(robot_xy, self.now_action[0], self.now_action[1])
-        f3 = self.F3_direction_agents(robot_xy, self.now_action[0], self.now_action[1],direction_agents_num)
-    
+        f3_f4 = self.F3_F4_direction_agents_danger(robot_xy, self.now_action[0], self.now_action[1])
+        f3 = f3_f4[0]
+        f4 = f3_f4[1]
         selected_action = self.now_action[1]
     
         #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
         #print('select_Q :', self.now_action)
-        if selected_action == "GUIDE":
+        #if selected_action == "GUIDE":
             ### 아래는 얘네 각각 출력..
-            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
-            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
-            self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
-            self.feature_weights_guide[1] = self.w2
-            with open ('log.txt', 'a') as f:
-                f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
-                f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
-                f.close()
+        self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+        self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+        self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
+        self.feature_weights_guide[1] = self.w2
+        with open ('log.txt', 'a') as f:
+            f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
+            f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
+            f.close()
             #print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
             #print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
             #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
@@ -1580,7 +1528,9 @@ class FightingAgent(Agent):
             # print("reward",reward)
             # print("next_state_max_Q",next_state_max_Q)
             # print("present_state_Q",present_state_Q)
-        if selected_action == "NOGUIDE":
-            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-            self.feature_weights_not_guide[0] = self.w3
+        #if selected_action == "NOT_GUIDE":
+        self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+        self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
+        self.feature_weights_not_guide[0] = self.w3
+        self.feature_weights_not_guide[1] = self.w4
         return
