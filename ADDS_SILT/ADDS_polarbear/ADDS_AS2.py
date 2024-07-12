@@ -20,7 +20,7 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 500
 number_of_agents = 11 # agents 수
 #-------------------------#
@@ -88,7 +88,7 @@ for j in range(run_iteration):
                     print(num_escaped_episodes)
                     with open("norobot.txt", "a") as f:
                         f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
-                    
+                    # with open("")
                     # robot 이 없는 모델에서 모두 탈출했다고 해서
 
                     # file2 = open("weight.txt", 'w')
@@ -111,7 +111,7 @@ for j in range(run_iteration):
 
             s_model_r.step()
 
-            
+            content =""
             print('num_remained_agent_r',s_model_r.num_remained_agent)
         # robot 있는 모델의 agent 수 저장
         #-----------------------------------------------------------------------------------------------------------------------
@@ -127,20 +127,24 @@ for j in range(run_iteration):
                     num_escaped_episodes["80%"] = i+1
             
             if s_model_r.num_remained_agent == 0: # 모두 빠져나가면 그때 에피소드 수 저장 , 텍스트 파일에 저장
-
                 if num_escaped_episodes["100%"] == 0:
                     num_escaped_episodes["100%"] = i+1
                     print(num_escaped_episodes)
                     with open("robot.txt", "a") as f:
                         f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
-
-                    file2 = open("weight.txt", 'w')
-                    try : 
-                        robot_agent = s_model_r.return_robot()
-                        new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
-                    except :
-                        file2.close()
-                        continue
+                    with open("result.txt", "a") as f:
+                        f.write(str(num_assigned_agent/(i+1))+"\n")
+                    # with open("weight.txt", 'r') as f:
+                    #     content = f.read()
+                    #     f.close()
+                    with open("weight.txt", 'w') as file2:
+                        try: 
+                            robot_agent = s_model_r.return_robot()
+                            if robot_agent is not None:
+                                new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                                file2.writelines(new_lines)
+                        except:
+                            continue
                         
                     if not (robot_agent == None):
                         new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
@@ -177,21 +181,25 @@ for j in range(run_iteration):
                     reward = -math.log2(-reward)
                 if(reward>0):
                     reward = math.log2(reward)
-                (s_model_r.return_robot()).update_weight(reward)
+                try : 
+                    (s_model_r.return_robot()).update_weight(reward)
+                except : 
+                    file3.close()
+                    "ERROR OCCURED"
+                    continue
 
             if i+1 == 500 :
-                print("txt 저장 들어옴")
-                file2 = open("weight.txt", 'w')
-                try : 
-                    robot_agent = s_model_r.return_robot()
-                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
-                except :
-                    file2.close()
-                    continue
+                with open("weight.txt", 'w') as file2:
+                    try: 
+                        robot_agent = s_model_r.return_robot()
+                        if robot_agent is not None:
+                            new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
+                            file2.writelines(new_lines)
+                    except:
+                        continue
+                with open("result.txt", "a") as f:
+                        f.write(str((num_assigned_agent-s_model_r.num_remained_agent)/n)+"\n")
                     
-                if not (robot_agent == None):
-                    new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)]
-                    file2.writelines(new_lines)
                 file2.close()
             
             s_model.num_remained_agent = 0 # 초기화
