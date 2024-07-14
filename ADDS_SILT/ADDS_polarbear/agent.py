@@ -7,6 +7,8 @@ import random
 import copy
 import sys 
 
+weight_changing = [1, 1, 1, 1] # 각 w1, w2, w3, w4에 해당하는 weight를 변화시킬 것인가 
+
 
 num_remained_agent = 0
 NUMBER_OF_CELLS = 50 
@@ -1473,6 +1475,7 @@ class FightingAgent(Agent):
         return Q
 
     def update_weight(self,reward):  
+        global weight_changing
         global robot_xy
 
         alpha = 0.1
@@ -1511,14 +1514,12 @@ class FightingAgent(Agent):
         #print('select_Q :', self.now_action)
         #if selected_action == "GUIDE":
             ### 아래는 얘네 각각 출력..
-        self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
-        self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+        if(weight_changing[0]):
+            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+        if(weight_changing[1]):    
+            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
         self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
         self.feature_weights_guide[1] = self.w2
-        with open ('log.txt', 'a') as f:
-            f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
-            f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
-            f.close()
             #print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
             #print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
             #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
@@ -1529,8 +1530,16 @@ class FightingAgent(Agent):
             # print("next_state_max_Q",next_state_max_Q)
             # print("present_state_Q",present_state_Q)
         #if selected_action == "NOT_GUIDE":
-        self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-        self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
+        if(weight_changing[2]):
+            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
+        if(weight_changing[3]):
+            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
+        with open ('log.txt', 'a') as f:
+            f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
+            f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
+            f.write(f"w3 ( { self.w3 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f3({ f3})\n")
+            f.write(f"w4 ( { self.w4 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f4({ f4})\n")
+            f.close()
         self.feature_weights_not_guide[0] = self.w3
         self.feature_weights_not_guide[1] = self.w4
         return

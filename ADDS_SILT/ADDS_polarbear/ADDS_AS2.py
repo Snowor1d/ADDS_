@@ -21,7 +21,7 @@ import time
 
 #-------------------------#
 visualization_mode = 'off' # choose your visualization mode 'on / off
-run_iteration = 1000
+run_iteration = 700
 number_of_agents = 11 # agents 수
 #-------------------------#
 for j in range(run_iteration):
@@ -133,7 +133,7 @@ for j in range(run_iteration):
                     with open("robot.txt", "a") as f:
                         f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
                     with open("result.txt", "a") as f:
-                        f.write(str(num_assigned_agent/(i+1))+"\n")
+                        f.write(str((num_assigned_agent-s_model_r.num_remained_agent-(num_assigned_agent-s_model.num_remained_agent))/(i+1))+"\n")
                     # with open("weight.txt", 'r') as f:
                     #     content = f.read()
                     #     f.close()
@@ -175,7 +175,7 @@ for j in range(run_iteration):
                     
                     
                     file3 = open("correlation.txt", "a")
-                    file3.write(f"{robot_agent.w1} {reward}\n")
+                    file3.write(f"{robot_agent.w1} {robot_agent.w2} {robot_agent.w3} {robot_agent.w4} {reward}\n")
                 except : 
                     file3.close()
                     continue
@@ -204,7 +204,7 @@ for j in range(run_iteration):
                         print("********************************")                        
                         continue
                 with open("result.txt", "a") as f:
-                        f.write(str((num_assigned_agent-s_model_r.num_remained_agent)/n)+"\n")
+                        f.write(str((num_assigned_agent-s_model_r.num_remained_agent-(num_assigned_agent-s_model.num_remained_agent))/(i+1))+"\n")
                     
                 file2.close()
             
