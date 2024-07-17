@@ -159,7 +159,7 @@ class FightingAgent2(Agent):
         self.w2 = float(lines[1].strip())
         self.w3 = float(lines[2].strip())
         
-
+        self.danger = 0
         self.feature_weights_guide = [self.w1, self.w2]
         self.feature_weights_not_guide = [self.w3]
 
@@ -483,6 +483,7 @@ class FightingAgent2(Agent):
         desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
+        self.danger = self.agent_to_agent_distance_real(self.model.exit_goal, self.xy)
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -633,7 +634,51 @@ class FightingAgent2(Agent):
                 count += 1
                 if (count>=200):
                     break 
+    def agent_to_agent_distance_real(self, from_agent, to_agent):
+        from model import space_connected_linear
 
+        from_grid_to_space = self.model.grid_to_space
+        from_space = from_grid_to_space[int(round(from_agent[0]))][int(round(from_agent[1]))]
+        to_space = from_grid_to_space[int(round(to_agent[0]))][int(round(to_agent[1]))]
+
+        if(from_space==to_space): #같은 공간
+            return math.sqrt(pow(from_agent[0]-to_agent[0],2)+pow(from_agent[1]-to_agent[1],2))
+        distance = 0
+        from_space = tuple(map(tuple, from_space))
+        to_space = tuple(map(tuple, to_space))
+        next_vertex_matrix = self.model.floyd_warshall()[0]
+
+        current_point = from_agent
+        current_space = from_space
+        next_space = next_vertex_matrix[current_space][to_space]
+        next_point = space_connected_linear(current_space, next_space)
+        distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
+        current_point = next_point 
+        current_space = next_space
+
+        while(current_space != to_space):
+            next_space = next_vertex_matrix[current_space][to_space]
+            next_point = space_connected_linear(current_space, next_space)
+            
+            # print(f"{current_space}에서 {to_space}로 가려면 {next_space}를 지나야 합니다.")
+            if(next_space != to_space):
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+
+                current_point = next_point
+                current_space = next_space
+
+                next_space = next_vertex_matrix[current_space][to_space]    
+                next_point = space_connected_linear(current_space, next_space)
+                
+            else:
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                current_point = next_point
+                next_point = to_agent
+                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
+                return distance
+
+        distance += math.sqrt(pow(current_point[0]-to_agent[0],2)+pow(current_point[1]-to_agent[1],2))
+        return distance            
         
 
 
