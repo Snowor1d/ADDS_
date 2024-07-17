@@ -20,8 +20,8 @@ import model
 import time
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
-run_iteration = 700
+visualization_mode = 'on' # choose your visualization mode 'on / off
+run_iteration = 1000
 number_of_agents = 11 # agents 수
 #-------------------------#
 for j in range(run_iteration):
