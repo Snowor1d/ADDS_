@@ -117,8 +117,6 @@ def set_agent_type_settings(agent, type):
         agent.health = 500
         agent.attack_damage = 0
 
-
-
 class FightingAgent(Agent):
     """An agent that fights."""
 
@@ -1405,10 +1403,14 @@ class FightingAgent(Agent):
         
 
 
-    def calculate_Max_Q(self,state): # state 집어 넣으면 max_Q 내주는 함수
+    def calculate_Max_Q(self,state,status): # state 집어 넣으면 max_Q 내주는 함수
         global robot_xy
         global one_foot
-        action_list = [["UP", "GUIDE"], ["UP", "NOT_GUIDE"], ["DOWN", "GUIDE"], ["DOWN", "NOT_GUIDE"], ["LEFT", "GUIDE"], ["LEFT", "NOT_GUIDE"], ["RIGHT", "GUIDE"], ["RIGHT", "NOT_GUIDE"]]
+        action_list = []
+        if(status == "GUIDE"):
+            action_list = [["UP", "GUIDE"], ["DOWN", "GUIDE"], ["LEFT", "GUIDE"], ["RIGHT", "GUIDE"]]
+        else :
+            action_list = [["UP", "NOT_GUIDE"], ["DOWN", "NOT_GUIDE"], ["LEFT", "NOT_GUIDE"], ["RIGHT", "NOT_GUIDE"]]
         
         r_x = robot_xy[0]
         r_y = robot_xy[1]
@@ -1430,9 +1432,12 @@ class FightingAgent(Agent):
                 if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
                     del_object.append("RIGHT")
         del_object= list(set(del_object))
-        for i in del_object:
-            action_list.remove([i, "GUIDE"])
-            action_list.remove([i, "NOT_GUIDE"])
+        if(status=="GUIDE"):
+            for i in del_object:
+                action_list.remove([i, "GUIDE"])
+        else :
+            for i in del_object:
+                action_list.remove([i, "NOT_GUIDE"])
 
         Q_list = []
         for i in range(len(action_list)):
@@ -1496,50 +1501,48 @@ class FightingAgent(Agent):
 
         
         # 현재 state와 다음 state의 max_Q 값 계산
-        next_state_max_Q = self.calculate_Max_Q(next_robot_xy)
-        present_state_Q = self.calculate_Q(robot_xy, self.now_action)
-        #print('good?',next_state_max_Q,present_state_Q)
+        print("self.now_action: ",self.now_action[1])
+        if(self.now_action[1] == "GUIDE"):
+            next_state_max_Q = self.calculate_Max_Q(next_robot_xy, "GUIDE")
+            present_state_Q = self.calculate_Q(robot_xy, self.now_action)
+            f1 = self.F1_distance(robot_xy, self.now_action[0], self.now_action[1])
+            f2 = self.F2_near_agents(robot_xy, self.now_action[0], self.now_action[1])
+            if(weight_changing[0]):
+                self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
+            if(weight_changing[1]):
+                self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+            self.feature_weights_guide[0] = self.w1
+            self.feature_weights_guide[1] = self.w2 
+            with open ('log.txt', 'a') as f:
+                print("hi!!!!!!!!")
+                f.write("GUIDE learning . . .\n")
+                f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
+                f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
+                f.write("============================================================================\n")
+                f.close()
 
-        # 여기부터 실제 업데이트 진행
-        #direction_agents_num = self.four_direction_compartment()
-        
-        f1 = self.F1_distance(robot_xy, self.now_action[0], self.now_action[1])
-        f2 = self.F2_near_agents(robot_xy, self.now_action[0], self.now_action[1])
-        f3_f4 = self.F3_F4_direction_agents_danger(robot_xy, self.now_action[0], self.now_action[1])
-        f3 = f3_f4[0]
-        f4 = f3_f4[1]
-        selected_action = self.now_action[1]
+        elif(self.now_action[1] == "NOT_GUIDE"):
+            print("not guide enter")
+            next_state_max_Q = self.calculate_Max_Q(next_robot_xy, "NOT_GUIDE")
+            present_state_Q = self.calculate_Q(robot_xy, self.now_action)
+            f3_f4 = self.F3_F4_direction_agents_danger(robot_xy, self.now_action[0], self.now_action[1])
+            f3 = f3_f4[0]
+            f4 = f3_f4[1]
+
+            if(weight_changing[2]):
+                self.w3 +=  alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3 
+            if(weight_changing[3]):
+                self.w4 +=  alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
+            self.feature_weights_not_guide[2] = self.w3
+            self.feature_weights_not_guide[3] = self.w4
+            with open ('log.txt', 'a') as f:
+                print("wow!!!!!!!")
+                f.write("NOT GUIDE learning . . .\n")
+                f.write(f"w3 ( { self.w3 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f3({ f3})\n")
+                f.write(f"w4 ( { self.w4 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f4({ f4})\n")
+                f.write("============================================================================\n")
+                f.close()                    
+
+
     
-        #print('weight :',self.feature_weights_guide,self.feature_weights_not_guide)
-        #print('select_Q :', self.now_action)
-        #if selected_action == "GUIDE":
-            ### 아래는 얘네 각각 출력..
-        if(weight_changing[0]):
-            self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
-        if(weight_changing[1]):    
-            self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
-        self.feature_weights_guide[0] = self.w1 #계산한 w1, w2를 리스트에 재할당해야 반영됨
-        self.feature_weights_guide[1] = self.w2
-            #print("w1 (", self.w1, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f1(", f1, ")")
-            #print("w2 (", self.w2, ") += alpha (", alpha, ") * (reward (", reward, ") + discount_factor (", discount_factor, ") * next_state_max_Q(", next_state_max_Q, ") - present_state_Q (", present_state_Q, ")) * f2(", f2, ")")
-            #self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-            # print("F1",f1)
-            # print("F2",f2)
-            # print("F3",f3)
-            # print("reward",reward)
-            # print("next_state_max_Q",next_state_max_Q)
-            # print("present_state_Q",present_state_Q)
-        #if selected_action == "NOT_GUIDE":
-        if(weight_changing[2]):
-            self.w3 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3
-        if(weight_changing[3]):
-            self.w4 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
-        with open ('log.txt', 'a') as f:
-            f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
-            f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
-            f.write(f"w3 ( { self.w3 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f3({ f3})\n")
-            f.write(f"w4 ( { self.w4 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f4({ f4})\n")
-            f.close()
-        self.feature_weights_not_guide[0] = self.w3
-        self.feature_weights_not_guide[1] = self.w4
         return

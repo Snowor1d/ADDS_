@@ -156,40 +156,39 @@ for j in range(run_iteration):
         
             
             print('에피소드 수',i+1)
-            file3 = open("correlation.txt", "a")
-            if i % 100 == 0:
+            if i % 20 == 0:
                 a = 1
                 try: 
                     robot_agent = s_model_r.return_robot()
                     reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
-                    if(reward>50):
-                        reward = 5
-                    elif (reward>5):
+                    
+                    if(reward>20):
                         reward = 1
+                    elif(reward>10):
+                        reward = 0.5
+                    elif (reward>5):
+                        reward = 0
                     elif (reward>-5):
+                        reward = -0.5
+                    elif (reward>-10):
                         reward = -1
-                    elif (reward>-50):
-                        reward = -3
+                    elif (reward>-20):
+                        reward = -1.5
                     else :
-                        reward = -5
-                    
-                    
+                        reward = -2
+
+                    (s_model_r.return_robot()).update_weight(reward)
+
                     file3 = open("correlation.txt", "a")
                     file3.write(f"{robot_agent.w1} {robot_agent.w2} {robot_agent.w3} {robot_agent.w4} {reward}\n")
                 except : 
                     file3.close()
                     continue
+                # if(reward<0):
+                #     reward = -math.log2(-reward)
+                # if(reward>0):
+                #     reward = math.log2(reward)
 
-                if(reward<0):
-                    reward = -math.log2(-reward)
-                if(reward>0):
-                    reward = math.log2(reward)
-                try : 
-                    (s_model_r.return_robot()).update_weight(reward)
-                except : 
-                    file3.close()
-                    "ERROR OCCURED"
-                    continue
 
             if i+1 == run_iteration :
                 with open("weight.txt", 'w') as file2:
