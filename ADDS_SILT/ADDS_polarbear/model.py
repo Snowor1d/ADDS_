@@ -674,7 +674,7 @@ class FightingModel(Model):
 
     def reward_distance_sum(self):
         result = 0
-        for i in self.model.agents:
+        for i in self.agents:
             if(i.dead == False and (i.type==0 or i.type==1)):
                 result += i.danger
         return result 
@@ -1891,15 +1891,11 @@ class FightingModel(Model):
     
     def reward_distance_real(self):
         s_distance = 0
-        print("test1")
         for i in self.agents:
-            print("test2")
             if(i.dead == False and (i.type == 0 or i.type ==1)):
-                print("test3")
-                d = i.danger
-                print("d : ", d)
+                d = i.agent_to_agent_distance_real(i.xy, self.exit_goal)
                 s_distance += d 
-        print("s_distance : ", s_distance)
+        #print("s_distance : ", s_distance)
         return s_distance
     
     def reward_distance_difficulty(self): # 모든 agent 각각의 거리 총합, 난이도 총합 고려 reward 산출

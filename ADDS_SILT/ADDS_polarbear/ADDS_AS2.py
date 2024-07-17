@@ -21,7 +21,7 @@ import time
 import sys
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
+visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 1500
 number_of_agents = 11 # agents 수
 #-------------------------#
@@ -161,23 +161,21 @@ for j in range(run_iteration):
                 a = 1
                 try:
                     robot_agent = s_model_r.return_robot()
-                    print("여긴돔")
                     reward = a * (s_model.reward_distance_real() - s_model_r.reward_distance_real())
-                    print("여기도 돔")
                     if(reward>20):
-                        reward = 1
+                        reward = 0.2
                     elif(reward>10):
-                        reward = 0.5
+                        reward = 0.1
                     elif (reward>5):
                         reward = 0
                     elif (reward>-5):
-                        reward = -0.5
+                        reward = -0.1
                     elif (reward>-10):
-                        reward = -1
+                        reward = -0.2
                     elif (reward>-20):
-                        reward = -1.5
+                        reward = -0.4
                     else :
-                        reward = -2
+                        reward = -0.7
 
                     (s_model_r.return_robot()).update_weight(reward)
 
@@ -186,8 +184,8 @@ for j in range(run_iteration):
                     file3.close()
             
                 except : 
-                    sys.exit()
                     continue
+                #     continue
                 # if(reward<0):
                 #     reward = -math.log2(-reward)
                 # if(reward>0):

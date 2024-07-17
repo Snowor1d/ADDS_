@@ -1000,7 +1000,7 @@ class FightingAgent(Agent):
         elif action == "LEFT":
             robot_xyP[0] -= one_foot
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
-        return NumberOfAgents * 0.05
+        return NumberOfAgents * 0.2
 
 
     def reward_distance(self, state, action, mode):
@@ -1360,7 +1360,7 @@ class FightingAgent(Agent):
     
     
     def F3_F4_direction_agents_danger(self, state, action, mode):
-        result = [-50, -4] 
+        result = [1, 1] 
         x = state[0]
         y = state[1]
         after_x = x 
@@ -1382,7 +1382,7 @@ class FightingAgent(Agent):
                     result[0] += i.danger
                     count += 1
         result[1] = count
-        result[0] = result[0] * 0.003
+        result[0] = result[0] * 0.002
         result[1] = result[1] * 0.02
                  
         #print(f"{action}으로 가면, {count}명의 agent와 가까워짐, F3값 : {result}")
