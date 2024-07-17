@@ -148,7 +148,7 @@ for j in range(run_iteration):
                             print("ERROR 147")
                             print("********************************")
                             continue
-                        
+                    
                     if not (robot_agent == None):
                         new_lines = [str(robot_agent.w1) + '\n', str(robot_agent.w2) + '\n', str(robot_agent.w3)+'\n', str(robot_agent.w4)]
                     file2.close()
@@ -160,7 +160,7 @@ for j in range(run_iteration):
                 a = 1
                 try: 
                     robot_agent = s_model_r.return_robot()
-                    reward = a * (s_model.reward_distance_difficulty() - s_model_r.reward_distance_difficulty())
+                    reward = a * (s_model.reward() - s_model_r.reward())
                     
                     if(reward>20):
                         reward = 1
@@ -181,8 +181,8 @@ for j in range(run_iteration):
 
                     file3 = open("correlation.txt", "a")
                     file3.write(f"{robot_agent.w1} {robot_agent.w2} {robot_agent.w3} {robot_agent.w4} {reward}\n")
-                except : 
                     file3.close()
+                except : 
                     continue
                 # if(reward<0):
                 #     reward = -math.log2(-reward)

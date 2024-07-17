@@ -1360,7 +1360,7 @@ class FightingAgent(Agent):
     
     
     def F3_F4_direction_agents_danger(self, state, action, mode):
-        result = [0, 0] 
+        result = [-50, -4] 
         x = state[0]
         y = state[1]
         after_x = x 
@@ -1514,7 +1514,6 @@ class FightingAgent(Agent):
             self.feature_weights_guide[0] = self.w1
             self.feature_weights_guide[1] = self.w2 
             with open ('log.txt', 'a') as f:
-                print("hi!!!!!!!!")
                 f.write("GUIDE learning . . .\n")
                 f.write(f"w1 ( {self.w1} ) += alpha ( {alpha} ) * (reward ( {reward} ) + discount_factor ( {discount_factor} ) * next_state_max_Q({ next_state_max_Q }) - present_state_Q ( {present_state_Q})) * f1( {f1})\n")
                 f.write(f"w2 ( { self.w2 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f2({ f2})\n")
@@ -1522,7 +1521,6 @@ class FightingAgent(Agent):
                 f.close()
 
         elif(self.now_action[1] == "NOT_GUIDE"):
-            print("not guide enter")
             next_state_max_Q = self.calculate_Max_Q(next_robot_xy, "NOT_GUIDE")
             present_state_Q = self.calculate_Q(robot_xy, self.now_action)
             f3_f4 = self.F3_F4_direction_agents_danger(robot_xy, self.now_action[0], self.now_action[1])
@@ -1533,10 +1531,9 @@ class FightingAgent(Agent):
                 self.w3 +=  alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f3 
             if(weight_changing[3]):
                 self.w4 +=  alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f4
-            self.feature_weights_not_guide[2] = self.w3
-            self.feature_weights_not_guide[3] = self.w4
+            self.feature_weights_not_guide[0] = self.w3
+            self.feature_weights_not_guide[1] = self.w4
             with open ('log.txt', 'a') as f:
-                print("wow!!!!!!!")
                 f.write("NOT GUIDE learning . . .\n")
                 f.write(f"w3 ( { self.w3 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f3({ f3})\n")
                 f.write(f"w4 ( { self.w4 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f4({ f4})\n")
