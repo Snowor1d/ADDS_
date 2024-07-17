@@ -1891,9 +1891,13 @@ class FightingModel(Model):
     
     def reward_distance_real(self):
         s_distance = 0
+        print("test1")
         for i in self.agents:
+            print("test2")
             if(i.dead == False and (i.type == 0 or i.type ==1)):
-                d = i.agent_to_agent_distance_real(i.xy, self.exit_goal)
+                print("test3")
+                d = i.danger
+                print("d : ", d)
                 s_distance += d 
         print("s_distance : ", s_distance)
         return s_distance

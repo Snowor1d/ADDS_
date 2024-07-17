@@ -1223,8 +1223,8 @@ class FightingAgent(Agent):
                 f4 = f3_f4[1]
                 if True : # guide 모드일때 weight는 feature_weights_guide
                     Q_list[j] = f3 * self.feature_weights_not_guide[0] + f4 * self.feature_weights_not_guide[1]
-                if(action_list[j] == self.robot_previous_action):
-                    Q_list[j] *= consistency_mul
+                # if(action_list[j] == self.robot_previous_action):
+                #     Q_list[j] *= consistency_mul
                 if (Q_list[j]>MAX_Q):
                     MAX_Q= Q_list[j]
                     selected = action_list[j]

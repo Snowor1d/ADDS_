@@ -18,10 +18,11 @@ import time
 import agent
 import model
 import time
+import sys
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
-run_iteration = 1000
+visualization_mode = 'off' # choose your visualization mode 'on / off
+run_iteration = 1500
 number_of_agents = 11 # agents 수
 #-------------------------#
 for j in range(run_iteration):
@@ -158,10 +159,11 @@ for j in range(run_iteration):
             print('에피소드 수',i+1)
             if i % 20 == 0:
                 a = 1
-                try: 
+                try:
                     robot_agent = s_model_r.return_robot()
-                    reward = a * (s_model.reward() - s_model_r.reward())
-                    
+                    print("여긴돔")
+                    reward = a * (s_model.reward_distance_real() - s_model_r.reward_distance_real())
+                    print("여기도 돔")
                     if(reward>20):
                         reward = 1
                     elif(reward>10):
@@ -182,7 +184,9 @@ for j in range(run_iteration):
                     file3 = open("correlation.txt", "a")
                     file3.write(f"{robot_agent.w1} {robot_agent.w2} {robot_agent.w3} {robot_agent.w4} {reward}\n")
                     file3.close()
+            
                 except : 
+                    sys.exit()
                     continue
                 # if(reward<0):
                 #     reward = -math.log2(-reward)
