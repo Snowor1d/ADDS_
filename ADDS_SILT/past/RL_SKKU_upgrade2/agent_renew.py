@@ -484,7 +484,8 @@ class FightingAgent(Agent):
         #     if (distance_to_goal <  math.sqrt(pow(new_position[0]-goal[0],2)+pow(new_position[1]-goal[1],2))):
         #         new_position = i
         if (self.type == 3):
-            new_position = self.robot_policy2()
+            new_position = self.
+            ()
             self.model.grid.move_agent(self, new_position)
             return
 
@@ -985,8 +986,10 @@ class FightingAgent(Agent):
             back_path = self.model.get_path(floyd_path, self.save_target, self.save_point) # save_target(인구가 가장 많은 곳)에서 save_point(safe zone) 까지의 최단 경로 
             self.go_path_num = len(go_path) #guide를 하기 위해서 ~ 
 
+
             for i in range(len(go_path)-1):
-                self.robot_now_path.append(space_connected_linear(go_path[i], go_path[i+1])) #(stage1 stage2) -> 중간 goal을 알려준다  
+                self.robot_now_path.append(
+                (go_path[i], go_path[i+1])) #(stage1 stage2) -> 중간 goal을 알려준다  
             self.robot_now_path.append([(self.save_target[0][0]+self.save_target[1][0])/2, (self.save_target[0][1]+self.save_target[1][1])/2]) #save target 중점까지 간다 
             for i in range(len(back_path)-1):
                 self.robot_now_path.append(space_connected_linear(back_path[i], back_path[i+1]))  #back path도 넣는다 
