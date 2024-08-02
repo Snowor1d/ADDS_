@@ -25,11 +25,12 @@ visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 1500
 number_of_agents = 11 # agents 수
 #-------------------------#
+model_num = random.randint(0,4)
 for j in range(run_iteration):
 
     print(f"{j} 번째 학습 ")
     if visualization_mode == 'off':
-        s_model = model.FightingModel(5,50,50)
+        s_model = model.FightingModel(5,50,50, model_num)
         s_model_r = copy.deepcopy(s_model)     
         
         s_model_r.make_robot() ## 자리를 옮겨봤어
@@ -47,7 +48,7 @@ for j in range(run_iteration):
             del s_model
             del s_model_r
             ran_num = random.randint(10000,20000)
-            s_model = model.FightingModel(5,50,50)
+            s_model = model.FightingModel(5,50,50,model_num)
             s_model_r = copy.deepcopy(s_model)
             s_model_r.make_robot()
             s_model_r.make_agents()
@@ -243,7 +244,7 @@ for j in range(run_iteration):
 
 
     if visualization_mode == 'on':
-        s_model = model.FightingModel(5,50,50)
+        s_model = model.FightingModel(5,50,50,model_num)
         s_model_r = copy.deepcopy(s_model)     
         ran_num = random.randint(10000,20000)
         s_model.make_agents2()

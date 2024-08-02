@@ -127,6 +127,7 @@ class FightingAgent(Agent):
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         global robot_xy
+        self.is_learning_state = 1
         self.robot_step = 0
         robot_xy = pos
         self.goal_init = 0
@@ -272,7 +273,10 @@ class FightingAgent(Agent):
         #     print("--------------------")
 
         self.move()
-        
+    
+    def change_learning_state(self, learning):
+        self.is_learning_state = learning
+
 
     def check_stage_agent(self): ## 이건 언제 쓰이나??? agent 움직일 때 현재 자기가 있는 위치 알 때
         x = self.xy[0]
@@ -475,7 +479,9 @@ class FightingAgent(Agent):
         else :
             reward = self.check_reward("NOT_GUIDE")
         #print("mode : ", next_action[1], " reward : ", reward)
-        self.update_weight(reward)
+        if(self.is_learning_state == 1):
+            self.update_weight(reward)
+            
         # print("next_action : ", next_action)
 
 

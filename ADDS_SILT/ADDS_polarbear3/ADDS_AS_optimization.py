@@ -33,7 +33,6 @@ def objective_function(velocity_a, velocity_b, switch):
         for model_num in range(5):
             s_model = model.FightingModel(5,50,50,model_num)
             s_model_r = copy.deepcopy(s_model)     
-            
             s_model_r.make_robot() ## 자리를 옮겨봤어
             s_model_r.make_agents()
 
@@ -53,6 +52,7 @@ def objective_function(velocity_a, velocity_b, switch):
                 s_model_r = copy.deepcopy(s_model)
                 s_model_r.make_robot()
                 (s_model_r.return_robot()).change_value(velocity_a,velocity_b,switch)
+                (s_model_r.return_robot()).change_learning_state(0)
                 s_model_r.make_agents()
                 s_model.make_agents2()
                 s_model_r.random_agent_distribute_outdoor(number_of_agents,ran_num)
