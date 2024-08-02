@@ -21,7 +21,7 @@ import time
 import sys
 
 #-------------------------#
-visualization_mode = 'on' # choose your visualization mode 'on / off
+visualization_mode = 'off' # choose your visualization mode 'on / off
 run_iteration = 1500
 number_of_agents = 11 # agents 수
 #-------------------------#
