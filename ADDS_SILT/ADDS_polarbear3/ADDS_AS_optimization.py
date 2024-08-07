@@ -27,10 +27,13 @@ number_of_agents = 11 # agents 수
 
 #-------------------------#
 
-def objective_function(velocity_a, velocity_b, switch):
+def objective_function(switch):
+    velocity_a = 5
+    velocity_b = 5
     score = 0
     if visualization_mode == 'off':
         for model_num in range(5):
+            print(f"{model_num}번째 모델")
             s_model = model.FightingModel(5,50,50,model_num)
             s_model_r = copy.deepcopy(s_model)     
             s_model_r.make_robot() ## 자리를 옮겨봤어
@@ -74,7 +77,7 @@ def objective_function(velocity_a, velocity_b, switch):
                 s_model_r.step()
 
                 content =""
-                print('num_remained_agent_r',s_model_r.num_remained_agent)
+                #print('num_remained_agent_r',s_model_r.num_remained_agent)
             # robot 있는 모델의 agent 수 저장
             #-----------------------------------------------------------------------------------------------------------------------
                 if i == 0: # 처음 생성된 agent 수 저장
@@ -94,7 +97,7 @@ def objective_function(velocity_a, velocity_b, switch):
                         print(num_escaped_episodes)
                         score += (i+1)
                         with open("robot.txt", "a") as f:
-                            f.write("{}번째 학습, {}, {}, {}\n".format(j, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
+                            f.write("{}번째 학습, {}, {}, {}\n".format(i, num_escaped_episodes["50%"], num_escaped_episodes["80%"], num_escaped_episodes["100%"]))
                         with open("result.txt", "a") as f:
                             f.write(str((num_assigned_agent-s_model_r.num_remained_agent-(num_assigned_agent-s_model.num_remained_agent))/(i+1))+"\n")
 
@@ -116,7 +119,7 @@ def objective_function(velocity_a, velocity_b, switch):
                     break
             
                 
-                print('에피소드 수',i+1)
+                #print('에피소드 수',i+1)
 
                 if i+1 == run_iteration :
 
@@ -150,15 +153,18 @@ def objective_function(velocity_a, velocity_b, switch):
             end_time = time.time()
             execution_time = end_time - start_time
             print("코드 실행 시간:", execution_time, "초")
+    print("score:", score)
+
+    return -score
 
 from bayes_opt import BayesianOptimization
 optimizer = BayesianOptimization(
     f=objective_function,
-    pbounds={'velocity_a': (0, 10), 'velocity_b': (0, 10), 'switch': (0, 1)},
-    random_state = 40
+    pbounds={'switch': (0, 1)},
+    random_state = 10
 )
 
-optimizer.maximize(init_points=10, n_iter=40)
+optimizer.maximize(init_points=10, n_iter=10)
 best_params = optimizer.max['params']
 best_value = optimizer.max['target']
 

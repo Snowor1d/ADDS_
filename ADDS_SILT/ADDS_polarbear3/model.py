@@ -568,7 +568,7 @@ class FightingModel(Model):
                 
         #self.all_graph = self.init_all_graph()
 
-        print("exit : ", self.exit_compartment)
+        #print("exit : ", self.exit_compartment)
 
     def init_all_graph(self):
         N = 50
