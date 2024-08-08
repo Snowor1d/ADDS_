@@ -1242,7 +1242,6 @@ class FightingAgent(Agent):
         ## 초기 selected 값 random 선택 ##
         values = ["UP", "DOWN", "LEFT", "RIGHT"]
         selected = random.choice(values)
-        direction_agents_num = self.four_direction_compartment()
         #print(direction_agents_num)
         if(mode=="GUIDE"):
             for j in range(len(action_list)):
