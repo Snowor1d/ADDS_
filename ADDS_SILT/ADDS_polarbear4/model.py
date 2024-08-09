@@ -382,24 +382,23 @@ class FightingModel(Model):
         global total_crowd
         #self.random_agent_distribute_outdoor(total_crowd)
         #self.random_hazard_placement(random.randint(1,3))
-        
-        self.exit_compartment = ((0,0), (0, 0)) ##출구 위치 저장
+        self.exit_compartments = []
 
         if(self.is_left_exit):
             self.space_goal_dict[((0,0), (5, 45))] = [self.left_exit_goal]
-            self.exit_compartment = ((0,0), (5, 45))
+            self.exit_compartments.append(((0,0), (5, 45)))
 
         if(self.is_up_exit):
             self.space_goal_dict[((0,45), (45, 49))] = [self.up_exit_goal]
-            self.exit_compartment = ((0,45), (45, 49))
+            self.exit_compartments.append(((0,45), (45, 49)))
 
         if(self.is_right_exit):
             self.space_goal_dict[((45,5), (49, 49))] = [self.right_exit_goal]
-            self.exit_compartment = ((45,5), (49, 49))
+            self.exit_compartments.append(((45,5), (49, 49)))
 
         if(self.is_down_exit):
             self.space_goal_dict[((5,0), (49, 5))] = [self.down_exit_goal]
-            self.exit_compartment = ((5,0), (49, 5))
+            self.exit_compartments.append(((5,0), (49, 5)))
 
         #exit 구역의 goal 재정의
 #---------------------------------------------------------------------------------------------------------------------
@@ -571,7 +570,7 @@ class FightingModel(Model):
           
 
     def make_exit(self):
-        exit_rec_list = []
+        self.exit_rec_list = []
         self.exit_goal = [0,0]
         self.is_down_exit = 0
         self.is_left_exit = 0
@@ -620,7 +619,7 @@ class FightingModel(Model):
             self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
             self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
             self.exit_goal = [self.left_exit_goal[0], self.left_exit_goal[1]]
-            exit_rec_list.append(exit_rec)
+            self.exit_rec_list.append(exit_rec)
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
         if(self.is_right_exit):
@@ -637,7 +636,7 @@ class FightingModel(Model):
             self.right_exit_goal[1] = self.right_exit_goal[1]/right_exit_num
             self.right_exit_area = [[45, start_exit_cell], [49, start_exit_cell+exit_size]]
             self.exit_goal = [self.right_exit_goal[0], self.right_exit_goal[1]]
-            exit_rec_list.append(exit_rec)
+            self.exit_rec_list.append(exit_rec)
         down_exit_num = 0    
         self.down_exit_goal = [0,0]
         if(self.is_down_exit):
@@ -654,7 +653,7 @@ class FightingModel(Model):
             self.down_exit_goal[1] = self.down_exit_goal[1]/down_exit_num
             self.down_exit_area = [[start_exit_cell, 0], [start_exit_cell+exit_size, 5]]
             self.exit_goal = [self.down_exit_goal[0], self.down_exit_goal[1]]
-            exit_rec_list.append(exit_rec)
+            self.exit_rec_list.append(exit_rec)
         up_exit_num = 0    
         self.up_exit_goal = [0,0]
         if(self.is_up_exit):
@@ -671,10 +670,10 @@ class FightingModel(Model):
             self.up_exit_goal[1] = self.up_exit_goal[1]/up_exit_num
             self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
             self.exit_goal = [self.up_exit_goal[0], self.up_exit_goal[1]]
-            exit_rec_list.append(exit_rec)
+            self.exit_rec_list.append(exit_rec)
         #exit_rec에는 탈출 점들의 좌표가 쌓임
 
-        return exit_rec_list
+        return self.exit_rec_list
 
 
 
@@ -696,55 +695,119 @@ class FightingModel(Model):
             return 1
     def way_to_exit(self):
         visible_distance = 6
-        x1=100 
-        x2= 0
-        y1= 100
-        y2=0
+
+        # 출구를 순회하면서 각 출구에 대한 x1, x2, y1, y2를 구합니다.
         for exit_rec in self.exit_recs:
+            x1, x2 = float('inf'), float('-inf')
+            y1, y2 = float('inf'), float('-inf')
+            
+            # 출구의 경계좌표를 찾습니다.
             for i in exit_rec:
-                if i[0]>x2:
+                if i[0] > x2:
                     x2 = i[0]
-                if i[0]<x1:
+                if i[0] < x1:
                     x1 = i[0]
-                if i[1]>y2:
+                if i[1] > y2:
                     y2 = i[1]
-                if i[1]<y1:
+                if i[1] < y1:
                     y1 = i[1]
-                for i in range(y1, y2+1):
-                    self.recur_exit(x1, i, visible_distance, "l")
-                for i in range(x1, x2+1):
-                    self.recur_exit(i, y2, visible_distance, "u")
-                for i in range(x1, x2+1):
-                    self.recur_exit(i, y1, visible_distance, "d")
-                for i in range(y1, y2+1):
-                    self.recur_exit(x2, i, visible_distance, "r")
+
+            # 좌표 범위에 대해 탐색
+            for j in range(y1, y2 + 1):
+                self.recur_exit(x1, j, visible_distance, "l")
+                self.recur_exit(x2, j, visible_distance, "r")
+
+            for j in range(x1, x2 + 1):
+                self.recur_exit(j, y1, visible_distance, "d")
+                self.recur_exit(j, y2, visible_distance, "u")
+
+    def recur_exit(self, x, y, visible_distance, direction):
+        # 기저 조건 확인
+        if visible_distance < 1:
+            return
+        
+        # 경계값 확인
+        max_index = len(self.grid_to_space) - 1
+        if x < 0 or y < 0 or x > max_index or y > max_index:
+            return
+        
+        # 방문한 위치가 방 내부라면 반환
+        if self.grid_to_space[x][y] in self.room_list:
+            return
+
+        # 현재 위치를 경로로 설정
+        self.exit_way_rec[x][y] = 1
+        
+        # 방향에 따른 재귀 호출
+        if direction == "l":
+            self.recur_exit(x - 1, y - 1, visible_distance - 2, "l")
+            self.recur_exit(x - 1, y, visible_distance - 1, "l")
+            self.recur_exit(x - 1, y + 1, visible_distance - 2, "l")
+        elif direction == "r":
+            self.recur_exit(x + 1, y - 1, visible_distance - 2, "r")
+            self.recur_exit(x + 1, y, visible_distance - 1, "r")
+            self.recur_exit(x + 1, y + 1, visible_distance - 2, "r")
+        elif direction == "u":
+            self.recur_exit(x - 1, y + 1, visible_distance - 2, "u")
+            self.recur_exit(x, y + 1, visible_distance - 1, "u")
+            self.recur_exit(x + 1, y + 1, visible_distance - 2, "u")
+        else:  # direction == "d"
+            self.recur_exit(x + 1, y - 1, visible_distance - 2, "d")
+            self.recur_exit(x, y - 1, visible_distance - 1, "d")
+            self.recur_exit(x - 1, y - 1, visible_distance - 2, "d")
+    # def way_to_exit(self):
+    #     visible_distance = 6
+    #     x1=100 
+    #     x2= 0
+    #     y1= 100
+    #     y2=0
+    #     for exit_rec in self.exit_recs:
+    #         print("eixt_rec : ", exit_rec)
+    #         for i in exit_rec:
+    #             if i[0]>x2:
+    #                 x2 = i[0]
+    #             if i[0]<x1:
+    #                 x1 = i[0]
+    #             if i[1]>y2:
+    #                 y2 = i[1]
+    #             if i[1]<y1:
+    #                 y1 = i[1]
+    #             for j in range(y1, y2+1):
+    #                 self.recur_exit(x1, j, visible_distance, "l")
+    #             for j in range(x1, x2+1):
+    #                 self.recur_exit(j, y2, visible_distance, "u")
+    #             for j in range(x1, x2+1):
+    #                 self.recur_exit(j, y1, visible_distance, "d")
+    #             for j in range(y1, y2+1):
+    #                 self.recur_exit(x2, j, visible_distance, "r")
 
                     
 
-    def recur_exit(self, x, y, visible_distance, direction):
-        if(visible_distance < 1):
-            return 
-        if(x==0 or y==0 or x==49 or y==49):
-            return
-        if(self.grid_to_space[x][y] in self.room_list):
-            return
-        self.exit_way_rec[x][y] = 1         
-        if direction=="l":
-            self.recur_exit(x-1, y-1, visible_distance-2, "l")
-            self.recur_exit(x-1, y, visible_distance-1, "l")
-            self.recur_exit(x-1, y+1, visible_distance-2, "l")
-        elif direction =="r":
-            self.recur_exit(x+1, y+1, visible_distance-2, "r")
-            self.recur_exit(x+1, y, visible_distance-1, "r")
-            self.recur_exit(x+1, y-1, visible_distance-2, "r")
-        elif direction =="u":
-            self.recur_exit(x-1, y+1, visible_distance-2, "u")
-            self.recur_exit(x, y+1, visible_distance-1, "u")
-            self.recur_exit(x+1, y+1, visible_distance-2, "u")
-        else :
-            self.recur_exit(x+1, y-1, visible_distance-2, "d")
-            self.recur_exit(x, y-1, visible_distance-1, "d")
-            self.recur_exit(x-1, y-1, visible_distance-2, "d")
+    # def recur_exit(self, x, y, visible_distance, direction):
+    #     if(visible_distance < 1):
+    #         return 
+        
+    #     if(x==0 or y==0 or x==49 or y==49):
+    #         return
+    #     if(self.grid_to_space[x][y] in self.room_list):
+    #         return
+    #     self.exit_way_rec[x][y] = 1    
+    #     if direction=="l":
+    #         self.recur_exit(x-1, y-1, visible_distance-2, "l")
+    #         self.recur_exit(x-1, y, visible_distance-1, "l")
+    #         self.recur_exit(x-1, y+1, visible_distance-2, "l")
+    #     elif direction =="r":
+    #         self.recur_exit(x+1, y+1, visible_distance-2, "r")
+    #         self.recur_exit(x+1, y, visible_distance-1, "r")
+    #         self.recur_exit(x+1, y-1, visible_distance-2, "r")
+    #     elif direction =="u":
+    #         self.recur_exit(x-1, y+1, visible_distance-2, "u")
+    #         self.recur_exit(x, y+1, visible_distance-1, "u")
+    #         self.recur_exit(x+1, y+1, visible_distance-2, "u")
+    #     else :
+    #         self.recur_exit(x+1, y-1, visible_distance-2, "d")
+    #         self.recur_exit(x, y-1, visible_distance-1, "d")
+    #         self.recur_exit(x-1, y-1, visible_distance-2, "d")
         
 
 
