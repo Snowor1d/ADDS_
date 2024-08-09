@@ -21,7 +21,7 @@ import time
 import sys
 
 #-------------------------#
-visualization_mode = 'off' # choose your visualization mode 'on / off
+visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 1500
 number_of_agents = 11 # agents 수
 #-------------------------#
@@ -378,7 +378,7 @@ for j in range(run_iteration):
             NUMBER_OF_CELLS,
             NUMBER_OF_CELLS,
             SIZE_OF_CANVAS_IN_PIXELS_X,
-            SIZE_OF_CANVAS_IN_PIXELS_Y,
+            SIZE_OF_CANVAS_IN_PIXELS_Y
         )
 
         chart_healthy = ChartModule(

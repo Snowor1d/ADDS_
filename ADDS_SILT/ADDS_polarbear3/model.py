@@ -291,7 +291,7 @@ def make_door_to_outdoor(door_list, space_list):
 class FightingModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, number_agents: int, width: int, height: int, model_num: int):
+    def __init__(self, number_agents: int, width: int, height: int, model_num : int):
         self.exit_way_rec =  [[0]*51 for _ in range(51)]
         self.exit_point = [0, 0]
         self.robot = None 
