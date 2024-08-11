@@ -27,9 +27,7 @@ number_of_agents = 11 # agents 수
 
 #-------------------------#
 
-def objective_function(switch):
-    velocity_a = 5
-    velocity_b = 5
+def objective_function(switch, velocity_a, velocity_b):
     score = 0
     if visualization_mode == 'off':
         for run_iter in range(3):
@@ -162,7 +160,7 @@ def objective_function(switch):
 from bayes_opt import BayesianOptimization
 optimizer = BayesianOptimization(
     f=objective_function,
-    pbounds={'switch': (0, 1)},
+    pbounds={'switch': (0, 1), 'velocity_a': (2, 10), 'velocity_b': (2, 10)},
     random_state = 13
 )
 

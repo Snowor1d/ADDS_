@@ -349,7 +349,7 @@ class FightingAgent(Agent):
             # new_position2 = (30, 30)
 
 
-            self.model.reward_distance_difficulty()
+            #self.model.reward_distance_difficulty()
 
 
             self.model.grid.move_agent(self, new_position2)
@@ -369,7 +369,13 @@ class FightingAgent(Agent):
         global robot_prev_xy
         exit_confirmed_area = self.model.exit_way_rec
         if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
-            self.now_goal = self.model.exit_goal
+            min_d = math.sqrt(pow(self.xy[0]-self.model.exit_goal_list[0][0], 2)+pow(self.xy[1]-self.model.exit_goal_list[0][1], 2))
+            self.now_goal = self.model.exit_goal_list[0]
+            for each_goal in self.model.exit_goal_list:
+                d = math.sqrt(pow(self.xy[0]-each_goal[0], 2)+pow(self.xy[1]-each_goal[1], 2))
+                if (min_d > d):
+                    self.now_goal = each_goal
+                    min_d = d
             self.danger = 0
             return 
 
@@ -508,8 +514,16 @@ class FightingAgent(Agent):
 
         if(self.drag == 0): ## not guide 일 때
             desired_speed = 5
+        
+        
         else:
-            desired_speed = 1 + (self.velocity_a * self.agent_to_agent_distance_real(robot_xy, self.model.exit_goal) + self.velocity_b * self.F2_near_agents(robot_xy, "STOP", "GUIDE"))/(50 + 10)
+            goal_d = 9999999
+            for i in self.model.exit_goal_list:
+                goal_d = min(goal_d, self.agent_to_agent_distance_real(robot_xy, i))
+            self.velocity_a = 10
+            self.velocity_b = 10
+            desired_speed = (1 + (self.velocity_a * goal_d) + self.velocity_b * self.F2_near_agents(robot_xy, "STOP", "GUIDE"))/(30 + 10)
+            print("desired_speed : ", desired_speed)
             #desired_speed = 4
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -690,6 +704,7 @@ class FightingAgent(Agent):
         global robot_radius
         global robot_xy
         global robot_status
+        global robot_step_num
         #from model import Model
         global random_disperse
         x = int(round(self.xy[0]))
@@ -719,8 +734,12 @@ class FightingAgent(Agent):
         desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         obstacle_force = [0, 0]
-        self.previous_danger = self.danger 
-        self.danger = self.agent_to_agent_distance_real(self.model.exit_goal, self.xy)
+        self.previous_danger = self.danger
+        self.danger = 999999
+        for each_goal in self.model.exit_goal_list:
+            danger = self.agent_to_agent_distance_real(each_goal, self.xy)
+            if(danger<self.danger):
+                self.danger = danger
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -1004,7 +1023,6 @@ class FightingAgent(Agent):
         global robot_xy
         global one_foot
 
-        now_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
         
         min_distance = 1000
         next_robot_position = [0, 0]
@@ -1020,7 +1038,10 @@ class FightingAgent(Agent):
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
 
-        result = self.agent_to_agent_distance_real(next_robot_position, self.model.exit_goal)
+        result = 999999
+        for i in self.model.exit_goal_list:
+            result = min(result, self.agent_to_agent_distance_real(next_robot_position, i))
+
         #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
         #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2)
         return result * 0.01
@@ -1095,47 +1116,6 @@ class FightingAgent(Agent):
 
         return reward
     
-    def reward_difficulty_space(self,state,action,mode):
-        global DifficultyList
-
-        # gray space의 좌표만 가진 list 생성
-        space_list = self.model.space_list #space list 저장
-        room_list = self.model.room_list #room list 저장
-        semi_safe_zone_list = [[[0, 0], [5, 45]], [[0, 45], [45, 49]], [[45, 5], [49, 49]], [[5, 0], [49, 5]]] # 후보 safe zone list 저장
-        pure_gray_space = [] # safe zone이랑 room 빼서 순수 gray 만듦
-        for sublist_a in space_list:
-            if sublist_a not in room_list and sublist_a not in semi_safe_zone_list:
-                pure_gray_space.append(sublist_a)
-
-        
-        exit_coordinate = self.model.exit_rec
-        if exit_coordinate[0][0] >=0 and exit_coordinate[0][0]<=5 and exit_coordinate[0][1]>=0 and exit_coordinate[0][1] <= 45:
-            safe_zone_space =  ((0,0),(5,45))
-        elif exit_coordinate[0][0] >=0 and exit_coordinate[0][0]<=45 and exit_coordinate[0][1]>=45 and exit_coordinate[0][1] <= 49:
-            safe_zone_space = ((0,45),(45,49))
-        elif exit_coordinate[0][0] >=45 and exit_coordinate[0][0]<=49 and exit_coordinate[0][1]>=5 and exit_coordinate[0][1] <= 49:
-            safe_zone_space =  ((45,5),(49,49))
-        else:
-            safe_zone_space = ((5,0),(49,5))
-
-        
-        each_space_agent_num = self.agents_in_each_space2() # 각 구역에 몇명있는지 저장
-        shortest_distance = self.model.floyd_distance
-
-        sum_Difficulty = 0 # 여기에 (출구로부터 회색 공간까지의 거리 * 그 공간의 agent 수) 들의 합을 저장함
-        for sublist in pure_gray_space: # 순수 gray 공간에 agent 수 찾기~
-            tuple_key = tuple(map(tuple, sublist))
-            gray_space_agent_mul_difficulty = shortest_distance[safe_zone_space][tuple_key] * each_space_agent_num.get(tuple_key)
-            sum_Difficulty += gray_space_agent_mul_difficulty
-
-        DifficultyList[4] = DifficultyList[3]
-        DifficultyList[3] = DifficultyList[2]
-        DifficultyList[2] = DifficultyList[1]
-        DifficultyList[1] = DifficultyList[0]
-        DifficultyList[0] = sum_Difficulty
-
-        reward = (DifficultyList[1]+DifficultyList[2]+DifficultyList[3]+DifficultyList[4])/4 - sum_Difficulty
-        return reward
     
     def select_Q(self, state) :
         global robot_step_num
@@ -1157,7 +1137,7 @@ class FightingAgent(Agent):
         alpha = 1/self.switch_criteria
         beta = self.switch_criteria
         dict_danger = self.how_urgent_another_space_is()
-        if(robot_step_num%3==0):
+        if(robot_step_num%1==0):
                 # s1 계산
             space_list = self.model.space_list #space list 저장
             room_list = self.model.room_list #room list 저장
@@ -1255,8 +1235,8 @@ class FightingAgent(Agent):
                     MAX_Q= Q_list[j]
                     selected = action_list[j]
                 # print(" Q_list[j]", Q_list[j], " = f1", f1, " * self.feature_weights_guide[0]", self.feature_weights_guide[0]," + f2", f2, " *self.feature_weights_guide[1]", self.feature_weights_guide[1])  
-                
-                exploration_rate = 0.1
+                print("selected : ", selected)
+                exploration_rate = 0
             
                 if random.random() <= exploration_rate:
                     selected = random.choice(action_list)
@@ -1442,16 +1422,6 @@ class FightingAgent(Agent):
                     
                 
     
-    def F4_difficulty_avg(self, state, action, mode, compartment_direction): # 가까워지는(action 했을 때) 구역의 난이도 평균 return
-        ## 가까워지는 구역이 없으면 return 0, 가까워지는 구역에 출구가 포함되어 있으면 출구 제외 난이도 평균 (출구는 난이도 -1)
-        a = []
-        for val in compartment_direction[action]: # action을 했을 때 가까워지는 구역
-            if val != list(map(list, self.model.exit_compartment)): #출구 포함되어 있으면 제외
-                a.append(self.model.dict_NoC[tuple(map(tuple, val))])
-        if len(a) != 0 :
-            return np.mean(a)
-        else:
-            return 0
         
 
 

@@ -571,7 +571,7 @@ class FightingModel(Model):
 
     def make_exit(self):
         self.exit_rec_list = []
-        self.exit_goal = [0,0]
+        self.exit_goal_list = []
         self.is_down_exit = 0
         self.is_left_exit = 0
         self.is_up_exit = 0
@@ -618,7 +618,7 @@ class FightingModel(Model):
             self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num #출구 좌표의 평균 
             self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
             self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
-            self.exit_goal = [self.left_exit_goal[0], self.left_exit_goal[1]]
+            self.exit_goal_list.append([self.left_exit_goal[0], self.left_exit_goal[1]])
             self.exit_rec_list.append(exit_rec)
         right_exit_num = 0    
         self.right_exit_goal = [0,0]
@@ -635,7 +635,7 @@ class FightingModel(Model):
             self.right_exit_goal[0] = self.right_exit_goal[0]/right_exit_num
             self.right_exit_goal[1] = self.right_exit_goal[1]/right_exit_num
             self.right_exit_area = [[45, start_exit_cell], [49, start_exit_cell+exit_size]]
-            self.exit_goal = [self.right_exit_goal[0], self.right_exit_goal[1]]
+            self.exit_goal_list.append([self.right_exit_goal[0], self.right_exit_goal[1]])
             self.exit_rec_list.append(exit_rec)
         down_exit_num = 0    
         self.down_exit_goal = [0,0]
@@ -652,7 +652,7 @@ class FightingModel(Model):
             self.down_exit_goal[0] = self.down_exit_goal[0]/down_exit_num
             self.down_exit_goal[1] = self.down_exit_goal[1]/down_exit_num
             self.down_exit_area = [[start_exit_cell, 0], [start_exit_cell+exit_size, 5]]
-            self.exit_goal = [self.down_exit_goal[0], self.down_exit_goal[1]]
+            self.exit_goal_list.append([self.down_exit_goal[0], self.down_exit_goal[1]])
             self.exit_rec_list.append(exit_rec)
         up_exit_num = 0    
         self.up_exit_goal = [0,0]
@@ -669,7 +669,7 @@ class FightingModel(Model):
             self.up_exit_goal[0] = self.up_exit_goal[0]/up_exit_num
             self.up_exit_goal[1] = self.up_exit_goal[1]/up_exit_num
             self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
-            self.exit_goal = [self.up_exit_goal[0], self.up_exit_goal[1]]
+            self.exit_goal_list.append([self.up_exit_goal[0], self.up_exit_goal[1]])
             self.exit_rec_list.append(exit_rec)
         #exit_rec에는 탈출 점들의 좌표가 쌓임
 
@@ -1467,14 +1467,6 @@ class FightingModel(Model):
 
         return new_space_list2
     
-    def reward_distance_real(self):
-        s_distance = 0
-        for i in self.agents:
-            if(i.dead == False and (i.type == 0 or i.type ==1)):
-                d = i.agent_to_agent_distance_real(i.xy, self.exit_goal)
-                s_distance += d 
-        #print("s_distance : ", s_distance)
-        return s_distance
     
     def reward_distance_difficulty(self): # 모든 agent 각각의 거리 총합, 난이도 총합 고려 reward 산출
         s_distance = 0 # 거리합

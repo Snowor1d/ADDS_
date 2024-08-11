@@ -510,7 +510,10 @@ class FightingAgent(Agent):
             desired_speed = 5
         else:
             desired_speed = 1 + (self.velocity_a * self.agent_to_agent_distance_real(robot_xy, self.model.exit_goal) + self.velocity_b * self.F2_near_agents(robot_xy, "STOP", "GUIDE"))/(50 + 10)
-            #desired_speed = 4
+
+        if(desired_speed>6):
+            desired_speed = 6
+
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
