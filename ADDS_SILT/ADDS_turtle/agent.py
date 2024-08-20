@@ -161,7 +161,12 @@ class FightingAgent(Agent):
         self.xy = pos
         self.vel = [0, 0]
         self.acc = [0, 0]
-        self.mass = 3
+        # self.mass = 3
+        self.mass = (3/70)*np.random.normal(66, 4.16) # agent의 mass, 평균 66kg, 표준 편차 4.16kg
+        if self.type == 3: # robot mass는 3으로 고정
+            self.mass = 3
+
+        self.desired_speed_a = np.random.normal(1.5, 0.2) # agent의 desired_speed, 평균 1.5m/s, 표준 편차 0.2m/s
         self.previous_goal = [0,0]
 
         self.now_action = ["UP", "GUIDE"]
@@ -524,8 +529,7 @@ class FightingAgent(Agent):
             self.velocity_b = 10
             desired_speed = (1 + (self.velocity_a * goal_to_exit) + self.velocity_b * self.F2_near_agents(robot_xy, "STOP", "GUIDE"))/(30 + 10)
             desired_speed = 3.5
-            print("desired_speed : ", desired_speed)
-            #desired_speed = 4
+            
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
@@ -706,12 +710,11 @@ class FightingAgent(Agent):
         global robot_xy
         global robot_status
         global robot_step_num
-        #from model import Model
         global random_disperse
+
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
         temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        #temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
             if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
@@ -725,16 +728,14 @@ class FightingAgent(Agent):
         F_x = 0
         F_y = 0
         k = 3
-        r_0 = 0.3
         valid_distance = 3
         intend_force = 2
         time_step = 0.2 #time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
                         # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
         #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
         #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
-        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
+        # desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
-        obstacle_force = [0, 0]
         self.previous_danger = self.danger
         self.danger = 999999
         for each_goal in self.model.exit_goal_list:
@@ -786,19 +787,10 @@ class FightingAgent(Agent):
         robot_x = robot_xy[0] - self.xy[0]
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
-        agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
-        now_stage = self.check_stage_agent()
-        # if(self.goal_init == 0):
-        #     goal_candiate = self.model.space_goal_dict[now_stage]
-        #     if(len(goal_candiate)==1):
-        #         goal_index = 0
-        #     else:
-        #         goal_index = random.randint(0, len(goal_candiate)-1)
-        #     self.now_goal = goal_candiate[goal_index]
-        #     self.goal_init = 1
-        #     self.previous_stage = now_stage
-        #print("agent now level : ", now_level)
+
+    
         if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
+            # 로봇 반경 내 agent 가 있으면
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
@@ -813,7 +805,7 @@ class FightingAgent(Agent):
             self.type = 0
 
         if(goal_d != 0):
-          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+          desired_force = [intend_force*(self.desired_speed_a*(goal_x/goal_d)), intend_force*(self.desired_speed_a*(goal_y/goal_d))] #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
           desired_force = [0, 0]
         
@@ -832,7 +824,6 @@ class FightingAgent(Agent):
 
         self.xy[0] += self.vel[0] * time_step
         self.xy[1] += self.vel[1] * time_step
-        #self.xy = self.move_to_valid(self.xy)
         
         next_x = int(round(self.xy[0]))
         next_y = int(round(self.xy[1]))
