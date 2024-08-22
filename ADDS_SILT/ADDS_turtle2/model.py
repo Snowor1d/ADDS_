@@ -13,7 +13,7 @@ import random
 import copy
 import math
 import numpy as np
-global_MAP_SIZE = 70
+global_MAP_SIZE = 50
 hazard_id = 5000
 total_crowd = 10
 max_specification = [20, 20]
@@ -344,7 +344,8 @@ class FightingModel(Model):
         self.space_goal_dict = {} #각 space가 가지는 goal을 표현하기 위함
         self.space_graph = {} #각 space의 인접 space를 표현하기 위함
         self.space_type = {} #space type이 0이면 빈 공간, 1이면 room
-
+        
+        self.agent_space_dict = {}
 
         self.init_outside() #외곽지대 탈출로 구현 
         
@@ -497,6 +498,19 @@ class FightingModel(Model):
         self.wall = wall 
         self.space = space
 
+    def same_space_agents(self): #딕셔너리로 agent 집어넣기 
+        agent_space_dict = {}
+        
+        for agent in self.agents:
+            if not (agent.type == 0 or agent.type == 1 or agent.type == 2):
+                continue
+            now_stage = agent.check_stage_agent()
+            if (now_stage in agent_space_dict.keys()):
+                agent_space_dict[now_stage].append(agent)
+            else:
+                agent_space_dict[now_stage] = [agent]
+        return agent_space_dict
+
     def init_all_graph(self):
 
         N = self.MAP_SIZE
@@ -532,6 +546,15 @@ class FightingModel(Model):
                                   
     def make_robot(self):
         self.robot_placement() #로봇 배치 
+
+    def to_follow_agent(self, now_stage):
+        result = []
+        for agent in self.agent_space_dict[now_stage]:
+            if (agent.type == 0 or agent.type == 1 and agent.dead == False): 
+                result.append(agent)
+
+        return result
+            
 
     def make_agents(self):
         
@@ -1467,7 +1490,7 @@ class FightingModel(Model):
                 ran += (ran*ran-int(12343/34)+32343*ran%(21))
             check_list[x-xy1[0]][y-xy1[1]] = 1
             num = num-1
-            a = FightingAgent(self.agent_id, self, [x,y], 0)
+            a = FightingAgent(self.agent_id, self, [x,y], 1)
             self.agent_id = self.agent_id + 1
             self.schedule.add(a)
             self.grid.place_agent(a, (x, y))
@@ -1478,9 +1501,12 @@ class FightingModel(Model):
         """Advance the model by one step."""
         global started
         max_id = 1
+
+        self.agent_space_dict = self.same_space_agents()
+
         if(started):
             for agent in self.agents:
-                if(agent.type==1 or agent.type==0):
+                if(agent.type==1 or agent.type==0 or agent.type==2):
                     if(agent.unique_id > max_id):
                         max_id = agent.unique_id
             #self.difficulty_f()
@@ -1490,7 +1516,7 @@ class FightingModel(Model):
             started = 0
             max_id = 1
             for agent in self.agents:
-                if (agent.unique_id > max_id and (agent.type== 0 or agent.type==1)):
+                if (agent.unique_id > max_id and (agent.type== 0 or agent.type==1 or agent.type==2)):
                     max_id = agent.unique_id
             for agent in self.agents:
                 if(max_id == agent.unique_id):
@@ -1505,6 +1531,11 @@ class FightingModel(Model):
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
         self.num_remained_agents()
+
+    def return_corresponding_agent(self, agent_id):
+        for agent in self.agents:
+            if(agent.unique_id == agent_id):
+                return agent
 
 
     def space_specification(self):
@@ -1607,6 +1638,8 @@ class FightingModel(Model):
         for i in self.space_list:
             space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
         for i in self.agents:
+            if not (i.type ==0 or i.type==1 or i.type==2):
+                continue
             space_xy = self.grid_to_space[int(round((i.xy)[0]))][int(round((i.xy)[1]))]
             if(i.dead == False and (i.type==0 or i.type==1)):
                 space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 

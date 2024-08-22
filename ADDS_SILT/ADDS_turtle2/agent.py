@@ -131,7 +131,7 @@ class FightingAgent(Agent):
         self.robot_step = 0
         robot_xy = pos
         self.goal_init = 0
-        self.type = type
+        self.type = type # 0 : robot guide, #1 : my way, #2 : agent following
         self.robot_previous_action = "UP"
         self.health = INITIAL_HEALTH
         self.attack_damage = ATTACK_DAMAGE
@@ -150,6 +150,11 @@ class FightingAgent(Agent):
         self.robot_previous_goal = [0, 0]
         self.robot_initialized = 0
         self.is_traced = 0
+        self.following_agent_id = 0
+
+        self.robot_attach_flag = 0
+                                              #0 vs 2                     # 2 vs 1                                  
+        self.agent_judge_probability = [random.gauss(60, 15)/100, random.gauss(60, 15)/100] #[로봇을 따라갈 비율, my 비율, 다른 agent를 따라갈 확률]
         
         self.switch_criteria = 0.5
         self.velocity_a = 2
@@ -183,6 +188,10 @@ class FightingAgent(Agent):
 
         self.go_path_num= 0
         self.back_path_num = 0
+
+        self.judge_list = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]] #앞에 있는 것이 우선순위. 0 : guide, 1 : myway, 2 : agent following
+        self.judge = self.judge_list[0]
+        self.agent_judge_probability = [random.gauss(60, 15)/100, random.gauss(50, 15)/100] #[로봇을 따라갈 확률, 다른 agent를 따라갈 확률]
 
         file_path = 'weight.txt'
         file = open(file_path, "r")
@@ -359,13 +368,17 @@ class FightingAgent(Agent):
         
         new_position = self.test_modeling()
 
-        if(self.type ==0 or self.type==1):
+        if(self.type ==0 or self.type==1 or self.type==2):
             
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
-            
-
+    
 
     def which_goal_agent_want(self):
+        global robot_xy
+
+        robot_x = robot_xy[0] - self.xy[0]
+        robot_y = robot_xy[1] - self.xy[1]
+        robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
         global robot_prev_xy
         exit_confirmed_area = self.model.exit_way_rec
         if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
@@ -377,22 +390,174 @@ class FightingAgent(Agent):
                     self.now_goal = each_goal
                     min_d = d
             self.danger = 0
-            return 
-
-        now_stage = self.check_stage_agent()
-        if(self.previous_stage != now_stage or self.previous_type != self.type):
-            if(self.previous_type != self.type ): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
-                # print("self.previous_type:",self.previous_type)
-                # print("self.type: ",self.type)
-                goal_candiate = self.model.space_goal_dict[now_stage]
-                min_d = 10000
-                min_i  = goal_candiate[0]
-                # print("agent 현재 위치 : \n", self.xy)
-                
-                vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
+            return  # agent가 탈출구에 도달했을 때
         
 
-                for i in goal_candiate :
+        mode_change = False
+        now_stage = self.check_stage_agent()
+        
+        if(robot_d < robot_radius and robot_status == 1):
+            if(self.is_traced < 3):
+                if(robot_d < robot_radius and robot_status == 1):
+                    random_value = random.random()
+                    print(random_value)
+                    if(random_value < self.agent_judge_probability[0]):
+                        self.type = 0                
+            self.is_traced = 5
+
+        elif(self.type == 0):
+            mode_change = True #robot 영역 밖에 있는데 agent가 guide 모드라면, 다시 설정되어야 함
+
+
+        if(self.previous_stage != now_stage): # stage가 바뀜
+            random_value = random.random()
+            if(random_value < self.agent_judge_probability[0]):
+                choice = random.randint(0, 1)
+                self.judge = self.judge_list[choice]
+            else:
+                if (random.random() > self.agent_judge_probability[1]):
+                    choice = random.randint(4, 5)
+                    self.judge = self.judge_list[choice]
+                else :
+                    choice = random.randint(2, 3)
+                    self.judge = self.judge_list[choice]
+                    
+
+            
+            #영역이 바뀌면, agent 모드가 다시 설정되어야 함
+        
+        to_follow = self.model.to_follow_agent(now_stage)
+        if self in to_follow:
+            to_follow.remove(self)
+
+        
+
+        # robot 영역안에 들어왔을때 또 판단의 기회가 있어야함 
+        if(robot_d < robot_radius and robot_status == 1): # robot 영역 안에 있음
+            if(self.judge[0] == 0): #로봇이 최우선
+                self.type = 0 #robot following
+            else : #로봇 영역 안에 있으나 로봇이 최우선이 아님
+                if(self.judge[0] == 1): # my way가 최우선
+                    self.type = 1
+                else : # agent following이 최우선
+                    if(len(to_follow) > 0): #따라갈 agent가 있다면 .. 
+                        self.type = 2
+                    else:
+                        self.type = self.judge[1]
+            
+        else: #로봇 밖에 있음. robot follwing은 배제
+            if(self.judge[0] == 0): #로봇이 최우선이나 근처에 로봇이 없음
+                if(self.judge[1] == 2 and len(to_follow) > 0): #2순위가 agent follwing이고 따라갈 agent가 있따면 
+                    self.type = 2
+                else:
+                    self.type = 1 
+            elif(self.judge[0] == 1): #my way가 최우선
+                self.type = 1  
+            elif(self.judge[0] == 2): #agent following이 최우선 
+                if(len(to_follow) > 0): #따라갈 agent가 있음
+                    self.type = 2  
+                else:
+                    self.type = 1
+
+                                          
+        if (self.type == 0):
+            self.previous_goal = self.now_goal
+            self.previous_stage = now_stage
+            self.previous_type = self.type
+            self.now_goal = robot_xy
+            
+            return
+        
+        if (self.type == 1): # myway
+            goal_candidate = copy.deepcopy(self.model.space_goal_dict[now_stage])
+            if(now_stage != self.previous_stage and self.type == self.previous_type): #로봇의 밖으로 나왔을때, #로봇을 불신하게 됐을때, #새로운 영역에 들어갔을때, #robot의 모드가 바뀌었을때
+                min_d = 10000
+                min_i = goal_candidate[0]
+                for i in goal_candidate:
+                    d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
+                    if (d<min_d):
+                        min_d = d
+                        min_i = i
+                
+                self.previous_stage = now_stage
+                self.previous_type = self.type
+                print("goal_candidate length : ", len(goal_candidate))
+                if len(goal_candidate)!=1:
+                    goal_candidate.remove(min_i)
+                
+                self.now_goal = random.choice(goal_candidate)
+                self.previous_stage = now_stage
+                self.previous_type = self.type
+                self.previous_goal = self.now_goal
+                self.following_agent_id = 0 
+                return 
+                
+            if(self.previous_type != self.type):
+                if(self.previous_type == 0): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+                    goal_candidate = self.model.space_goal_dict[now_stage]
+                    min_d = 10000
+                    min_i  = goal_candidate[0]
+                    # print("agent 현재 위치 : \n", self.xy)
+                    
+                    vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
+            
+
+                    for i in goal_candidate :
+                        vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
+                        degree = calculate_degree(vector1, vector2)
+                        if(min_d > degree):
+                            min_d = degree
+                            min_i = i
+                    self.now_goal = min_i
+                    self.previous_stage = now_stage 
+                    self.previous_goal = self.now_goal
+                    self.previous_type = self.type
+                    self.following_agent_id = 0
+                    return
+
+                else : #agent following하다가 1이 되었을때 -> agent가 다른 space에 진입했을때 
+                    min_d = 10000
+                    min_i = goal_candidate[0]
+                    for i in goal_candidate:
+                        d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
+                        if (d<min_d):
+                            min_d = d
+                            min_i = i
+                    
+                    self.previous_stage = now_stage
+                    self.previous_type = self.type
+
+                    goal_candidate.remove(min_i)
+                    
+                    self.now_goal = random.choice(goal_candidate)
+                    self.previous_stage = now_stage
+                    self.previous_type = self.type
+                    self.previous_goal = self.now_goal
+                    self.following_agent_id = 0
+                    return 
+                    
+        if (self.type == 2): # agent following
+            print(f"{self.xy}에 있는 녀석이 {self.model.return_corresponding_agent(self.following_agent_id).xy}을 따라가는 중")
+            if(self.following_agent_id == -1): # following 하던 agent의 자취를 따라가는 경우 
+                self.previous_stage = now_stage 
+                self.previous_goal = self.now_goal 
+                self.previous_type = self.type
+                return
+
+            if(self.following_agent_id == 0): # agent를 following하고 있지 않았던 경우 
+                following_agent = to_follow
+
+                self.following_agent_id = random.choice(following_agent).unique_id
+            
+            elif(now_stage != self.model.return_corresponding_agent(self.following_agent_id).check_stage_agent()): # 따라가던 agent가 도중에 끊겼을 경우
+                previous_following = self.model.return_corresponding_agent(self.following_agent_id).xy
+                goal_candidate = self.model.space_goal_dict[now_stage]
+                min_d = 10000
+                min_i  = goal_candidate[0]
+                
+                vector1 = (previous_following[0]-self.xy[0], previous_following[1]-self.xy[1])
+        
+                for i in goal_candidate :
                     vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
                     degree = calculate_degree(vector1, vector2)
                     if(min_d > degree):
@@ -402,52 +567,25 @@ class FightingAgent(Agent):
                 self.previous_stage = now_stage 
                 self.previous_goal = self.now_goal
                 self.previous_type = self.type
-                return
-              
-
-
-            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]]
-
-            goal_candiate2 = []
-            if(len(goal_candiate)>1):
-                min_d = 1000
-                min_i = goal_candiate[0]
-                for i in goal_candiate:
-                    d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
-                    if (d<min_d):
-                        min_d = d
-                        min_i = i #가장 가까운 골 찾기
-                for j in goal_candiate: 
-                    if (j==min_i): #goal 후보에서 빼버림
-                        continue
-                    else:
-                        goal_candiate2.append(j)
-                if(len(goal_candiate2)==1):
-                    goal_index = 0
-                else:
-                    goal_index = random.randint(0, len(goal_candiate2)-1)
-                self.now_goal = goal_candiate2[goal_index]
-                self.previous_stage = now_stage
-                return
-            elif(len(goal_candiate)==0):
-                self.now_goal = self.previous_goal
-            else :
-                goal_index = 0
-                self.now_goal = goal_candiate[goal_index]
-                self.previous_stage = now_stage
+                self.follwing_agent_id = -1 # 이전에 following하던 agent의 자취를 따라가는 중임 
+                return 
             self.previous_goal = self.now_goal
-        self.previous_type = self.type 
+            self.now_goal = self.model.return_corresponding_agent(self.following_agent_id).xy
+            self.previous_stage = now_stage 
+            self.previous_type = self.type 
+            return 
+    
     
     def check_reward(self, mode):
         reward = 0
         if (mode=="GUIDE"):
             for agent in self.model.agents:
-                if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1)):
+                if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1 or agent.type == 2)):
                     reward += (agent.previous_danger - agent.danger) 
             
         else : 
             for agent in self.model.agents:
-                if (agent.type == 1):
+                if (agent.type == 0 or agent.type == 1 or agent.type == 2):
                     reward += agent.danger
 
         return reward
@@ -568,7 +706,7 @@ class FightingAgent(Agent):
                     repulsive_force[0] += 0
                     repulsive_force[1] += 0
 
-                elif(near_agent.type == 1): ## agents
+                elif(near_agent.type == 1 or near_agent.type == 2 or near_agent.type == 3): ## agents
                     repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
                     repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
 
@@ -759,7 +897,7 @@ class FightingAgent(Agent):
                     repulsive_force[0] += 0
                     repulsive_force[1] += 0
 
-                elif(near_agent.type == 1 or near_agent.type==3): ## agents
+                elif(near_agent.type == 1 or near_agent.type==3 or near_agent.type == 2): ## agents
                     if(near_agent.type==3):
                         repulsive_force[0] += 1*np.exp(-(d/2))*(d_x/d) 
                         repulsive_force[1] += 1*np.exp(-(d/2))*(d_y/d)
@@ -788,29 +926,12 @@ class FightingAgent(Agent):
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
         agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
         now_stage = self.check_stage_agent()
-        # if(self.goal_init == 0):
-        #     goal_candiate = self.model.space_goal_dict[now_stage]
-        #     if(len(goal_candiate)==1):
-        #         goal_index = 0
-        #     else:
-        #         goal_index = random.randint(0, len(goal_candiate)-1)
-        #     self.now_goal = goal_candiate[goal_index]
-        #     self.goal_init = 1
-        #     self.previous_stage = now_stage
-        #print("agent now level : ", now_level)
-        if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
-            goal_x = robot_x
-            goal_y = robot_y
-            goal_d = robot_d
-            self.type = 1
-            self.now_goal = robot_goal        
-            self.is_traced = 5
-            
-        else :
-            self.which_goal_agent_want()
-            if(self.is_traced>0):
-                self.is_traced -= 1
-            self.type = 0
+
+        self.which_goal_agent_want()
+
+        goal_x = self.now_goal[0] - self.xy[0]
+        goal_y = self.now_goal[1] - self.xy[1]
+        goal_d = math.sqrt(pow(goal_x,2) + pow(goal_y,2))
 
         if(goal_d != 0):
           desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -1042,8 +1163,6 @@ class FightingAgent(Agent):
         for i in self.model.exit_goal_list:
             result = min(result, self.agent_to_agent_distance_real(next_robot_position, i))
 
-        #print(f"next_goal : {next_goal}, {action} 일때의 space : {floyd_distance[((now_space[0][0],now_space[0][1]), (now_space[1][0], now_space[1][1]))][exit] } - {math.sqrt(pow(now_space_x_center-next_goal[0],2)+pow(now_space_y_center-next_goal[1],2))} + {math.sqrt(pow(next_goal[0]-next_robot_position[0],2)+pow(next_goal[1]-next_robot_position[1],2))} = {result}")
-        #result = math.sqrt(pow(next_robot_position[0]-next_goal[0],2) + pow(next_robot_position[1]-next_goal[1],2)
         return result * 0.01
 
 
@@ -1276,7 +1395,7 @@ class FightingAgent(Agent):
         robot_space = self.model.grid_to_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]
         
         for agent in self.model.agents:
-            if (agent.type==0 or agent.type==1) and agent.dead==False:
+            if (agent.type==0 or agent.type==1 or agent.type==2) and agent.dead==False:
                 space = self.model.grid_to_space[int(round(agent.xy[0]))][int(round(agent.xy[1]))]
                 if(space==robot_space):
 
@@ -1290,7 +1409,7 @@ class FightingAgent(Agent):
         
             
         for agent in self.model.agents:
-            if ((agent.type==0 or agent.type==1) and (math.sqrt((pow(agent.xy[0]-robot_xy[0],2)+pow(agent.xy[1]-robot_xy[1],2)))<robot_radius) and agent.dead==False):
+            if ((agent.type==0 or agent.type==1 or agent.type==2) and (math.sqrt((pow(agent.xy[0]-robot_xy[0],2)+pow(agent.xy[1]-robot_xy[1],2)))<robot_radius) and agent.dead==False):
                 urgent += agent.danger
         return urgent
 

@@ -24,7 +24,7 @@ import sys
 visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 1500
 number_of_agents = 11 # agents 수
-MAP_SIZE = 40
+MAP_SIZE = 50
 #-------------------------#
 model_num = random.randint(0,4)
 for j in range(run_iteration):
@@ -263,14 +263,19 @@ for j in range(run_iteration):
                 return portrayal
             
             portrayal["r"] = 1
-            if agent.type == 1: #끌려가는 agent  
-                portrayal["Color"] = "lightsalmon"
-                portrayal["Layer"] = 1
-                return portrayal
-            if agent.type == 2: 
+            if agent.type == 0: #끌려가는 agent  
                 portrayal["Color"] = "magenta"
                 portrayal["Layer"] = 1
                 return portrayal
+            if agent.type == 1: #myway aget
+                portrayal["Color"] = "blue"
+                portrayal["Layer"] = 1
+                return portrayal
+            if agent.type == 2: #agent를 follow 하는 agent
+                portrayal["Color"] = "cyan"
+                portrayal["Layer"] = 1
+                return portrayal
+            
             if agent.type == 3: #robot
                 if agent.drag == 1: #끌고갈때
                     portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
