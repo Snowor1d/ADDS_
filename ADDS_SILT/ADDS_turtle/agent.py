@@ -161,7 +161,12 @@ class FightingAgent(Agent):
         self.xy = pos
         self.vel = [0, 0]
         self.acc = [0, 0]
-        self.mass = 3
+        # self.mass = 3
+        self.mass = (3/70)*np.random.normal(66, 4.16) # agent의 mass, 평균 66kg, 표준 편차 4.16kg
+        if self.type == 3: # robot mass는 3으로 고정
+            self.mass = 3
+
+        self.desired_speed_a = np.random.normal(1.5, 0.2) # agent의 desired_speed, 평균 1.5m/s, 표준 편차 0.2m/s
         self.previous_goal = [0,0]
 
         self.now_action = ["UP", "GUIDE"]
@@ -493,8 +498,7 @@ class FightingAgent(Agent):
 
         goal_x = 0
         goal_y = 0
-        goal_d = 2 
-
+        
         if(next_action[0] == "UP"):
             goal_x = 0 
             goal_y = 2
@@ -507,8 +511,32 @@ class FightingAgent(Agent):
         elif(next_action[0] == "DOWN"):
             goal_x = 0
             goal_y = -2
+        elif(next_action[0] == "2UP"):
+            goal_x = 0
+            goal_y = 4
+        elif(next_action[0] == "2LEFT"):
+            goal_x = -4
+            goal_y = 0 
+        elif(next_action[0] == "2RIGHT"):
+            goal_x = 4
+            goal_y = 0
+        elif(next_action[0] == "2DOWN"):    
+            goal_x = 0
+            goal_y = -4
+        elif(next_action[0] == "NW"):
+            goal_x = -2
+            goal_y = 2
+        elif(next_action[0] == "NE"):
+            goal_x = 2
+            goal_y = 2
+        elif(next_action[0] == "SW"):
+            goal_x = -2
+            goal_y = -2
+        elif(next_action[0] == "SE"):
+            goal_x = 2
+            goal_y = -2
 
-
+        goal_d = math.sqrt(pow(goal_x, 2) + pow(goal_y, 2))
         intend_force = 2
         desired_speed = 2
 
@@ -523,9 +551,13 @@ class FightingAgent(Agent):
             self.velocity_a = 10
             self.velocity_b = 10
             desired_speed = (1 + (self.velocity_a * goal_to_exit) + self.velocity_b * self.F2_near_agents(robot_xy, "STOP", "GUIDE"))/(30 + 10)
-            desired_speed = 3.5
-            print("desired_speed : ", desired_speed)
-            #desired_speed = 4
+            if next_action[0] == "UP" or next_action[0] == "DOWN" or next_action[0] == "LEFT" or next_action[0] == "RIGHT":
+                desired_speed = 2.5
+            elif next_action[0] == "2UP" or next_action[0] == "2DOWN" or next_action[0] == "2LEFT" or next_action[0] == "2RIGHT":
+                desired_speed = 5
+            else:
+                desired_speed = 3.5
+            
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
@@ -534,8 +566,7 @@ class FightingAgent(Agent):
         
         x=int(round(robot_xy[0]))
         y=int(round(robot_xy[1]))
-        
-
+ 
         temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
@@ -600,14 +631,14 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y<0):
             next_y = 0
-        if(next_x>49):
-            next_x = 49
-        if(next_y>49):
-            next_y = 49
+        if(next_x> NUMBER_OF_CELLS -1):
+            next_x = NUMBER_OF_CELLS -1
+        if(next_y> NUMBER_OF_CELLS -1):
+            next_y = NUMBER_OF_CELLS -1
 
             
         #self.robot_guide = 0
-        robot_goal = [robot_xy[0] + goal_x, robot_xy[1] + goal_y]
+        robot_goal = [next_x, next_y]
         return (next_x, next_y)
     
 
@@ -706,12 +737,11 @@ class FightingAgent(Agent):
         global robot_xy
         global robot_status
         global robot_step_num
-        #from model import Model
         global random_disperse
+
         x = int(round(self.xy[0]))
         y = int(round(self.xy[1]))
         temp_loc = [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
-        #temp_loc = [(x-2, y), (x-1, y), (x+1, y), (x+2, y), (x, y+1), (x, y+2), (x, y-1), (x, y-2), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
         near_loc = []
         for i in temp_loc:
             if(i[0]>0 and i[1]>0 and i[0]<self.model.grid.width and i[1] < self.model.grid.height):
@@ -725,16 +755,14 @@ class FightingAgent(Agent):
         F_x = 0
         F_y = 0
         k = 3
-        r_0 = 0.3
         valid_distance = 3
         intend_force = 2
         time_step = 0.2 #time step... 작게하면? 현실의 연속적인 시간과 비슷해져 현실적인 결과를 얻을 수 있음. 그러나 속도가 느려짐
                         # 크게하면? 속도가 빨라지나 비현실적.. (agent가 튕기는 등..)
         #time_step마다 desired_speed로 가고, desired speed의 단위는 1픽셀, 1픽셀은 0.5m
         #만약 time_step가 0.1이고, desired_speed가 2면.. 0.1초 x 2x0.5m = 한번에 최대 0.1m 이동 가능..
-        desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
+        # desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
-        obstacle_force = [0, 0]
         self.previous_danger = self.danger
         self.danger = 999999
         for each_goal in self.model.exit_goal_list:
@@ -786,19 +814,10 @@ class FightingAgent(Agent):
         robot_x = robot_xy[0] - self.xy[0]
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
-        agent_space = self.model.grid_to_space[int(round(self.xy[0]))][int(round(self.xy[1]))]
-        now_stage = self.check_stage_agent()
-        # if(self.goal_init == 0):
-        #     goal_candiate = self.model.space_goal_dict[now_stage]
-        #     if(len(goal_candiate)==1):
-        #         goal_index = 0
-        #     else:
-        #         goal_index = random.randint(0, len(goal_candiate)-1)
-        #     self.now_goal = goal_candiate[goal_index]
-        #     self.goal_init = 1
-        #     self.previous_stage = now_stage
-        #print("agent now level : ", now_level)
+
+    
         if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
+            # 로봇 반경 내 agent 가 있으면
             goal_x = robot_x
             goal_y = robot_y
             goal_d = robot_d
@@ -813,7 +832,7 @@ class FightingAgent(Agent):
             self.type = 0
 
         if(goal_d != 0):
-          desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
+          desired_force = [intend_force*(self.desired_speed_a*(goal_x/goal_d)), intend_force*(self.desired_speed_a*(goal_y/goal_d))] #desired_force : 사람이 탈출구쪽으로 향하려는 힘
         else :
           desired_force = [0, 0]
         
@@ -832,7 +851,6 @@ class FightingAgent(Agent):
 
         self.xy[0] += self.vel[0] * time_step
         self.xy[1] += self.vel[1] * time_step
-        #self.xy = self.move_to_valid(self.xy)
         
         next_x = int(round(self.xy[0]))
         next_y = int(round(self.xy[1]))
@@ -1038,6 +1056,27 @@ class FightingAgent(Agent):
             next_robot_position[0] -= one_foot
         elif (action=="RIGHT"):
             next_robot_position[0] += one_foot
+        elif (action=="2UP"):
+            next_robot_position[1] += 2*one_foot
+        elif (action=="2DOWN"):
+            next_robot_position[1] -= 2*one_foot
+        elif (action=="2LEFT"):
+            next_robot_position[0] -= 2*one_foot
+        elif (action=="2RIGHT"):
+            next_robot_position[0] += 2*one_foot
+        elif (action=="NW"):
+            next_robot_position[0] -= one_foot
+            next_robot_position[1] += one_foot
+        elif (action=="NE"):
+            next_robot_position[0] += one_foot
+            next_robot_position[1] += one_foot
+        elif (action=="SW"):
+            next_robot_position[0] -= one_foot
+            next_robot_position[1] -= one_foot
+        elif (action=="SE"):
+            next_robot_position[0] += one_foot
+            next_robot_position[1] -= one_foot
+
 
         result = 999999
         for i in self.model.exit_goal_list:
@@ -1069,6 +1108,34 @@ class FightingAgent(Agent):
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
         elif action == "LEFT":
             robot_xyP[0] -= one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "2UP":
+            robot_xyP[1] += 2*one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "2DOWN":
+            robot_xyP[1] -= 2*one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "2RIGHT":
+            robot_xyP[0] += 2*one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "2LEFT":
+            robot_xyP[0] -= 2*one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "NW":
+            robot_xyP[0] -= one_foot
+            robot_xyP[1] += one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "NE":
+            robot_xyP[0] += one_foot
+            robot_xyP[1] += one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "SW":
+            robot_xyP[0] -= one_foot
+            robot_xyP[1] -= one_foot
+            NumberOfAgents = self.agents_in_robot_area(robot_xyP)
+        elif action == "SE":
+            robot_xyP[0] += one_foot
+            robot_xyP[1] -= one_foot
             NumberOfAgents = self.agents_in_robot_area(robot_xyP)
         return NumberOfAgents * 0.2
 
@@ -1129,7 +1196,7 @@ class FightingAgent(Agent):
 
         consistency_mul = 1.2
 
-        action_list = ["UP", "DOWN", "LEFT", "RIGHT"]
+        action_list = ["UP", "DOWN", "LEFT", "RIGHT", "2UP", "2DOWN", "2LEFT", "2RIGHT", "NW", "NE", "SW", "SE"]
         r_x = robot_xy[0]
         r_y = robot_xy[1]
         robot_step_num += 1
@@ -1200,8 +1267,7 @@ class FightingAgent(Agent):
         for k in action_list:
             if (k == "UP"):
                 if(self.model.valid_space[int(round(r_x))][int(round(r_y+one_foot))]==0):
-                    del_object.append("UP")
-                    
+                    del_object.append("UP")         
             elif (k == "DOWN"):
                 if(self.model.valid_space[int(round(r_x))][int(round(r_y-one_foot))]==0 or (r_y-one_foot)<0):
                     del_object.append("DOWN")
@@ -1212,16 +1278,44 @@ class FightingAgent(Agent):
             elif (k == "RIGHT"):
                 if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
                     del_object.append("RIGHT")
+            
+            elif (k == "2UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+2*one_foot))]==0):
+                    del_object.append("2UP")
+            elif (k == "2DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-2*one_foot))]==0 or (r_y-2*one_foot)<0):
+                    del_object.append("2DOWN")
+            elif (k == "2LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-2*one_foot, 0)))][int(round(r_y))]==0 or (r_x-2*one_foot)<0):
+                    del_object.append("2LEFT")
+            elif (k == "2RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+2*one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("2RIGHT")
+            elif (k == "NW"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y+one_foot))]==0 or (r_x-one_foot)<0):
+                    del_object.append("NW")
+            elif (k == "NE"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y+one_foot))]==0):
+                    del_object.append("NE")
+            elif (k == "SW"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y-one_foot))]==0 or (r_x-one_foot)<0):
+                    del_object.append("SW")
+            elif (k == "SE"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y-one_foot))]==0):
+                    del_object.append("SE")
+
+
         del_object= list(set(del_object))
         for i in del_object:
             action_list.remove(i)
 
         Q_list = []
+        print("action_list : ", action_list)
         for i in range(len(action_list)):
             Q_list.append(0)
         MAX_Q =-999999999
         ## 초기 selected 값 random 선택 ##
-        values = ["UP", "DOWN", "LEFT", "RIGHT"]
+        values = ["UP", "DOWN", "LEFT", "RIGHT", "2UP", "2DOWN", "2LEFT", "2RIGHT", "NW", "NE", "SW", "SE"]
         selected = random.choice(values)
         #print(direction_agents_num)
         if(mode=="GUIDE"):
@@ -1242,7 +1336,7 @@ class FightingAgent(Agent):
                     selected = random.choice(action_list)
             
                 self.now_action = [selected, "GUIDE"]
-            print("selected : ", selected)
+            print("selected : ", self.now_action)
             return self.now_action
         elif(mode=="NOT_GUIDE"):
             for j in range(len(action_list)):
@@ -1263,6 +1357,7 @@ class FightingAgent(Agent):
             
                 self.now_action = [selected, "NOT_GUIDE"]
                 self.robot_previous_action = selected
+            print("selected : ", self.now_action)
             return self.now_action
         
     def how_urgent_another_space_is(self):
@@ -1402,6 +1497,27 @@ class FightingAgent(Agent):
             after_x = x-1
         elif (action=="RIGHT"):
             after_x = x+1
+        elif (action=="2UP"):
+            after_y = y+2
+        elif (action=="2DOWN"):
+            after_y = y-2
+        elif (action=="2LEFT"):
+            after_x = x-2
+        elif (action=="2RIGHT"):
+            after_x = x+2
+        elif (action=="NW"):
+            after_x = x-1
+            after_y = y+1
+        elif (action=="NE"):
+            after_x = x+1
+            after_y = y+1
+        elif (action=="SW"):
+            after_x = x-1
+            after_y = y-1
+        elif (action=="SE"):
+            after_x = x+1
+            after_y = y-1
+
         count = 0
         if(self.model.valid_space[int(round(after_x))][int(round(after_y))]==0):
             after_x = x
@@ -1431,9 +1547,9 @@ class FightingAgent(Agent):
         one_foot = 1.5
         action_list = []
         if(status == "GUIDE"):
-            action_list = [["UP", "GUIDE"], ["DOWN", "GUIDE"], ["LEFT", "GUIDE"], ["RIGHT", "GUIDE"]]
+            action_list = [["UP", "GUIDE"], ["DOWN", "GUIDE"], ["LEFT", "GUIDE"], ["RIGHT", "GUIDE"],["2UP", "GUIDE"], ["2DOWN", "GUIDE"], ["2LEFT", "GUIDE"], ["2RIGHT", "GUIDE"], ["NW", "GUIDE"], ["NE", "GUIDE"], ["SW", "GUIDE"], ["SE", "GUIDE"]]
         else :
-            action_list = [["UP", "NOT_GUIDE"], ["DOWN", "NOT_GUIDE"], ["LEFT", "NOT_GUIDE"], ["RIGHT", "NOT_GUIDE"]]
+            action_list = [["UP", "NOT_GUIDE"], ["DOWN", "NOT_GUIDE"], ["LEFT", "NOT_GUIDE"], ["RIGHT", "NOT_GUIDE"],["2UP", "NOT_GUIDE"], ["2DOWN", "NOT_GUIDE"], ["2LEFT", "NOT_GUIDE"], ["2RIGHT", "NOT_GUIDE"], ["NW", "NOT_GUIDE"], ["NE", "NOT_GUIDE"], ["SW", "NOT_GUIDE"], ["SE", "NOT_GUIDE"]]
         
         r_x = robot_xy[0]
         r_y = robot_xy[1]
@@ -1454,6 +1570,30 @@ class FightingAgent(Agent):
             elif (k[0] == "RIGHT"):
                 if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
                     del_object.append("RIGHT")
+            elif (k[0] == "2UP"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y+2*one_foot))]==0):
+                    del_object.append("2UP")
+            elif (k[0] == "2DOWN"):
+                if(self.model.valid_space[int(round(r_x))][int(round(r_y-2*one_foot))]==0 or (r_y-2*one_foot)<0):
+                    del_object.append("2DOWN")
+            elif (k[0] == "2LEFT"):
+                if(self.model.valid_space[int(round(max(r_x-2*one_foot, 0)))][int(round(r_y))]==0 or (r_x-2*one_foot)<0):
+                    del_object.append("2LEFT")
+            elif (k[0] == "2RIGHT"):
+                if(self.model.valid_space[int(round(min(r_x+2*one_foot, NUMBER_OF_CELLS)))][int(round(r_y))]==0) :
+                    del_object.append("2RIGHT")
+            elif (k[0] == "NW"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y+one_foot))]==0 or (r_x-one_foot)<0):
+                    del_object.append("NW")
+            elif (k[0] == "NE"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y+one_foot))]==0):
+                    del_object.append("NE")
+            elif (k[0] == "SW"):
+                if(self.model.valid_space[int(round(max(r_x-one_foot, 0)))][int(round(r_y-one_foot))]==0 or (r_x-one_foot)<0):
+                    del_object.append("SW")
+            elif (k[0] == "SE"):
+                if(self.model.valid_space[int(round(min(r_x+one_foot, NUMBER_OF_CELLS)))][int(round(r_y-one_foot))]==0):
+                    del_object.append("SE")
         del_object= list(set(del_object))
         if(status=="GUIDE"):
             for i in del_object:
@@ -1519,9 +1659,28 @@ class FightingAgent(Agent):
             next_robot_xy[1] -= 1
         elif self.now_action[0] == 'RIGHT':
             next_robot_xy[0] += 1
-        else:
+        elif self.now_action[0] == 'LEFT':
             next_robot_xy[0] -= 1
-
+        elif self.now_action[0] == '2UP':
+            next_robot_xy[1] += 2
+        elif self.now_action[0] == '2DOWN':
+            next_robot_xy[1] -= 2
+        elif self.now_action[0] == '2RIGHT':
+            next_robot_xy[0] += 2
+        elif self.now_action[0] == '2LEFT':
+            next_robot_xy[0] -= 2
+        elif self.now_action[0] == 'NW':
+            next_robot_xy[0] -= 1
+            next_robot_xy[1] += 1
+        elif self.now_action[0] == 'NE':
+            next_robot_xy[0] += 1
+            next_robot_xy[1] += 1
+        elif self.now_action[0] == 'SW':
+            next_robot_xy[0] -= 1
+            next_robot_xy[1] -= 1
+        elif self.now_action[0] == 'SE':
+            next_robot_xy[0] += 1
+            next_robot_xy[1] -= 1
         
         # 현재 state와 다음 state의 max_Q 값 계산
         print("self.now_action: ",self.now_action[1])
