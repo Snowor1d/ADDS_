@@ -1593,7 +1593,10 @@ class FightingAgent(Agent):
                 f.write(f"w3 ( { self.w3 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f3({ f3})\n")
                 f.write(f"w4 ( { self.w4 } ) += alpha ( { alpha }) * (reward ( { reward }) + discount_factor ( { discount_factor }) * next_state_max_Q( { next_state_max_Q }) - present_state_Q ({ present_state_Q})) * f4({ f4})\n")
                 f.write("============================================================================\n")
-                f.close()                    
+                f.close()      
+        with open ('correlation.txt', 'a') as f:
+            f.write(f"{self.w1} {self.w2} {self.w3} {self.w4}\n")
+            f.close()
 
 
     

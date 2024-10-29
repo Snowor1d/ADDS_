@@ -4394,3 +4394,103 @@ NOT GUIDE learning . . .
 w3 ( 0.5044025984586865 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.2746991884137744) - present_state_Q (0.1617253959623702)) * f3(0.21522327622845983)
 w4 ( 0.8998938398062724 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.2746991884137744) - present_state_Q (0.1617253959623702)) * f4(0.06)
 ============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.00005324 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.082) - present_state_Q (0.042)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.082) - present_state_Q (0.042)) * f4(0.04)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0001128799808336 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.00200010648) - present_state_Q (0.00200010648)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.00200010648) - present_state_Q (0.00200010648)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.000172519940197 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020002257599616674) - present_state_Q (0.0020002257599616674)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020002257599616674) - present_state_Q (0.0020002257599616674)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0002321598780899 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000345039880394) - present_state_Q (0.002000345039880394)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000345039880394) - present_state_Q (0.002000345039880394)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0002917997945124 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.00200046431975618) - present_state_Q (0.00200046431975618)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.00200046431975618) - present_state_Q (0.00200046431975618)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0003514396894646 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000583599589025) - present_state_Q (0.002000583599589025)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000583599589025) - present_state_Q (0.002000583599589025)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0004110795629464 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000702879378929) - present_state_Q (0.002000702879378929)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002000702879378929) - present_state_Q (0.002000702879378929)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0004707194149578 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020008221591258928) - present_state_Q (0.0020008221591258928)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020008221591258928) - present_state_Q (0.0020008221591258928)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0005303592454988 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020009414388299156) - present_state_Q (0.0020009414388299156)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020009414388299156) - present_state_Q (0.0020009414388299156)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0005899990545695 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001060718490998) - present_state_Q (0.002001060718490998)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001060718490998) - present_state_Q (0.002001060718490998)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0006496388421697 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001179998109139) - present_state_Q (0.002001179998109139)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001179998109139) - present_state_Q (0.002001179998109139)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0007092786082998 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020012992776843397) - present_state_Q (0.0020012992776843397)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020012992776843397) - present_state_Q (0.0020012992776843397)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0007689183529596 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020014185572165997) - present_state_Q (0.0020014185572165997)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020014185572165997) - present_state_Q (0.0020014185572165997)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.000828558076149 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020015378367059192) - present_state_Q (0.0020015378367059192)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020015378367059192) - present_state_Q (0.0020015378367059192)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.000888197777868 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001657116152298) - present_state_Q (0.002001657116152298)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002001657116152298) - present_state_Q (0.002001657116152298)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0009478374581169 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020017763955557364) - present_state_Q (0.0020017763955557364)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020017763955557364) - present_state_Q (0.0020017763955557364)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0010074771168953 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020018956749162336) - present_state_Q (0.0020018956749162336)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020018956749162336) - present_state_Q (0.0020018956749162336)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0010671167542036 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002014954233791) - present_state_Q (0.002002014954233791)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002014954233791) - present_state_Q (0.002002014954233791)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0011267563700414 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002134233508407) - present_state_Q (0.002002134233508407)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002134233508407) - present_state_Q (0.002002134233508407)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0011863959644092 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002253512740083) - present_state_Q (0.002002253512740083)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002253512740083) - present_state_Q (0.002002253512740083)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0012460355373067 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002372791928818) - present_state_Q (0.002002372791928818)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002372791928818) - present_state_Q (0.002002372791928818)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.001305675088734 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020024920710746135) - present_state_Q (0.0020024920710746135)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.0020024920710746135) - present_state_Q (0.0020024920710746135)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.001365314618691 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002611350177468) - present_state_Q (0.002002611350177468)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002611350177468) - present_state_Q (0.002002611350177468)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 1.0014249541271776 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002730629237382) - present_state_Q (0.002002730629237382)) * f3(0.002)
+w4 ( 1.0010648 ) += alpha ( 0.1) * (reward ( 0.3) + discount_factor ( 0.1) * next_state_max_Q( 0.002002730629237382) - present_state_Q (0.002002730629237382)) * f4(0.0)
+============================================================================
+NOT GUIDE learning . . .
+w3 ( 0.8195051939689603 ) += alpha ( 0.1) * (reward ( -0.6) + discount_factor ( 0.1) * next_state_max_Q( 1.234742766162373) - present_state_Q (1.234742766162373)) * f3(1.0547427661623732)
+w4 ( 0.9691971671881695 ) += alpha ( 0.1) * (reward ( -0.6) + discount_factor ( 0.1) * next_state_max_Q( 1.234742766162373) - present_state_Q (1.234742766162373)) * f4(0.18)
+============================================================================
