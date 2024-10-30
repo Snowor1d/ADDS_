@@ -127,12 +127,6 @@ class FightingAgent(Agent):
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         global robot_xy
-
-        self.past_mesh = None
-        self.previous_mesh = None
-
-
-
         self.is_learning_state = 1
         self.robot_step = 0
         robot_xy = pos
@@ -163,7 +157,7 @@ class FightingAgent(Agent):
 
         #self.robot_xy = [2,2]
         #self.robot_status = 0
-        # print(isinstance(pos, tuple))
+
         self.xy = pos
         self.vel = [0, 0]
         self.acc = [0, 0]
@@ -243,11 +237,26 @@ class FightingAgent(Agent):
             self.attacked = False
             return
         if(self.type != 3): #robot은 죽지 않는다
-            #print("self.xy[0] : ", self.xy[0])
-            if self.model.exit_grid[int(self.xy[0])][int(self.xy[1])]:
-                self.dead = True
-                return
-            
+            if (self.model.is_left_exit):
+                if (self.xy[0] > self.model.left_exit_area[0][0] and self.xy[0] < self.model.left_exit_area[1][0] and self.xy[1] > self.model.left_exit_area[0][1] and self.xy[1]<self.model.left_exit_area[1][1]):
+                    self.health = 0
+                    self.dead = True 
+
+            if (self.model.is_right_exit):
+                if (self.xy[0] > self.model.right_exit_area[0][0] and self.xy[0] < self.model.right_exit_area[1][0] and self.xy[1] > self.model.right_exit_area[0][1] and self.xy[1]<self.model.right_exit_area[1][1]):
+                    self.health = 0
+                    self.dead = True 
+        
+            if (self.model.is_up_exit):
+                if (self.xy[0] > self.model.up_exit_area[0][0] and self.xy[0] < self.model.up_exit_area[1][0] and self.xy[1] > self.model.up_exit_area[0][1] and self.xy[1]<self.model.up_exit_area[1][1]):
+                    self.health = 0
+                    self.dead = True 
+        
+            if (self.model.is_down_exit):
+                if (self.xy[0] > self.model.down_exit_area[0][0] and self.xy[0] < self.model.down_exit_area[1][0] and self.xy[1] > self.model.down_exit_area[0][1] and self.xy[1]<self.model.down_exit_area[1][1]):
+                    self.health = 0
+                    self.dead = True 
+
         # if(self.type == 0 or self.type==1):
         #     print("agent 위치 : ", self.xy)
         #     print("robot과의 거리 : ", self.agent_to_agent_distance_real(self.xy, robot_xy))
@@ -337,123 +346,87 @@ class FightingAgent(Agent):
 
             
             return
-        if(self.type == 0 or self.type == 1):
-            new_position = self.agent_modeling()
+        
+        new_position = self.test_modeling()
+
+        if(self.type ==0 or self.type==1):
+            
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
             
 
 
     def which_goal_agent_want(self):
         global robot_prev_xy
-        
+        exit_confirmed_area = self.model.exit_way_rec
+        if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
+            min_d = math.sqrt(pow(self.xy[0]-self.model.exit_goal_list[0][0], 2)+pow(self.xy[1]-self.model.exit_goal_list[0][1], 2))
+            self.now_goal = self.model.exit_goal_list[0]
+            for each_goal in self.model.exit_goal_list:
+                d = math.sqrt(pow(self.xy[0]-each_goal[0], 2)+pow(self.xy[1]-each_goal[1], 2))
+                if (min_d > d):
+                    self.now_goal = each_goal
+                    min_d = d
+            self.danger = 0
+            return 
 
-        exit_confirm_radius = 5
-        
-        now_grid = (int(self.xy[0]), int(self.xy[1]))
-        candidates = [(int(self.xy[0])+1, int(self.xy[1])+1), (int(self.xy[0])+1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])+1), (int(self.xy[0])-1, int(self.xy[1])-1), (int(self.xy[0])-1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])-1)]
-        while now_grid not in self.model.match_grid_to_mesh.keys():
-           now_grid = candidates[random.randint(0, len(candidates)-1)]
-
-
-        now_mesh = self.model.match_grid_to_mesh[now_grid] 
-
-        shortest_distance = math.sqrt(pow(self.xy[0]-self.model.exit_point[0][0],2)+pow(self.xy[1]-self.model.exit_point[0][1],2))
-        shortest_goal = self.model.exit_point[0]
-
-        exit_point_index = 0
-        for index, i in enumerate(self.model.exit_point): 
-            if  (math.sqrt(pow(self.xy[0]-i[0],2)+pow(self.xy[1]-i[1],2)) < shortest_distance):
-                shortest_distance = math.sqrt(pow(self.xy[0]-i[0],2)+pow(self.xy[1]-i[1],2))
-                exit_point_index = index
-            
-        if (shortest_distance < exit_confirm_radius):
-            self.now_goal = self.model.exit_point[exit_point_index]
-            return
-
-        if(math.sqrt(pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
-            self.previous_mesh = self.now_mesh
-            self.past_mesh = self.previous_mesh
-            random_mesh_choice = self.model.pure_mesh[random.randint(0, len(self.model.pure_mesh)-1)]
-
-            while (random_mesh_choice == self.now_mesh or random_mesh_choice == self.past_mesh):
-                random_mesh_choice = self.model.pure_mesh[random.randint(0, len(self.model.pure_mesh)-1)]
-                print("무한루프 걸림")
-
-            next_mesh = self.model.next_vertex_matrix[now_mesh][self.pure_mesh[random_mesh_choice]]
-            self.now_goal =  [(next_mesh[0][0]+next_mesh[1][0]+next_mesh[2][0])/3, (next_mesh[0][1]+next_mesh[1][1]+next_mesh[2][1])/3]
-
-            
-
-
-        # if(exit_confirmed_area[int(round(self.xy[0]))][int(round(self.xy[1]))]):
-        #     min_d = math.sqrt(pow(self.xy[0]-self.model.exit_goal_list[0][0], 2)+pow(self.xy[1]-self.model.exit_goal_list[0][1], 2))
-        #     self.now_goal = self.model.exit_goal_list[0]
-        #     for each_goal in self.model.exit_goal_list:
-        #         d = math.sqrt(pow(self.xy[0]-each_goal[0], 2)+pow(self.xy[1]-each_goal[1], 2))
-        #         if (min_d > d):
-        #             self.now_goal = each_goal
-        #             min_d = d
-        #     self.danger = 0
-        #     return 
-
-        # now_stage = self.check_stage_agent()
-        # if(self.previous_stage != now_stage or self.previous_type != self.type):
-        #     if(self.previous_type != self.type ): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
-        #         # print("self.previous_type:",self.previous_type)
-        #         # print("self.type: ",self.type)
-        #         goal_candiate = self.model.space_goal_dict[now_stage]
-        #         min_d = 10000
-        #         min_i  = goal_candiate[0]
-        #         # print("agent 현재 위치 : \n", self.xy)
+        now_stage = self.check_stage_agent()
+        if(self.previous_stage != now_stage or self.previous_type != self.type):
+            if(self.previous_type != self.type ): #로봇을 따라가다가 끊긴 경우에는, goal 후보 중에 로봇 위치와 가장 가까운 곳을 goal로 설정할 것임 
+                # print("self.previous_type:",self.previous_type)
+                # print("self.type: ",self.type)
+                goal_candiate = self.model.space_goal_dict[now_stage]
+                min_d = 10000
+                min_i  = goal_candiate[0]
+                # print("agent 현재 위치 : \n", self.xy)
                 
-        #         vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
+                vector1 = (robot_prev_xy[0]-self.xy[0], robot_prev_xy[1]-self.xy[1])
         
 
-        #         for i in goal_candiate :
-        #             vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
-        #             degree = calculate_degree(vector1, vector2)
-        #             if(min_d > degree):
-        #                 min_d = degree
-        #                 min_i = i
-        #         self.now_goal = min_i
-        #         self.previous_stage = now_stage 
-        #         self.previous_goal = self.now_goal
-        #         self.previous_type = self.type
-        #         return
+                for i in goal_candiate :
+                    vector2 = (i[0] - self.xy[0], i[1]-self.xy[1])
+                    degree = calculate_degree(vector1, vector2)
+                    if(min_d > degree):
+                        min_d = degree
+                        min_i = i
+                self.now_goal = min_i
+                self.previous_stage = now_stage 
+                self.previous_goal = self.now_goal
+                self.previous_type = self.type
+                return
               
 
 
-        #     goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]]
+            goal_candiate = self.model.space_goal_dict[now_stage] # ex) [[2,0], [3,5],[4,1]]
 
-        #     goal_candiate2 = []
-        #     if(len(goal_candiate)>1):
-        #         min_d = 1000
-        #         min_i = goal_candiate[0]
-        #         for i in goal_candiate:
-        #             d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
-        #             if (d<min_d):
-        #                 min_d = d
-        #                 min_i = i #가장 가까운 골 찾기
-        #         for j in goal_candiate: 
-        #             if (j==min_i): #goal 후보에서 빼버림
-        #                 continue
-        #             else:
-        #                 goal_candiate2.append(j)
-        #         if(len(goal_candiate2)==1):
-        #             goal_index = 0
-        #         else:
-        #             goal_index = random.randint(0, len(goal_candiate2)-1)
-        #         self.now_goal = goal_candiate2[goal_index]
-        #         self.previous_stage = now_stage
-        #         return
-        #     elif(len(goal_candiate)==0):
-        #         self.now_goal = self.previous_goal
-        #     else :
-        #         goal_index = 0
-        #         self.now_goal = goal_candiate[goal_index]
-        #         self.previous_stage = now_stage
-        #     self.previous_goal = self.now_goal
-        # self.previous_type = self.type 
+            goal_candiate2 = []
+            if(len(goal_candiate)>1):
+                min_d = 1000
+                min_i = goal_candiate[0]
+                for i in goal_candiate:
+                    d = math.sqrt(pow(self.xy[0]-i[0], 2)+pow(self.xy[1]-i[1], 2))
+                    if (d<min_d):
+                        min_d = d
+                        min_i = i #가장 가까운 골 찾기
+                for j in goal_candiate: 
+                    if (j==min_i): #goal 후보에서 빼버림
+                        continue
+                    else:
+                        goal_candiate2.append(j)
+                if(len(goal_candiate2)==1):
+                    goal_index = 0
+                else:
+                    goal_index = random.randint(0, len(goal_candiate2)-1)
+                self.now_goal = goal_candiate2[goal_index]
+                self.previous_stage = now_stage
+                return
+            elif(len(goal_candiate)==0):
+                self.now_goal = self.previous_goal
+            else :
+                goal_index = 0
+                self.now_goal = goal_candiate[goal_index]
+                self.previous_stage = now_stage
+            self.previous_goal = self.now_goal
+        self.previous_type = self.type 
     
     def check_reward(self, mode):
         reward = 0
@@ -744,7 +717,7 @@ class FightingAgent(Agent):
                 min_distance = floyd_distance[self.save_target]
 
         
-    def agent_modeling(self):
+    def test_modeling(self):
         global robot_radius
         global robot_xy
         global robot_status
@@ -777,10 +750,10 @@ class FightingAgent(Agent):
         repulsive_force = [0, 0]
         self.previous_danger = self.danger
         self.danger = 999999
-        # for each_goal in self.model.exit_goal_list:
-        #     danger = self.agent_to_agent_distance_real(each_goal, self.xy)
-        #     if(danger<self.danger):
-        #         self.danger = danger
+        for each_goal in self.model.exit_goal_list:
+            danger = self.agent_to_agent_distance_real(each_goal, self.xy)
+            if(danger<self.danger):
+                self.danger = danger
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -860,7 +833,6 @@ class FightingAgent(Agent):
 
         self.vel[0] = self.acc[0]
         self.vel[1] = self.acc[1]
-        self.xy = [self.xy[0], self.xy[1]]
 
         self.xy[0] += self.vel[0] * time_step
         self.xy[1] += self.vel[1] * time_step

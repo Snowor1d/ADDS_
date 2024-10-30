@@ -19,6 +19,10 @@ from sklearn.cluster import DBSCAN
 from matplotlib.path import Path
 import triangle as tr
 
+from shapely.geometry import Polygon, Point, MultiPolygon, box, LineString 
+from shapely.ops import unary_union, triangulate, polygonize
+from scipy.spatial import Voronoi
+
 import cv2
 
 def are_meshes_adjacent(mesh1, mesh2):
@@ -111,14 +115,14 @@ def find_triangle_lines(v0, v1, v2):
     
     return list(line_points)
 
-# # Example usage
-# v0 = [10, 10]
-# v1 = [20, 15]
-# v2 = [15, 25]
+# Example usage
+v0 = [10, 10]
+v1 = [20, 15]
+v2 = [15, 25]
 
-# # Find grid coordinates for the triangle's edges
-# line_coords = find_triangle_lines(v0, v1, v2)
-# print("Grid coordinates that the triangle's edges pass through:", line_coords)
+# Find grid coordinates for the triangle's edges
+line_coords = find_triangle_lines(v0, v1, v2)
+print("Grid coordinates that the triangle's edges pass through:", line_coords)
 
 def is_point_in_triangle(p, v0, v1, v2):
     """
@@ -142,6 +146,25 @@ def is_point_in_triangle(p, v0, v1, v2):
     has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
     
     return not (has_neg and has_pos)
+
+from shapely.geometry import Point, Polygon
+
+def is_point_in_polygon(point, polygon_points):
+    polygon = Polygon(polygon_points)
+    return polygon.contains(Point(point))
+
+def calculate_internal_coordinates_in_polygon(width, height, vertices, D):
+    
+    grid_points_in_polygon = []
+
+    for x in range(width):
+        for y in range(height):
+            grid_point = [x, y]
+            if is_point_in_polygon(grid_point, vertices):
+                grid_points_in_polygon.append(grid_point)
+
+    return grid_points_in_polygon
+
 
 def calculate_internal_coordinates_in_triangle(width, height, v0, v1, v2, D):
     """
@@ -235,26 +258,18 @@ class FightingModel(Model):
         self.obstacles = list()
         self.mesh = list()
         self.mesh_list = list()
-        self.extract_map()     
-        self.distance = {}  
+        self.extract_map()       
         self.schedule_e = RandomActivation(self)
         self.running = (
             True
         )
-        self.exit_grid = np.zeros((self.width, self.height))
-        self.pure_mesh = []
         self.match_grid_to_mesh = {}
-        self.match_mesh_to_grid = {}
-        self.exit_goal_point = []
         self.grid = MultiGrid(width, height, False)
         self.headingding = ContinuousSpace(width, height, False, 0, 0)
         self.fill_outwalls(width, height)
         self.mesh_map()
-        self.make_exit()
         self.construct_map()
-        self.exit_list = []
         a = FightingAgent(self.agent_num, self, [0,0], 1)
-        self.random_agent_distribute_outdoor(30, 1)
 
     def fill_outwalls(self, w, h):
         for i in range(w):
@@ -265,141 +280,52 @@ class FightingModel(Model):
             self.walls.append((w-1, j))
     
     def mesh_map(self):
+        grid_area = box(0, 0, self.width, self.height)
+        obstacles_polygons = [Polygon(obstacle) for obstacle in self.obstacles]
+        obstacles_union = unary_union(obstacles_polygons)
 
-        D = 40
 
-        map_boundary = [[0, 0], [self.width, 0], [self.width, self.height], [0, self.height]]
-        obstacle_hulls = []
 
+        # 격자의 외곽선 꼭짓점 정의
+        boundary_points = [[0, 0], [self.width, 0], [self.width, self.height], [0, self.height]]
+
+        # 장애물 꼭짓점과 격자 외곽점 수집
+        all_points = []
+        all_points = all_points + boundary_points 
         for obstacle in self.obstacles:
-            if len(obstacle) == 3 or len(obstacle) == 4:
-                hull = ConvexHull(obstacle)
-                hull_points = np.array(obstacle)[hull.vertices]
-                obstacle_hulls.append(hull_points)
-            else:
-                raise ValueError("Each obstacle must have either 3 or 4 points.")
+            all_points = all_points + obstacle
 
-        # 경계점 및 장애물의 모서리 점 추가
-        vertices = map_boundary.copy()
-        for hull_points in obstacle_hulls:
-            vertices.extend(hull_points.tolist())
+        # Voronoi 다이어그램 생성
+        vor = Voronoi(all_points)
 
-        segments = [[i, (i + 1) % 4] for i in range(4)]  # 맵의 경계
-        offset = 4  # 맵 경계 포인트를 위한 오프셋
+        # Voronoi 경계선 추출
+        lines = []
+        for start, end in vor.ridge_vertices:
+            if start != -1 and end != -1:
+                line = LineString([vor.vertices[start], vor.vertices[end]])
+                lines.append(line)
 
-        # 장애물의 모서리 추가
-        for hull_points in obstacle_hulls:
-            n = len(hull_points)
-            segments.extend([[i + offset, (i + 1) % n + offset] for i in range(n)])
-            offset += n
+        # Voronoi 경계선으로 다각형 생성
+        boundary_polygon = Polygon(boundary_points)  # 전체 격자 경계선
+        obstacle_polygons = [Polygon(points) for points in self.obstacles]  # 장애물 영역
+        all_obstacles = unary_union(obstacle_polygons)  # 장애물을 하나의 영역으로 합침
 
-        # 세그먼트 및 포인트로 메쉬화
-        vertices_with_points, segments_with_points = generate_segments_with_points(vertices, segments, D)
+        # 전체 격자에서 장애물을 뺀 영역에서 다각형 생성
+        remaining_area = boundary_polygon.difference(all_obstacles)  # 남은 영역
+        polygon_meshes = list(polygonize(lines + [remaining_area.boundary]))
 
-        # 삼각형화를 위한 데이터 생성
-        triangulation_data = {'vertices': np.array(vertices_with_points), 'segments': np.array(segments_with_points)}
+        # 장애물과 겹치지 않는 다각형만 선택
+        meshes = [poly for poly in polygon_meshes if not poly.intersects(all_obstacles)]
 
-        # 삼각형화
-        t = tr.triangulate(triangulation_data, 'p')
-        boundary_coords = []
+        # 다각형의 좌표를 리스트 형태로 저장
+        mesh_coords = [list(poly.exterior.coords) for poly in meshes]
 
-        for tri in t['triangles']:
-            v0, v1, v2 = t['vertices'][tri[0]], t['vertices'][tri[1]], t['vertices'][tri[2]]
-            vertices_tuple = tuple(sorted([tuple(v0), tuple(v1), tuple(v2)]))
-            self.mesh_list.append(vertices_tuple)
-            
-            # 삼각형의 내부 좌표 계산
-            internal_coords = calculate_internal_coordinates_in_triangle(self.width, self.height, v0, v1, v2, D)
-            # 내부 좌표 저장
-            self.mesh.append(internal_coords)
-            
-
-        for mesh in self.mesh_list:
-            internal_coords = calculate_internal_coordinates_in_triangle(self.width, self.height, mesh[0], mesh[1], mesh[2], D)
-            for i in internal_coords:
-                if not (i[0], i[1]) in self.match_grid_to_mesh.keys():
-                    self.match_grid_to_mesh[(i[0], i[1])] = (mesh[0], mesh[1], mesh[2])
+        # 결과 출력
+        print(len(mesh_coords))
+        for i, mesh in enumerate(mesh_coords):
+            print(f"Polygon {i+1}: {mesh}")
 
 
-        for mesh in self.mesh_list:
-            middle_point = ((mesh[0][0]+mesh[1][0]+mesh[2][0])/3, (mesh[0][1]+mesh[1][1]+mesh[2][1])/3)
-            
-            for obstacle in self.obstacles:
-                if len(obstacle) == 4: # 사각형 obstacle
-                    if is_point_in_triangle(middle_point, obstacle[0], obstacle[1], obstacle[2]) or is_point_in_triangle(middle_point, obstacle[0], obstacle[2], obstacle[3]) :
-                        self.obstacle_mesh.append(mesh)
-                elif len(obstacle) == 3:
-                    if is_point_in_triangle(middle_point, obstacle[0], obstacle[1], obstacle[2]):
-                        self.obstacle_mesh.append(mesh)
-
-
-        path = {}
-        
-        next_vertex_matrix = {start: {end: None for end in self.mesh_list} for start in self.mesh_list}
-        for i, mesh1 in enumerate(self.mesh_list):
-            self.distance[mesh1] = {}
-            path[mesh1] = {}
-            for j, mesh2 in enumerate(self.mesh_list):
-                self.distance[mesh1][mesh2] = 9999999999
-                if i == j:
-                    self.distance[mesh1][mesh2] = 0
-                    next_vertex_matrix[mesh1][mesh2] = mesh1
-                elif (mesh1 in self.obstacle_mesh or mesh2 in self.obstacle_mesh):
-                    # if mesh1 in self.obstacle_mesh:
-                    #     print(mesh1, "이 obstacle_mesh에 있음")
-                    # elif mesh2 in self.obstacle_mesh:
-                    #     print("mesh2가 obstacle_mesh에 있음")
-                    self.distance[mesh1][mesh2] = math.inf
-                    path[mesh1][mesh2] = None
-                elif are_meshes_adjacent(mesh1, mesh2):  # 인접한 경우에만 거리 계산
-                    # print("인접함!")
-                    mesh1_center = ((mesh1[0][0] + mesh1[1][0] + mesh1[2][0])/3, (mesh1[0][1]+mesh1[1][1]+mesh1[2][1])/3)
-                    mesh2_center = ((mesh2[0][0] + mesh2[1][0] + mesh2[2][0])/3, (mesh2[0][1]+mesh2[1][1]+mesh2[2][1])/3)        
-                    dist = math.sqrt(pow(mesh1_center[0]-mesh2_center[0], 2) + pow(mesh1_center[1]-mesh2_center[1],2))
-                    self.distance[mesh1][mesh2] = dist
-                    next_vertex_matrix[mesh1][mesh2] = mesh2 
-                    #path[mesh1][mesh2] = [i, j] if dist < math.inf else None
-                else:
-                    self.distance[mesh1][mesh2] = math.inf
-                    next_vertex_matrix[mesh1][mesh2] = None
-        
-        n = len(mesh)
-        
-
-        for mesh1 in self.mesh_list:
-            for mesh2 in self.mesh_list:
-                for mesh3 in self.mesh_list:
-                    i = mesh2
-                    k = mesh1
-                    j = mesh3
-                    if self.distance[i][k] + self.distance[k][j] < self.distance[i][j]:
-                        self.distance[i][j] = self.distance[i][k] + self.distance[k][j]
-                        next_vertex_matrix[i][j] = next_vertex_matrix[i][k]
-        for mesh in self.mesh_list:
-            if mesh not in self.obstacle_mesh:
-                self.pure_mesh.append(mesh)
-        
-
-        boundary_coords = list(set(map(tuple, boundary_coords)))
-        
-        for i in range(self.width):
-            for j in range(self.height):
-                for mesh in self.pure_mesh:
-                    if is_point_in_triangle([i, j], mesh[0], mesh[1], mesh[2]):
-                        if mesh not in self.match_mesh_to_grid.keys():
-                            self.match_mesh_to_grid[mesh] = []
-                        self.match_mesh_to_grid[mesh].append([i, j])
-
-    def get_path(self, next_vertex_matrix, start, end): #start->end까지 최단 경로로 가려면 어떻게 가야하는지 알려줌 
-
-        if next_vertex_matrix[start][end] is None:
-            return []
-
-        path = [start]
-        while start != end:
-            start = next_vertex_matrix[start][end]
-            path.append(start)
-        return path
 
     def extract_map(self):
         width = 70
@@ -414,38 +340,58 @@ class FightingModel(Model):
 
     def construct_map(self):
         for i in range(len(self.walls)):
-            a = FightingAgent(self.agent_num, self, self.walls[i], 9)
+            a = FightingAgent(self.agent_num, self, self.walls[i], 0)
             self.agent_num+=1
             self.schedule_e.add(a)
             self.grid.place_agent(a, self.walls[i])
         for i in range(len(self.obstacles)):
-            for each_point in  get_points_within_polygon(self.obstacles[i], 1):
-                a = FightingAgent(self.agent_num, self, each_point, 9)
-                self.agent_num+=1
-                self.schedule_e.add(a)
-                self.grid.place_agent(a, each_point)
-        num = 0
-        exit_grid = []
-        for e in self.exit_list:
-            exit_grid.append(get_points_within_polygon(e, 1))
-            for each_point in get_points_within_polygon(e, 1):
-                self.exit_grid[each_point[0]][each_point[1]] = 1
-        for i in range(len(exit_grid)):
-            a = FightingAgent(self.agent_num, self, self.exit_list[i][0], 10)
+            a = FightingAgent(self.agent_num, self, self.obstacles[i], 0)
             self.agent_num+=1
             self.schedule_e.add(a)
-            for each_point in exit_grid[i]:
+            print(self.obstacles[i])
+            for each_point in  get_points_within_polygon(self.obstacles[i], 1):
                 self.grid.place_agent(a, each_point)
+        num = 0
+        for mesh in self.mesh:
+            num +=1 
+            for i in range(len(mesh)):
+                a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], num%11+1)
+                self.agent_num+=1
+                self.schedule_e.add(a)
+                self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
 
-        # for mesh in self.mesh:
-        #     num +=1 
-            # for i in range(len(mesh)):
-            #     a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], num%11+1)
-            #     self.agent_num+=1
-            #     self.schedule_e.add(a)
-            #     self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
 
+    def init_all_graph(self):
+        N = 50
+        INF = float('inf')
+        all_space = np.zeros((N, N), dtype=int)
+        
+        for i in self.room_list:
+            first_x = i[0][0]
+            first_y = i[0][1]
+            second_x = i[1][0]
+            second_y = i[1][1]
+            for x in range(first_x, second_x+1):
+                for y in range(first_y, second_y+1):
+                    all_space[x][y] = 1
+        dist = np.full((N*N, N*N), INF)
 
+        for i in range(N):
+            for j in range(N):
+                if all_space[i][j] == 0:
+                    index1 = i * N + j
+                    dist[index1][index1] = 0
+                    for dx, dy in [(-1,0), (1,0), (0, -1), (0, 1)]:
+                        ni, nj = i + dx, j + dy
+                        if 0 <= ni < N and 0 <= nj < N and all_space[ni][nj] == 0:
+                            index2 = ni * N + nj
+                            dist[index1][index2] = 1
+        for k in range(N * N):
+            for i in range(N * N):
+                for j in range(N * N):
+                    if dist[i][j] > dist[i][k] + dist[k][j]:
+                        dist[i][j] = dist[i][k] + dist[k][j]
+        return dist
                                   
     def make_robot(self):
         self.robot_placement() #로봇 배치 
@@ -469,19 +415,110 @@ class FightingModel(Model):
           
 
     def make_exit(self):
-        exit_width = 5
-        exit_height = 5
-        self.exit_list = [[(0,0), (exit_width, 0), (exit_width, exit_height), (0, exit_height)],
-                         [(self.width-exit_width-1,0), (self.width-1, 0), (self.width-1, exit_height), (self.width-exit_width-1, exit_height)],
-                         [(0, self.height-exit_height-2), (exit_width, self.height-exit_height-2), (exit_width, self.height-1), (0, self.height-1)],
-                         [(self.width-exit_width-1, self.height-exit_height-2), (self.width-1, self.height-exit_height-2), (self.width-1, self.height-1), (self.width-exit_width-1, self.height-1)]
-                        ]
-        self.exit_point = [[(exit_width)/2, (exit_height)/2],
-                           [(self.width-exit_width-1+self.width-1)/2, (exit_height)/2],
-                           [(exit_width)/2, (self.height-exit_height-1+self.height-1)/2],
-                           [(self.width-exit_width-1+self.width-1)/2, (self.height-exit_height-1+self.height-1)/2]
-                           ]
-        return 0
+        self.exit_rec_list = []
+        self.exit_goal_list = []
+        self.is_down_exit = 0
+        self.is_left_exit = 0
+        self.is_up_exit = 0
+        self.is_right_exit = 0
+
+        if(self.only_one_exit == 1):
+            self.is_down_exit = 1
+            self.is_up_exit = 1
+            self.is_left_exit = 1
+        elif(self.only_one_exit == 2):
+            self.is_left_exit = 1
+            self.is_right_exit = 1
+        elif(self.only_one_exit == 3):
+            self.is_up_exit = 1
+            self.is_left_exit = 1
+        elif(self.only_one_exit == 4):
+            self.is_right_exit = 1
+
+        self.is_down_exit = random.randint(0,1)
+        # self.is_left_exit = random.randint(0,1) #0이면 출구없음 #1이면 출구있음
+        # self.is_up_exit = random.randint(0,1)
+        # self.is_right_exit = 0
+
+        # if (self.is_down_exit==0 and self.is_left_exit==0 and self.is_up_exit==0):
+        #     self.is_right_exit = 1  #출구 넷 중에 하나 이상은 되게 한다~! 
+        # else:
+        #     self.is_right_exit = 0
+
+        
+        left_exit_num = 0
+        self.left_exit_goal = [0,0]
+        if(self.is_left_exit): #left에 존재하면?
+            exit_rec = []
+            # exit_size = random.randint(10, 30) #출구 사이즈를 30~70 정한다  ## 원래 이거 였음 
+            exit_size = 15
+            start_exit_cell = 20 #출구가 어디부터 시작되는가? #넘어갈까봐
+            # start_exit_cell = random.randint(0, 49-exit_size)  ### 원래 이거 였음
+            for i in range(0, 5): 
+                for j in range(start_exit_cell, start_exit_cell+exit_size): #채운다~
+                    exit_rec.append((i,j)) #exit_rec에 떄려 넣는다~
+                    self.left_exit_goal[0] += i
+                    self.left_exit_goal[1] += j
+                    left_exit_num +=1
+            self.left_exit_goal[0] = self.left_exit_goal[0]/left_exit_num #출구 좌표의 평균 
+            self.left_exit_goal[1] = self.left_exit_goal[1]/left_exit_num
+            self.left_exit_area = [[0, start_exit_cell], [5, start_exit_cell+exit_size]]
+            self.exit_goal_list.append([self.left_exit_goal[0], self.left_exit_goal[1]])
+            self.exit_rec_list.append(exit_rec)
+        right_exit_num = 0    
+        self.right_exit_goal = [0,0]
+        if(self.is_right_exit):
+            exit_rec = []
+            exit_size = 20
+            start_exit_cell = 20
+            for i in range(45, 50):
+                for j in range(start_exit_cell, start_exit_cell+exit_size):
+                    exit_rec.append((i,j))
+                    self.right_exit_goal[0] += i
+                    self.right_exit_goal[1] += j
+                    right_exit_num +=1
+            self.right_exit_goal[0] = self.right_exit_goal[0]/right_exit_num
+            self.right_exit_goal[1] = self.right_exit_goal[1]/right_exit_num
+            self.right_exit_area = [[45, start_exit_cell], [49, start_exit_cell+exit_size]]
+            self.exit_goal_list.append([self.right_exit_goal[0], self.right_exit_goal[1]])
+            self.exit_rec_list.append(exit_rec)
+        down_exit_num = 0    
+        self.down_exit_goal = [0,0]
+        if(self.is_down_exit):
+            exit_rec = []
+            exit_size = 20
+            start_exit_cell = 20
+            for i in range(start_exit_cell, start_exit_cell+exit_size):
+                for j in range(0, 5):
+                    exit_rec.append((i,j))
+                    self.down_exit_goal[0] += i
+                    self.down_exit_goal[1] += j
+                    down_exit_num +=1
+            self.down_exit_goal[0] = self.down_exit_goal[0]/down_exit_num
+            self.down_exit_goal[1] = self.down_exit_goal[1]/down_exit_num
+            self.down_exit_area = [[start_exit_cell, 0], [start_exit_cell+exit_size, 5]]
+            self.exit_goal_list.append([self.down_exit_goal[0], self.down_exit_goal[1]])
+            self.exit_rec_list.append(exit_rec)
+        up_exit_num = 0    
+        self.up_exit_goal = [0,0]
+        if(self.is_up_exit):
+            exit_rec = []
+            exit_size = 20
+            start_exit_cell = 20
+            for i in range(start_exit_cell, start_exit_cell+exit_size):
+                for j in range(45, 50):
+                    exit_rec.append((i,j))
+                    self.up_exit_goal[0] += i
+                    self.up_exit_goal[1] += j
+                    up_exit_num = up_exit_num + 1
+            self.up_exit_goal[0] = self.up_exit_goal[0]/up_exit_num
+            self.up_exit_goal[1] = self.up_exit_goal[1]/up_exit_num
+            self.up_exit_area = [[start_exit_cell, 45], [start_exit_cell+exit_size, 49]]
+            self.exit_goal_list.append([self.up_exit_goal[0], self.up_exit_goal[1]])
+            self.exit_rec_list.append(exit_rec)
+        #exit_rec에는 탈출 점들의 좌표가 쌓임
+
+        return self.exit_rec_list
 
 
 
@@ -625,26 +662,34 @@ class FightingModel(Model):
     
     def random_agent_distribute_outdoor(self, agent_num, ran):
         
-
-        space_num = len(self.pure_mesh)
+        # case1 -> 방에 사람이 있는 경우
+        # case2 -> 밖에 주로 사람이 있는 경우
+        only_space = []
+        for sp in self.space_list:
+            if (not sp in self.room_list and sp != [[0,0], [5, 45]] and sp != [[0, 45], [45, 49]] and sp != [[45, 5], [49, 49]] and sp != [[5,0], [49,5]]):
+                only_space.append(sp)
+        space_num = len(only_space)
         
         
         space_agent = agent_num
-        agent_location = []
 
-        for i in range(agent_num):
-            assign_mesh_num = random.randint(0, space_num-1)
-            assigned_mesh = self.pure_mesh[assign_mesh_num]
-            assigned_coordinates = self.match_mesh_to_grid[assigned_mesh]
+        random_list = [0] * space_num
 
-            assigned = assigned_coordinates[random.randint(0, len(assigned_coordinates)-1)]
-            assigned = [int(assigned[0]), int(assigned[1])]
-            if not assigned in agent_location:
-                agent_location.append(assigned)
-                a = FightingAgent(self.agent_num, self, assigned, 1)
-                self.agent_num += 1
-                self.schedule_e.add(a)
-                self.grid.place_agent(a, assigned)
+        # 총합이 agent num이 되도록 할당
+        for i in range(space_num - 1):
+            #random_num = random.randint(1, space_agent - sum(random_list) - (space_num - i - 1))
+            random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+            random_num = ran % (space_agent - sum(random_list) - (space_num - i - 1)) + 1
+            ran += (ran*ran-int(12343/34)+3435*ran%(23))
+            random_list[i] = random_num
+
+        # 마지막 숫자는 나머지 값으로 설정
+        if(space_num != 0):
+            random_list[-1] = space_agent - sum(random_list)
+
+        for j in range(len(only_space)):
+            self.agent_place(only_space[j][0], only_space[j][1], random_list[j],ran)
+
 
 
     def random_hazard_placement(self, hazard_num):
@@ -923,6 +968,41 @@ class FightingModel(Model):
 
 
 
+
+    def make_hazard(self, xy1, xy2, depth):
+        new_plane = []
+    
+        x1 = 0
+        y1 = 0
+        x2 = 0
+        y2 = 0
+
+        x1 = xy1[0]
+        y1 = xy1[1]
+        x2 = xy2[0]
+        y2 = xy2[1]
+        x_len = x2-x1
+        y_len = y2-y1
+        # check_list = [[0]*y_len for _ in range(x_len)]
+
+
+        # hazard_size = random.randint(min_area, max_area)
+        hazard_start = (random.randint(x1, x2)+1, random.randint(y1, y2)-1)
+        self.hazard_recur(hazard_start[0], hazard_start[1], depth, [x1, x2], [y1, y2])
+
+    
+    def hazard_recur(self, x, y, depth, x_range, y_range):
+        global hazard_id
+        if (x<(x_range[0]+1) or x>(x_range[1]-1) or y<(y_range[0]+1) or y>(y_range[1]-1) or depth==0):
+            return 
+        a = FightingAgent(hazard_id, self,[x,y], 1)
+        self.schedule_h.add(a)
+        self.grid.place_agent(a, (x, y))
+        hazard_id = hazard_id + 1
+        self.hazard_recur(x-1, y, depth-1, x_range, y_range)
+        self.hazard_recur(x+1, y, depth-1, x_range, y_range)
+        self.hazard_recur(x, y+1, depth-1, x_range, y_range)
+        self.hazard_recur(x, y-1, depth-1, x_range, y_range)
        
 
     def floyd_warshall(self): #공간과 공간사이의 최단 경로를 구하는 알고리즘 
@@ -961,6 +1041,36 @@ class FightingModel(Model):
             path.append(start)
         return path
         
+    
+
+    def agent_place(self, xy1, xy2, num, ran):
+    
+        agent_list = []
+        x_len = xy2[0]-xy1[0]
+        y_len = xy2[1]-xy1[1]
+
+        check_list = [[0]*y_len for _ in range(x_len)]
+        while(num>0):
+            #x = random.randint(xy1[0]+1, xy2[0]-1)
+            x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+            #y = random.randint(xy1[1]+1, xy2[1]-1)
+            y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+            ran += (ran*ran-int(12343/34)+343*ran%(25))
+            #print(x, xy1[0])
+            #print(y, xy1[1])
+            while(check_list[x-xy1[0]][y-xy1[1]] == 1):
+                # x = random.randint(xy1[0]+1, xy2[0]-1)
+                # y = random.randint(xy1[1]+1, xy2[1]-1)
+                x = ran % ((xy2[0]-1) - (xy1[0]+1) + 1) + xy1[0]+1
+                y = ran % ((xy2[1]-1) - (xy1[1]+1) + 1) + xy1[1]+1
+                ran += (ran*ran-int(12343/34)+32343*ran%(21))
+            check_list[x-xy1[0]][y-xy1[1]] = 1
+            num = num-1
+            a = FightingAgent(self.agent_id, self, [x,y], 0)
+            self.agent_id = self.agent_id + 1
+            self.schedule.add(a)
+            self.grid.place_agent(a, (x, y))
+            #self.agents.append(a)
 
 
     def step(self):
@@ -984,7 +1094,7 @@ class FightingModel(Model):
             for agent in self.agents:
                 if(max_id == agent.unique_id):
                     agent.dead = True 
-        self.schedule_e.step()
+        self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
         # if(self.robot != None):
         #     print(self.robot.robot_xy)
@@ -993,10 +1103,12 @@ class FightingModel(Model):
         # Checking if there is a champion
         if FightingModel.current_healthy_agents(self) == 0:
             self.running = False
-        #self.num_remained_agents()
+        self.num_remained_agents()
 
 
 
+
+        return new_space_list2
     
 
     
@@ -1014,7 +1126,7 @@ class FightingModel(Model):
         Returns:
             (Integer): Number of Agents.
         """
-        return sum([1 for agent in model.schedule_e.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
+        return sum([1 for agent in model.schedule.agents if agent.health > 0]) ### agent의 health가 0이어야 cureent_healthy_agents 수에 안 들어감
                                                                                ### agent.py 에서 exit area 도착했을 때 health를 0으로 바꿈
 
 
@@ -1028,7 +1140,7 @@ class FightingModel(Model):
         Returns:
             (Integer): Number of Agents.
         """
-        return sum([1 for agent in model.schedule_e.agents if agent.health == 0])
+        return sum([1 for agent in model.schedule.agents if agent.health == 0])
 
     def num_remained_agents(self):
         #from model import Model
