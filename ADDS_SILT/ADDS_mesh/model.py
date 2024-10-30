@@ -237,10 +237,12 @@ class FightingModel(Model):
         self.mesh_list = list()
         self.extract_map()     
         self.distance = {}  
+        self.schedule = RandomActivation(self)
         self.schedule_e = RandomActivation(self)
         self.running = (
             True
         )
+        self.next_vertex_matrix = {}
         self.exit_grid = np.zeros((self.width, self.height))
         self.pure_mesh = []
         self.match_grid_to_mesh = {}
@@ -335,7 +337,7 @@ class FightingModel(Model):
 
         path = {}
         
-        next_vertex_matrix = {start: {end: None for end in self.mesh_list} for start in self.mesh_list}
+        self.next_vertex_matrix = {start: {end: None for end in self.mesh_list} for start in self.mesh_list}
         for i, mesh1 in enumerate(self.mesh_list):
             self.distance[mesh1] = {}
             path[mesh1] = {}
@@ -343,7 +345,7 @@ class FightingModel(Model):
                 self.distance[mesh1][mesh2] = 9999999999
                 if i == j:
                     self.distance[mesh1][mesh2] = 0
-                    next_vertex_matrix[mesh1][mesh2] = mesh1
+                    self.next_vertex_matrix[mesh1][mesh2] = mesh1
                 elif (mesh1 in self.obstacle_mesh or mesh2 in self.obstacle_mesh):
                     # if mesh1 in self.obstacle_mesh:
                     #     print(mesh1, "이 obstacle_mesh에 있음")
@@ -357,11 +359,11 @@ class FightingModel(Model):
                     mesh2_center = ((mesh2[0][0] + mesh2[1][0] + mesh2[2][0])/3, (mesh2[0][1]+mesh2[1][1]+mesh2[2][1])/3)        
                     dist = math.sqrt(pow(mesh1_center[0]-mesh2_center[0], 2) + pow(mesh1_center[1]-mesh2_center[1],2))
                     self.distance[mesh1][mesh2] = dist
-                    next_vertex_matrix[mesh1][mesh2] = mesh2 
+                    self.next_vertex_matrix[mesh1][mesh2] = mesh2 
                     #path[mesh1][mesh2] = [i, j] if dist < math.inf else None
                 else:
                     self.distance[mesh1][mesh2] = math.inf
-                    next_vertex_matrix[mesh1][mesh2] = None
+                    self.next_vertex_matrix[mesh1][mesh2] = None
         
         n = len(mesh)
         
@@ -374,7 +376,7 @@ class FightingModel(Model):
                     j = mesh3
                     if self.distance[i][k] + self.distance[k][j] < self.distance[i][j]:
                         self.distance[i][j] = self.distance[i][k] + self.distance[k][j]
-                        next_vertex_matrix[i][j] = next_vertex_matrix[i][k]
+                        self.next_vertex_matrix[i][j] = self.next_vertex_matrix[i][k]
         for mesh in self.mesh_list:
             if mesh not in self.obstacle_mesh:
                 self.pure_mesh.append(mesh)
@@ -449,15 +451,6 @@ class FightingModel(Model):
                                   
     def make_robot(self):
         self.robot_placement() #로봇 배치 
-
-    def make_agents(self):
-        self.wall = [list(t) for t in self.walls]
-
-        for i in range(len(self.wall)):
-            c = FightingAgent(i, self, self.wall[i], 11)
-            self.schedule_e.add(c)
-            self.grid.place_agent(c, self.wall[i])
-
 
 
     def reward_distance_sum(self):
@@ -566,34 +559,34 @@ class FightingModel(Model):
 
 
 
-    def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
-        inner_space = []
-        for i in self.outdoor_space:
-            if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
-                inner_space.append(i)
-        space_index = 0 
-        if(len(inner_space) > 1):
-            space_index = random.randint(0, len(inner_space)-1)
-        else :
-            space_index = 0
-        if(len(inner_space) == 0):
-            return
-        xy = inner_space[space_index]
+    # def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
+    #     inner_space = []
+    #     for i in self.outdoor_space:
+    #         if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
+    #             inner_space.append(i)
+    #     space_index = 0 
+    #     if(len(inner_space) > 1):
+    #         space_index = random.randint(0, len(inner_space)-1)
+    #     else :
+    #         space_index = 0
+    #     if(len(inner_space) == 0):
+    #         return
+    #     xy = inner_space[space_index]
 
     
-        x_len = xy[0][0] - xy[1][0]
-        y_len = xy[1][0] - xy[1][1]
+    #     x_len = xy[0][0] - xy[1][0]
+    #     y_len = xy[1][0] - xy[1][1]
 
 
-        x = random.randint(xy[0][0]+1, xy[1][0]-1)
-        y = random.randint(xy[0][1]+1, xy[1][1]-1)
+    #     x = random.randint(xy[0][0]+1, xy[1][0]-1)
+    #     y = random.randint(xy[0][1]+1, xy[1][1]-1)
         
 
-        self.agent_id = self.agent_id + 10
-        self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
-        self.agent_id = self.agent_id + 10
-        self.schedule.add(self.robot)
-        self.grid.place_agent(self.robot, (x, y))
+    #     self.agent_id = self.agent_id + 10
+    #     self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
+    #     self.agent_id = self.agent_id + 10
+    #     self.schedule.add(self.robot)
+    #     self.grid.place_agent(self.robot, (x, y))
 
     def robot_respawn(self):
         inner_space = []
@@ -643,7 +636,7 @@ class FightingModel(Model):
                 agent_location.append(assigned)
                 a = FightingAgent(self.agent_num, self, assigned, 1)
                 self.agent_num += 1
-                self.schedule_e.add(a)
+                self.schedule.add(a)
                 self.grid.place_agent(a, assigned)
 
 
@@ -984,15 +977,15 @@ class FightingModel(Model):
             for agent in self.agents:
                 if(max_id == agent.unique_id):
                     agent.dead = True 
-        self.schedule_e.step()
+        self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
         # if(self.robot != None):
         #     print(self.robot.robot_xy)
         
     
         # Checking if there is a champion
-        if FightingModel.current_healthy_agents(self) == 0:
-            self.running = False
+        # if FightingModel.current_healthy_agents(self) == 0:
+        #     self.running = False
         #self.num_remained_agents()
 
 

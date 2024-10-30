@@ -127,10 +127,10 @@ class FightingAgent(Agent):
     def __init__(self, unique_id, model, pos, type): 
         super().__init__(unique_id, model)
         global robot_xy
-
+        
         self.past_mesh = None
         self.previous_mesh = None
-
+        self.agent_pos_initialized = 0
 
 
         self.is_learning_state = 1
@@ -218,7 +218,7 @@ class FightingAgent(Agent):
         #print("model A: ", robot_xy)
         global exit_area
         global goal_list
-
+        print("Type : ", self.type)
         """Handles the step of the model dor each agent.
         Sets the flags of each agent during the simulation.
         """
@@ -316,27 +316,27 @@ class FightingAgent(Agent):
         # robot_prev_xy[0] = robot_xy[0]
         # robot_prev_xy[1] = robot_xy[1]
         
-        if (self.type == 3):
+        # if (self.type == 3):
             
-            robot_prev_xy[0] = robot_xy[0]
-            robot_prev_xy[1] = robot_xy[1]
+        #     robot_prev_xy[0] = robot_xy[0]
+        #     robot_prev_xy[1] = robot_xy[1]
             
-            self.robot_step += 1
-            robot_space_tuple = tuple(map(tuple, self.robot_space))
+        #     self.robot_step += 1
+        #     robot_space_tuple = tuple(map(tuple, self.robot_space))
             
                    
 
-            new_position2 = self.robot_policy_Q()  ## 수상한 녀석...
-            # new_position2 = (30, 30)
+        #     new_position2 = self.robot_policy_Q()  ## 수상한 녀석...
+        #     # new_position2 = (30, 30)
 
 
-            #self.model.reward_distance_difficulty()
+        #     #self.model.reward_distance_difficulty()
 
 
-            self.model.grid.move_agent(self, new_position2)
+        #     self.model.grid.move_agent(self, new_position2)
 
             
-            return
+        #     return
         if(self.type == 0 or self.type == 1):
             new_position = self.agent_modeling()
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
@@ -351,9 +351,11 @@ class FightingAgent(Agent):
         
         now_grid = (int(self.xy[0]), int(self.xy[1]))
         candidates = [(int(self.xy[0])+1, int(self.xy[1])+1), (int(self.xy[0])+1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])+1), (int(self.xy[0])-1, int(self.xy[1])-1), (int(self.xy[0])-1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])-1)]
-        while now_grid not in self.model.match_grid_to_mesh.keys():
+        while (now_grid not in self.model.match_grid_to_mesh.keys()) or (self.model.match_grid_to_mesh[now_grid] not in self.model.pure_mesh):
+           print("355 while")
            now_grid = candidates[random.randint(0, len(candidates)-1)]
 
+    
 
         now_mesh = self.model.match_grid_to_mesh[now_grid] 
 
@@ -365,21 +367,25 @@ class FightingAgent(Agent):
             if  (math.sqrt(pow(self.xy[0]-i[0],2)+pow(self.xy[1]-i[1],2)) < shortest_distance):
                 shortest_distance = math.sqrt(pow(self.xy[0]-i[0],2)+pow(self.xy[1]-i[1],2))
                 exit_point_index = index
-            
+
+
+
         if (shortest_distance < exit_confirm_radius):
             self.now_goal = self.model.exit_point[exit_point_index]
             return
 
-        if(math.sqrt(pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
-            self.previous_mesh = self.now_mesh
+        if(math.sqrt((pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==0) or self.agent_pos_initialized == 0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
+            self.agent_pos_initialized = 1
+            self.previous_mesh = now_mesh
             self.past_mesh = self.previous_mesh
-            random_mesh_choice = self.model.pure_mesh[random.randint(0, len(self.model.pure_mesh)-1)]
+            mesh_index = random.randint(0, len(self.model.pure_mesh)-1)
+            random_mesh_choice = self.model.pure_mesh[mesh_index]
 
-            while (random_mesh_choice == self.now_mesh or random_mesh_choice == self.past_mesh):
+            while (random_mesh_choice == now_mesh or random_mesh_choice == self.past_mesh):
                 random_mesh_choice = self.model.pure_mesh[random.randint(0, len(self.model.pure_mesh)-1)]
                 print("무한루프 걸림")
 
-            next_mesh = self.model.next_vertex_matrix[now_mesh][self.pure_mesh[random_mesh_choice]]
+            next_mesh = self.model.next_vertex_matrix[now_mesh][self.model.pure_mesh[mesh_index]]
             self.now_goal =  [(next_mesh[0][0]+next_mesh[1][0]+next_mesh[2][0])/3, (next_mesh[0][1]+next_mesh[1][1]+next_mesh[2][1])/3]
 
             
@@ -817,7 +823,7 @@ class FightingAgent(Agent):
                     repulsive_force = [-1, 1] # agent가 정확히 같은 위치에 있을시 따로 떨어트리기 위함 
                     random_disperse = 1
 
-        
+        print("now_goal : ", self.now_goal)
         
         goal_x = self.now_goal[0] - self.xy[0]
         goal_y = self.now_goal[1] - self.xy[1]
@@ -827,21 +833,21 @@ class FightingAgent(Agent):
         robot_y = robot_xy[1] - self.xy[1]
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
 
-    
-        if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
-            # 로봇 반경 내 agent 가 있으면
-            goal_x = robot_x
-            goal_y = robot_y
-            goal_d = robot_d
-            self.type = 1
-            self.now_goal = robot_goal        
-            self.is_traced = 5
+        self.which_goal_agent_want()
+        # if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
+        #     # 로봇 반경 내 agent 가 있으면
+        #     goal_x = robot_x
+        #     goal_y = robot_y
+        #     goal_d = robot_d
+        #     #self.type = 1
+        #     self.now_goal = robot_goal        
+        #     self.is_traced = 5
             
-        else :
-            self.which_goal_agent_want()
-            if(self.is_traced>0):
-                self.is_traced -= 1
-            self.type = 0
+        # else :
+        #     self.which_goal_agent_want()
+        #     if(self.is_traced>0):
+        #         self.is_traced -= 1
+        #     self.type = 0
 
         if(goal_d != 0):
           desired_force = [intend_force*(self.desired_speed_a*(goal_x/goal_d)), intend_force*(self.desired_speed_a*(goal_y/goal_d))] #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -915,39 +921,6 @@ class FightingAgent(Agent):
         return loc 
 
     
-    def move_to_valid_robot(self):
-        global robot_xy
-        original_loc = [0, 0]
-        original_loc[0] = robot_xy[0]
-        original_loc[1] = robot_xy[1]
-        count = 0
-        while(self.model.valid_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]==0):
-            robot_xy[0] = (original_loc[0] - 0.5)
-            robot_xy[1] = (original_loc[1] - 0.5)
-            robot_xy[0] += (random.randint(0, 5)/5)
-            robot_xy[1] += (random.randint(0, 5)/5)
-            count += 1
-            if (count>=40):
-                break 
-        if (count>=40):
-            while(self.model.valid_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]==0):
-                robot_xy[0] = (original_loc[0] - 1)
-                robot_xy[1] = (original_loc[1] - 1)
-                robot_xy[0] += (random.randint(0, 10)/5)
-                robot_xy[1] += (random.randint(0, 10)/5)
-                count += 1 
-                if (count>=100):
-                    break 
-        if (count>=100):
-            while(self.model.valid_space[int(round(robot_xy[0]))][int(round(robot_xy[1]))]==0):
-                robot_xy[0] = (original_loc - 2)
-                robot_xy[1] = (original_loc - 2)
-                robot_xy[0] += (random.randint(0, 20)/5)
-                robot_xy[1] += (random.randint(0, 20)/5)
-                count += 1
-                if (count>=200):
-                    break 
-
     
     def agent_to_agent_distance(self, from_agent, to_agent):
         from model import space_connected_linear
@@ -1002,53 +975,6 @@ class FightingAgent(Agent):
                     min_d = d 
         return min_d
 
-    def agent_to_agent_distance_real(self, from_agent, to_agent):
-        from model import space_connected_linear
-
-        from_grid_to_space = self.model.grid_to_space
-        from_space = from_grid_to_space[int(round(from_agent[0]))][int(round(from_agent[1]))]
-        to_space = from_grid_to_space[int(round(to_agent[0]))][int(round(to_agent[1]))]
-
-        if(from_space==to_space): #같은 공간
-            return math.sqrt(pow(from_agent[0]-to_agent[0],2)+pow(from_agent[1]-to_agent[1],2))
-        distance = 0
-        from_space = tuple(map(tuple, from_space))
-        to_space = tuple(map(tuple, to_space))
-        next_vertex_matrix = self.model.floyd_warshall()[0]
-
-        current_point = from_agent
-        current_space = from_space
-        #print("current_space : ", current_space, " to_space : ", to_space)
-        next_space = next_vertex_matrix[current_space][to_space]
-        #print("current_space : ", current_space, " next_space : ", next_space)
-        next_point = space_connected_linear(current_space, next_space)
-        distance += math.sqrt(pow(next_point[0]-current_point[0],2)+pow(next_point[1]-current_point[1],2))
-        current_point = next_point 
-        current_space = next_space
-
-        while(current_space != to_space):
-            next_space = next_vertex_matrix[current_space][to_space]
-            next_point = space_connected_linear(current_space, next_space)
-            
-            # print(f"{current_space}에서 {to_space}로 가려면 {next_space}를 지나야 합니다.")
-            if(next_space != to_space):
-                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-
-                current_point = next_point
-                current_space = next_space
-
-                next_space = next_vertex_matrix[current_space][to_space]    
-                next_point = space_connected_linear(current_space, next_space)
-                
-            else:
-                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-                current_point = next_point
-                next_point = to_agent
-                distance += math.sqrt(pow(current_point[0]-next_point[0],2)+pow(current_point[1]-next_point[1],2))
-                return distance
-
-        distance += math.sqrt(pow(current_point[0]-to_agent[0],2)+pow(current_point[1]-to_agent[1],2))
-        return distance
     
     def F1_distance(self, state, action, mode):
         from model import space_connected_linear
