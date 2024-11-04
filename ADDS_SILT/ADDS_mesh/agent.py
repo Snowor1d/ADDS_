@@ -128,10 +128,11 @@ class FightingAgent(Agent):
         super().__init__(unique_id, model)
         global robot_xy
         
+        self.next_mesh = None
         self.past_mesh = None
         self.previous_mesh = None
         self.agent_pos_initialized = 0
-
+        self.pos = pos
 
         self.is_learning_state = 1
         self.robot_step = 0
@@ -339,6 +340,8 @@ class FightingAgent(Agent):
         #     return
         if(self.type == 0 or self.type == 1):
             new_position = self.agent_modeling()
+            new_position = (int(round(new_position[0])), int(round(new_position[1])))
+            self.pos = (int(round(self.pos[0])), int(round(self.pos[1])))
             self.model.grid.move_agent(self, new_position) ## 그 위치로 이동
             
 
@@ -347,10 +350,12 @@ class FightingAgent(Agent):
         global robot_prev_xy
         
 
-        exit_confirm_radius = 5
+        exit_confirm_radius = 10
         
-        now_grid = (int(self.xy[0]), int(self.xy[1]))
-        candidates = [(int(self.xy[0])+1, int(self.xy[1])+1), (int(self.xy[0])+1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])+1), (int(self.xy[0])-1, int(self.xy[1])-1), (int(self.xy[0])-1, int(self.xy[1])), (int(self.xy[0]), int(self.xy[1])-1)]
+        now_grid = (int(round(self.xy[0])), int(round(self.xy[1])))
+        x= now_grid[0]
+        y = now_grid[1]
+        candidates = [(x+1,y+1), (x+1, y), (x, y+1), (x-1, y-1), (x-1, y), (x, y-1)]
         while (now_grid not in self.model.match_grid_to_mesh.keys()) or (self.model.match_grid_to_mesh[now_grid] not in self.model.pure_mesh):
            print("355 while")
            now_grid = candidates[random.randint(0, len(candidates)-1)]
@@ -369,12 +374,12 @@ class FightingAgent(Agent):
                 exit_point_index = index
 
 
-
+        
         if (shortest_distance < exit_confirm_radius):
             self.now_goal = self.model.exit_point[exit_point_index]
             return
 
-        if(math.sqrt((pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==0) or self.agent_pos_initialized == 0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
+        if(math.sqrt((pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==1) or self.agent_pos_initialized == 0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
             self.agent_pos_initialized = 1
             self.previous_mesh = now_mesh
             self.past_mesh = self.previous_mesh
@@ -866,11 +871,10 @@ class FightingAgent(Agent):
 
         self.vel[0] = self.acc[0]
         self.vel[1] = self.acc[1]
-        self.xy = [self.xy[0], self.xy[1]]
+        #self.xy = [self.xy[0], self.xy[1]]
 
         self.xy[0] += self.vel[0] * time_step
         self.xy[1] += self.vel[1] * time_step
-        
         next_x = int(round(self.xy[0]))
         next_y = int(round(self.xy[1]))
 
@@ -878,10 +882,10 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y<0):
             next_y = 0
-        if(next_x>49):
-            next_x = 49
-        if(next_y>49):
-            next_y = 49
+        if(next_x>self.model.width-1):
+            next_x = self.model.width-1
+        if(next_y>self.model.height):
+            next_y = self.model.height-1
 
         self.robot_guide = 0
         return (next_x, next_y)

@@ -257,6 +257,7 @@ class FightingModel(Model):
         self.exit_list = []
         a = FightingAgent(self.agent_num, self, [0,0], 1)
         self.random_agent_distribute_outdoor(30, 1)
+        self.make_robot()
 
     def fill_outwalls(self, w, h):
         for i in range(w):
