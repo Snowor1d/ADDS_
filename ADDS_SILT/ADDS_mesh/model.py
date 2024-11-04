@@ -560,34 +560,14 @@ class FightingModel(Model):
 
 
 
-    # def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
-    #     inner_space = []
-    #     for i in self.outdoor_space:
-    #         if (i!=[[0,0], [5, 45]] and i!=[[45,5], [49, 49]] and i != [[0,45], [45, 49]] and i !=[[5,0], [49, 5]]):
-    #             inner_space.append(i)
-    #     space_index = 0 
-    #     if(len(inner_space) > 1):
-    #         space_index = random.randint(0, len(inner_space)-1)
-    #     else :
-    #         space_index = 0
-    #     if(len(inner_space) == 0):
-    #         return
-    #     xy = inner_space[space_index]
-
-    
-    #     x_len = xy[0][0] - xy[1][0]
-    #     y_len = xy[1][0] - xy[1][1]
-
-
-    #     x = random.randint(xy[0][0]+1, xy[1][0]-1)
-    #     y = random.randint(xy[0][1]+1, xy[1][1]-1)
-        
-
-    #     self.agent_id = self.agent_id + 10
-    #     self.robot = FightingAgent(self.agent_id, self, [x,y], 3)
-    #     self.agent_id = self.agent_id + 10
-    #     self.schedule.add(self.robot)
-    #     self.grid.place_agent(self.robot, (x, y))
+    def robot_placement(self): # 야외 공간에 무작위로 로봇 배치 
+        get_point = self.exit_point[random.randint(0, 3)]
+        get_point = (int(round(get_point[0])), int(round(get_point[1])))
+        self.agent_id = self.agent_id + 10
+        self.robot = FightingAgent(self.agent_id, self, [get_point[0],get_point[1]], 3)
+        self.agent_id = self.agent_id + 10
+        self.schedule.add(self.robot)
+        self.grid.place_agent(self.robot, (get_point[0], get_point[1]))
 
     def robot_respawn(self):
         inner_space = []
