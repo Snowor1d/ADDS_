@@ -11,7 +11,7 @@ weight_changing = [1, 1, 1, 1] # 각 w1, w2, w3, w4에 해당하는 weight를 �
 
 
 num_remained_agent = 0
-NUMBER_OF_CELLS = 50 
+NUMBER_OF_CELLS = 70 
 
 
 one_foot = 1
@@ -328,7 +328,7 @@ class FightingAgent(Agent):
         or attacks other agent."""
 
         cells_with_agents = []
-        robot_xy = [self.model.robot.xy[0], self.model.robot.xy[1]]
+        robot_xy = [self.model.robot_xy[0], self.model.robot_xy[1]]
         robot_prev_xy[0] = robot_xy[0]
         robot_prev_xy[1] = robot_xy[1]
         
@@ -485,7 +485,7 @@ class FightingAgent(Agent):
         self.xy[1] += vel[1] * time_step
         self.model.robot_xy[0] = self.xy[0]
         self.model.robot_xy[1] = self.xy[1]
-        
+
         next_x = int(round(self.xy[0]))
         next_y = int(round(self.xy[1]))
 
@@ -493,10 +493,12 @@ class FightingAgent(Agent):
             next_x = 0
         if(next_y<0):
             next_y = 0
-        if(next_x> NUMBER_OF_CELLS -1):
-            next_x = NUMBER_OF_CELLS -1
-        if(next_y> NUMBER_OF_CELLS -1):
-            next_y = NUMBER_OF_CELLS -1
+        if(next_x>self.model.width-1):
+            next_x = self.model.width-1
+        if(next_y>self.model.height):
+            next_y = self.model.height-1
+
+        self.robot_guide = 0
 
         robot_goal = [next_x, next_y]
         return (next_x, next_y)
@@ -578,8 +580,8 @@ class FightingAgent(Agent):
 
         if(self.robot_initialized == 0 ):
             self.robot_initialized = 1
-            robot_xy[0] = self.model.robot.xy[0]
-            robot_xy[1] = self.model.robot.xy[1]
+            robot_xy[0] = self.model.robot_xy[0]
+            robot_xy[1] = self.model.robot_xy[1]
             return (self.model.robot.xy[0], self.model.robot.xy[1]) ## 오호라... 처음에 리스폰 되는 거 피하려고 
         
         next_action = self.select_Q(robot_xy)
