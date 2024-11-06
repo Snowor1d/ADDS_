@@ -262,6 +262,7 @@ class FightingModel(Model):
         self.make_robot()
         self.visualize_danger()
         self.robot_xy = [0, 0]
+        self.robot_mode = 0
 
     def fill_outwalls(self, w, h):
         for i in range(w):
