@@ -49,7 +49,7 @@ import tornado.websocket
 from PIL import Image      
 from mesa_viz_tornado.UserParam import UserParam
 import cv2
-
+most_danger = 0
 width = 70
 height = 70
 model_num = 1
@@ -58,6 +58,12 @@ if visualization_mode == 'on':
     Height =height
     s_model_r = model.FightingModel(5,width,height,model_num)  
     ran_num = random.randint(10000,20000)
+    most_danger_mesh = None
+    for agent in s_model_r.schedule_e.agents:
+        if agent.type == 99:
+            if agent.danger > most_danger:
+                most_danger = agent.danger
+        
     
     
     
@@ -78,6 +84,8 @@ if visualization_mode == 'on':
     }
 
     def agent_portrayal(agent):
+
+        global most_danger
         # if the agent is buried we put it as white, not showing it.
         if agent.buried:
             portrayal = {
@@ -137,7 +145,6 @@ if visualization_mode == 'on':
             return portrayal
 
             
-        
             
 
 
@@ -161,8 +168,8 @@ if visualization_mode == 'on':
             return portrayal
         
         portrayal["r"] = 1
-        if agent.type == 1: #끌려가는 agent  
-            portrayal["Color"] = "lightsalmon"
+        if agent.type == 1: 
+            portrayal["Color"] = f"rgb(110, 110, 250)"
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 2: 
@@ -207,6 +214,12 @@ if visualization_mode == 'on':
         if agent.type == 11:
             portrayal["Color"] = "grey"
             portrayal["Layer"] = 2
+            return portrayal
+        
+        if agent.type == 99: #this for danger visualization
+            red_value = int(agent.danger/most_danger*255)
+            portrayal["Color"] = f"rgb(255,{(1-(agent.danger/most_danger)/3)*255},{(1-(agent.danger/most_danger)/3)*255})"
+            portrayal["Layer"] = 0
             return portrayal
 
         # if agent.type == 5:

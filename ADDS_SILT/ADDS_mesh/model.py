@@ -245,6 +245,7 @@ class FightingModel(Model):
         self.next_vertex_matrix = {}
         self.exit_grid = np.zeros((self.width, self.height))
         self.pure_mesh = []
+        self.mesh_danger = {}
         self.match_grid_to_mesh = {}
         self.match_mesh_to_grid = {}
         self.exit_goal_point = []
@@ -254,10 +255,13 @@ class FightingModel(Model):
         self.mesh_map()
         self.make_exit()
         self.construct_map()
+        self.calculate_mesh_danger()
         self.exit_list = []
         a = FightingAgent(self.agent_num, self, [0,0], 1)
         self.random_agent_distribute_outdoor(30, 1)
         self.make_robot()
+        self.visualize_danger()
+        self.robot_xy = [0, 0]
 
     def fill_outwalls(self, w, h):
         for i in range(w):
@@ -266,10 +270,51 @@ class FightingModel(Model):
         for j in range(h):
             self.walls.append((0, j))
             self.walls.append((w-1, j))
+    def choice_safe_mesh_visualize(self, point):
+        point_grid = (int(point[0]), int(point[1]))
+        x = point_grid[0]
+        y = point_grid[1]
+        candidates = [(x+1,y+1), (x+1, y), (x, y+1), (x-1, y-1), (x-1, y), (x, y-1)]
+        for c in candidates:
+            if (self.match_grid_to_mesh[c] in self.pure_mesh):
+                return c
+
+        return False
+
+        return self.match_grid_to_mesh[point_grid]
+    def visualize_danger(self):
+        for mesh in self.mesh:
+            for i in range(len(mesh)):
+                a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], 99)
+                
+                corresponding_mesh = self.match_grid_to_mesh[(mesh[i][0], mesh[i][1])]
+                
+                if (corresponding_mesh not in self.pure_mesh):
+                    check = self.choice_safe_mesh_visualize([mesh[i][0], mesh[i][1]])
+                    if (check == False):
+                        continue
+                    corresponding_mesh = self.match_grid_to_mesh[check]
+
+                a.danger = self.mesh_danger[corresponding_mesh]
+                self.agent_num+=1
+                self.schedule_e.add(a)
+                self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
     
+    def calculate_mesh_danger(self):
+        for mesh in self.pure_mesh:
+            shortest_distance = 9999999999
+            near_mesh = None
+            for e in self.exit_point:
+                distance = math.sqrt(pow(mesh[0][0]-e[0], 2) + pow(mesh[0][1]-e[1], 2))
+                if distance < shortest_distance:
+                    shortest_distance = distance
+                    near_mesh = e 
+            self.mesh_danger[mesh] = shortest_distance
+        return 0
+
     def mesh_map(self):
 
-        D = 40
+        D = 10
 
         map_boundary = [[0, 0], [self.width, 0], [self.width, self.height], [0, self.height]]
         obstacle_hulls = []
@@ -375,6 +420,8 @@ class FightingModel(Model):
                     i = mesh2
                     k = mesh1
                     j = mesh3
+                    if mesh1 in self.obstacle_mesh or mesh3 in self.obstacle_mesh:
+                        continue
                     if self.distance[i][k] + self.distance[k][j] < self.distance[i][j]:
                         self.distance[i][j] = self.distance[i][k] + self.distance[k][j]
                         self.next_vertex_matrix[i][j] = self.next_vertex_matrix[i][k]
@@ -960,14 +1007,6 @@ class FightingModel(Model):
                     agent.dead = True 
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-        # if(self.robot != None):
-        #     print(self.robot.robot_xy)
-        
-    
-        # Checking if there is a champion
-        # if FightingModel.current_healthy_agents(self) == 0:
-        #     self.running = False
-        #self.num_remained_agents()
 
 
 
