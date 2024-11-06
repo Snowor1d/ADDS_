@@ -177,7 +177,7 @@ if visualization_mode == 'on':
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 3: #robot
-            if agent.drag == 1: #끌고갈때
+            if s_model_r.robot_mode == 1: #끌고갈때
                 portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
             else:
                 portrayal["Color"] = "purple"

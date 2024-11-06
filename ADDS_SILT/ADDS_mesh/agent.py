@@ -177,7 +177,6 @@ class FightingAgent(Agent):
         self.now_action = ["UP", "GUIDE"]
 
         #for robot
-        self.robot_mode = 0 #1일때 Guide, 0일때 Not Guide
         self.robot_space = ((0,0), (5,45))
         self.mission_complete = 1
         self.going = 0
@@ -392,6 +391,7 @@ class FightingAgent(Agent):
 
         now_mesh = self.choice_safe_mesh(self.xy)
         if(self.robot_goal_mesh == None or (self.robot_goal_mesh == now_mesh and self.model.robot_mode == 1)): # 로봇이 누구한테 가야할지 agent 탐색
+            self.model.robot_mode = 0
             selected_agent = None
             biggest_danger = 0
             for agent in self.model.agents:
@@ -509,10 +509,7 @@ class FightingAgent(Agent):
 
     def which_goal_agent_want(self):
         global robot_prev_xy
-
-        robot_d = math.sqrt(pow(self.xy[0]-self.model.robot_xy[0],2)+pow(self.xy[1]-self.model.robot_xy[1],2)) ## agent와 robot 사이의 거리
-        
-        exit_confirm_radius = 10 ## agnet 확정 탈출 구역 반경
+        robot_radius = 7
 
         now_mesh = self.choice_safe_mesh(self.xy) ## agent가 있는 mesh
         self.danger = self.model.mesh_danger[now_mesh]
@@ -530,6 +527,17 @@ class FightingAgent(Agent):
         if (shortest_distance < exit_confirm_radius): ## agent가 탈출구에 도착했을 때
             self.now_goal = self.model.exit_point[exit_point_index]
             return
+
+        
+        robot_d = math.sqrt(pow(self.xy[0]-self.model.robot_xy[0],2)+pow(self.xy[1]-self.model.robot_xy[1],2))
+        
+        if(robot_d < robot_radius and self.model.robot_mode == 1):
+            goal_x = self.model.robot_xy[0]
+            goal_y = self.model.robot_xy[1]
+            self.type = 0
+            self.now_goal = [goal_x, goal_y]
+        else:
+            self.type = 1
 
         if(math.sqrt((pow(self.xy[0]-self.now_goal[0],2)+pow(self.xy[1]-self.now_goal[1],2))<2 and self.type==1) or self.agent_pos_initialized == 0): #로봇에 의해 가이드되고 있을때는 골에 근접하더라도 골 초기화 x
             ## agent가 가고 있는 골에 도착했을 때, 처음 agent가 생성되었을 때 
@@ -920,20 +928,6 @@ class FightingAgent(Agent):
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
 
         self.which_goal_agent_want()
-        # if(robot_d < robot_radius and robot_status == 1 and self.model.exit_way_rec[int(round(self.xy[0]))][int(round(self.xy[1]))] == 0):
-        #     # 로봇 반경 내 agent 가 있으면
-        #     goal_x = robot_x
-        #     goal_y = robot_y
-        #     goal_d = robot_d
-        #     #self.type = 1
-        #     self.now_goal = robot_goal        
-        #     self.is_traced = 5
-            
-        # else :
-        #     self.which_goal_agent_want()
-        #     if(self.is_traced>0):
-        #         self.is_traced -= 1
-        #     self.type = 0
 
         if(goal_d != 0):
           desired_force = [intend_force*(self.desired_speed_a*(goal_x/goal_d)), intend_force*(self.desired_speed_a*(goal_y/goal_d))] #desired_force : 사람이 탈출구쪽으로 향하려는 힘
