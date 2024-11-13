@@ -1093,6 +1093,12 @@ class FightingModel(Model):
     def step(self):
         """Advance the model by one step."""
         global started
+        # for agent in self.agents:
+        #     if(agent.type == 0 or agent.type == 1 or agent.type == 2):
+        #         if (agent.dead == False):
+        #             print("xy", agent.xy)
+
+               
         max_id = 1
         if(started):
             for agent in self.agents:

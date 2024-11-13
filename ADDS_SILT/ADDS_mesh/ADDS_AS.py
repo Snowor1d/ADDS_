@@ -168,9 +168,9 @@ if visualization_mode == 'on':
             return portrayal
         
         portrayal["r"] = 1
-        if agent.type == 0:
+        if agent.type == 0: # 로봇 따라가는 agent
             portrayal["Color"] = "magenta"
-            portrayal["Layer"] = 0
+            portrayal["Layer"] = 1
             return portrayal
         if agent.type == 1: 
             portrayal["Color"] = f"rgb(110, 110, 250)"

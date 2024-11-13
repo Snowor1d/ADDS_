@@ -779,6 +779,17 @@ class FightingAgent(Agent):
             self.now_goal = self.model.exit_point[exit_point_index]
             return
 
+
+        to_follow_agents = [] ## 같은 mesh에 따라갈 agent가 있는지 확인하려는 list
+        for agent in self.model.agents: ## 같은 mesh에 있는 agent들 중에서 int(round(agent.xy[0]))
+            if (agent.type == 0 or agent.type == 1): ## 로봇 following/ myway 인 agent만 확인
+                distance = math.sqrt(pow(self.xy[0]-agent.xy[0],2)+pow(self.xy[1]-agent.xy[1],2))
+                if distance < agent_radius and not agent.dead: ## agent 반경 내에 있으면
+                    to_follow_agents.append(agent)
+        if self in to_follow_agents: ## 나는 제외
+            to_follow_agents.remove(self)
+
+        robot_d = math.sqrt(pow(self.xy[0]-self.model.robot_xy[0],2) + pow(self.xy[1]-self.model.robot_xy[1],2))
         
         
         robot_d = math.sqrt(pow(self.xy[0]-self.model.robot.xy[0],2)+pow(self.xy[1]-self.model.robot.xy[1],2))
@@ -846,7 +857,7 @@ class FightingAgent(Agent):
         reward = 0
         if (mode=="GUIDE"):
             for agent in self.model.agents:
-                if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1)):
+                if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1 or agent.type == 2)):
                     reward += (agent.previous_danger - agent.danger) 
             
         else : 
