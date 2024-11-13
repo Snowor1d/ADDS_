@@ -168,16 +168,20 @@ if visualization_mode == 'on':
             return portrayal
         
         portrayal["r"] = 1
+        if agent.type == 0:
+            portrayal["Color"] = "magenta"
+            portrayal["Layer"] = 0
+            return portrayal
         if agent.type == 1: 
             portrayal["Color"] = f"rgb(110, 110, 250)"
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 2: 
-            portrayal["Color"] = "magenta"
+            portrayal["Color"] = "cyan"
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 3: #robot
-            if s_model_r.robot_mode == 1: #끌고갈때
+            if s_model_r.robot_mode == "GUIDE": #끌고갈때
                 portrayal["Color"] = "red" #빨강!!!!!!!!!!!1
             else:
                 portrayal["Color"] = "purple"
