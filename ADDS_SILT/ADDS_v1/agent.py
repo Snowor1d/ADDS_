@@ -266,6 +266,9 @@ class FightingAgent(Agent):
         self.type_1_flag = 0
         self.type_2_flag = 0
 
+        self.previous_escaped_agents = 0
+        self.escaped_agents = 0
+
 
     def __repr__(self) -> str:
         return f"{self.unique_id} -> {self.health}"
@@ -865,18 +868,58 @@ class FightingAgent(Agent):
             self.now_goal =  self.model.return_agent_id(self.follow_agent_id).xy
 
 
+    # def check_reward(self, mode):
+    #     reward = 0
+    #     if (mode=="GUIDE"):
+    #         for agent in self.model.agents:
+    #             if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1)):
+    #                 reward += (agent.previous_danger - agent.danger) 
+            
+    #     else : 
+    #         for agent in self.model.agents:
+    #             if (agent.type == 1):
+    #                 reward += agent.danger
+
+    #     return reward
+
     def check_reward(self, mode):
         reward = 0
-        if (mode=="GUIDE"):
-            for agent in self.model.agents:
-                if (agent.is_traced>0 and (agent.type == 0 or agent.type == 1)):
-                    reward += (agent.previous_danger - agent.danger) 
-            
-        else : 
-            for agent in self.model.agents:
-                if (agent.type == 1):
-                    reward += agent.danger
+        target_agent_number = 10 # target_step 동안 target_agent_number만큼의 agent가 탈출하면 reward 10
+        target_step = 100
+        a, b = divmod(self.robot_step, target_step) ## a는 몫, b는 나머지
 
+        if b == 0:
+            self.previous_escaped_agents = self.escaped_agents
+            self.escaped_agents = 0
+            for agent in self.model.agents:
+                if (agent.type == 0 or agent.type == 1 or agent.type == 2) and agent.dead == True:
+                    self.escaped_agents += 1
+        
+        escaped_agents_in_target_step = self.escaped_agents - self.previous_escaped_agents
+
+        # step 이 커질 수록 탈출하는 agent수가 적어지는 것 반영해서 reward 설정
+        if a < 2 :
+            if escaped_agents_in_target_step > target_agent_number:
+                reward = 10 
+            else:
+                reward = -10
+        elif a >= 2 and a < 4:
+            if escaped_agents_in_target_step > target_agent_number/2:
+                reward = 10
+            else:
+                reward = -10
+        elif a >= 4 and a < 6:
+            if escaped_agents_in_target_step > target_agent_number/4:
+                reward = 10
+            else:
+                reward = -10
+        else :
+            if escaped_agents_in_target_step > target_agent_number/8:
+                reward = 10
+            else:
+                reward = -10
+
+        print("reward : ", reward, "escaped_agents_in_target_step : ", escaped_agents_in_target_step)
         return reward
     
     def change_value(self, velocity_a, velocity_b, switch):
