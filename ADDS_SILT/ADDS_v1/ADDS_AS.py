@@ -23,7 +23,7 @@ import sys
 #-------------------------#
 visualization_mode = 'on' # choose your visualization mode 'on / off
 run_iteration = 1500
-number_of_agents = 11 # agents 수
+number_of_agents = 30 # agents 수
 #-------------------------#
 
 
@@ -168,16 +168,16 @@ if visualization_mode == 'on':
             return portrayal
         
         portrayal["r"] = 1
-        if agent.type == 0: # 로봇 따라가는 agent
+        if agent.type == 0:
             portrayal["Color"] = "magenta"
-            portrayal["Layer"] = 1
+            portrayal["Layer"] = 0
             return portrayal
         if agent.type == 1: 
             portrayal["Color"] = f"rgb(110, 110, 250)"
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 2: 
-            portrayal["Color"] = "cyan"
+            portrayal["Color"] = f"rgb(110, 110, 250)"
             portrayal["Layer"] = 1
             return portrayal
         if agent.type == 3: #robot
@@ -223,6 +223,39 @@ if visualization_mode == 'on':
         if agent.type == 99: #this for danger visualization
             red_value = int(agent.danger/most_danger*255)
             portrayal["Color"] = f"rgb(255,{(1-(agent.danger/most_danger)/3)*255},{(1-(agent.danger/most_danger)/3)*255})"
+            portrayal["Layer"] = 0
+            return portrayal
+
+        if agent.type == 102:
+            portrayal["Color"] = "rgb(255, 255, 255)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 103:
+            portrayal["Color"] = "rgb(240, 240, 240)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 104:
+            portrayal["Color"] = "rgb(230, 230, 230)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 103:
+            portrayal["Color"] = "rgb(220, 220, 220)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 104:
+            portrayal["Color"] = "rgb(210, 210, 210)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 105:
+            portrayal["Color"] = "rgb(200, 200, 200)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 105:
+            portrayal["Color"] = "rgb(190, 190, 190)"
+            portrayal["Layer"] = 0
+            return portrayal
+        if agent.type == 106:
+            portrayal["Color"] = "rgb(180, 180, 180)"
             portrayal["Layer"] = 0
             return portrayal
 

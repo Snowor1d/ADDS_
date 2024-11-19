@@ -1,14 +1,30 @@
 #this source code requires Mesa==2.2.1 
 #^__^
 from mesa import Agent
+import socket
+import time 
 import math
 import numpy as np
 import random
 import copy
 import sys 
 
+
+
+
+def send_command(command):
+    global s
+    s.sendall((command +"\n").encode())
+
+
+
+
+host = '172.20.10.7'
+port = 80
 weight_changing = [1, 1, 1, 1] # 각 w1, w2, w3, w4에 해당하는 weight를 변화시킬 것인가 
 
+# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# s.connect((host, port))
 
 num_remained_agent = 0
 NUMBER_OF_CELLS = 70 
@@ -306,9 +322,13 @@ class FightingAgent(Agent):
         point_grid = (int(round(point[0])), int(round(point[1])))
         x = point_grid[0]
         y = point_grid[1]
+        while_checking = 0
+
         candidates = [(x+1,y+1), (x+1, y), (x, y+1), (x-1, y-1), (x-1, y), (x, y-1)]
         while (point_grid not in self.model.match_grid_to_mesh.keys()) or (self.model.match_grid_to_mesh[point_grid] not in self.model.pure_mesh):
-            print("265 while")
+            while_checking += 1
+            if(while_checking == 50):
+                raise Exception("safe mesh를 찾지 못하였습니다.")
             point_grid = candidates[random.randint(0, len(candidates)-1)]
         return self.model.match_grid_to_mesh[point_grid]
 
@@ -414,7 +434,7 @@ class FightingAgent(Agent):
 
             new_position_robot = self.robot_policy_Q()
             #new_position_robot = self.robot_policy_A()
-
+            print("self.model.robot_mode", self.model.robot_mode)
             #self.model.reward_distance_difficulty()
 
 
@@ -462,10 +482,10 @@ class FightingAgent(Agent):
         #robot_status = 1
         global robot_prev_xy
         self.robot_previous_goal = robot_goal
-
+        print("self.model.robot_mode : ", self.model.robot_mode, "self.robot_goal_mesh : ", self.robot_goal_mesh)
         now_mesh = self.choice_safe_mesh(self.xy)
         if(self.robot_goal_mesh == None or (self.robot_goal_mesh == now_mesh and self.model.robot_mode == "GUIDE")): # 로봇이 누구한테 가야할지 agent 탐색
-            self.model.robot_mode == "NOT_GUIDE"
+            self.model.robot_mode = "NOT_GUIDE"
             selected_agent = None
             biggest_danger = 0
             for agent in self.model.agents:
@@ -474,11 +494,11 @@ class FightingAgent(Agent):
                     if (danger > biggest_danger):
                         biggest_danger = danger
                         selected_agent = agent
-            self.model.robot_mode == "NOT_GUIDE"
+            # self.model.robot_mode == "NOT_GUIDE"
             self.robot_goal_mesh = self.choice_safe_mesh(selected_agent.xy)
 
         elif(self.model.robot_mode == "NOT_GUIDE" and self.robot_goal_mesh == now_mesh): # 로봇이 Guide mode로 바뀌어야 할때
-            self.model.robot_mode == "GUIDE"
+            self.model.robot_mode = "GUIDE"
             self.robot_goal_mesh = self.choice_safe_mesh(self.choice_near_exit())
 
 
@@ -491,8 +511,12 @@ class FightingAgent(Agent):
         goal_x = self.now_goal[0] - self.xy[0]
         goal_y = self.now_goal[1] - self.xy[1]
         goal_d = math.sqrt(pow(goal_x,2) + pow(goal_y,2))
-        intend_force = 2
-        desired_speed = 3.5
+        intend_force = 2       
+        
+        desired_speed = 3
+
+        if(self.model.robot_mode == "NOT_GUIDE"): ## not guide 일 때
+            desired_speed = 6
             
         if(goal_d != 0):
             desired_force = [intend_force*(desired_speed*(goal_x/goal_d)), intend_force*(desired_speed*(goal_y/goal_d))]; #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -572,8 +596,6 @@ class FightingAgent(Agent):
             next_x = self.model.width-1
         if(next_y>self.model.height):
             next_y = self.model.height-1
-
-        self.robot_guide = 0
 
         robot_goal = [next_x, next_y]
 
@@ -753,7 +775,7 @@ class FightingAgent(Agent):
         global robot_prev_xy
         robot_radius = 7
         agent_radius = 7
-        exit_confirm_radius = 15
+        exit_confirm_radius = 12
         
         to_follow_agents = [] ## 같은 mesh에 따라갈 agent가 있는지 확인하려는 list
         for agent in self.model.agents: ## 같은 mesh에 있는 agent들 중에서 int(round(agent.xy[0]))
@@ -777,6 +799,7 @@ class FightingAgent(Agent):
         
         if (shortest_distance < exit_confirm_radius): ## agent가 탈출구에 도착했을 때
             self.now_goal = self.model.exit_point[exit_point_index]
+            self.danger = 0
             return
 
 
@@ -834,10 +857,10 @@ class FightingAgent(Agent):
                 for neighbor in self.model.adjacent_mesh[now_mesh]:
                     neighbor_coord = ((neighbor[0][0]+neighbor[1][0]+neighbor[2][0])/3, (neighbor[0][1]+neighbor[1][1]+neighbor[2][1])/3)
                     neighbors_coords.append(neighbor_coord)
-                print("neighbors_coords : ", neighbors_coords)
-                print("self.direction : ", self.direction)
+                #print("neighbors_coords : ", neighbors_coords)
+                #print("self.direction : ", self.direction)
                 self.now_goal = find_closest_direction(self.xy, self.direction, neighbors_coords)
-                print(self.now_goal)
+                #print(self.now_goal)
             else :
                 mesh_index = random.randint(0, len(self.model.pure_mesh)-1)
                 random_mesh_choice = self.model.pure_mesh[mesh_index]
@@ -883,6 +906,7 @@ class FightingAgent(Agent):
         #next_action = self.select_Q(robot_xy)
         next_action = self.select_Q(self.xy)
 
+
         if (next_action[1] == "GUIDE"):
             reward = self.check_reward("GUIDE")
         else :
@@ -914,7 +938,7 @@ class FightingAgent(Agent):
         desired_speed = 3
 
         if(self.model.robot_mode == "NOT_GUIDE"): ## not guide 일 때
-            desired_speed = 5
+            desired_speed = 6
         
             
         if(goal_d != 0):
@@ -964,8 +988,8 @@ class FightingAgent(Agent):
 
                 elif(near_agent.type == 11 or near_agent.type == 9):## 검정벽 
                     #print("짠!")
-                    repulsive_force[0] += 15*np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 15*np.exp(-(d/2))*(d_y/d)
+                    repulsive_force[0] += 2 *np.exp(-(d/2))*(d_x/d)
+                    repulsive_force[1] += 2 *np.exp(-(d/2))*(d_y/d)
 
         F_x = 0
         F_y = 0
@@ -1036,7 +1060,7 @@ class FightingAgent(Agent):
         number_a = 0
         robot_radius = 7
         for i in self.model.agents:
-            if(i.dead == False and (i.type == 0 or i.type == 1)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
+            if(i.dead == False and (i.type == 0 or i.type == 1 or i.type == 2)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
                 if (pow(robot_xyP[0]-i.xy[0], 2) + pow(robot_xyP[1]-i.xy[1], 2)) < pow(robot_radius, 2) : ## 로봇 반경 내에 agent가 있다면
                     number_a += 1
         return number_a
@@ -1154,8 +1178,8 @@ class FightingAgent(Agent):
                     repulsive_force[1] += 1*np.exp(-(d/2))*(d_y/d) 
 
                 elif(near_agent.type == 11 or near_agent.type == 9):## 검정벽 
-                    repulsive_force[0] += 3*np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 3*np.exp(-(d/2))*(d_y/d)
+                    repulsive_force[0] += 2*np.exp(-(d/2))*(d_x/d)
+                    repulsive_force[1] += 2*np.exp(-(d/2))*(d_y/d)
             else :
                 if(random_disperse):
                     repulsive_force = [1, -1]
@@ -1173,10 +1197,13 @@ class FightingAgent(Agent):
         robot_d = math.sqrt(pow(robot_x,2)+pow(robot_y,2))
 
         self.which_goal_agent_want()
+        if(self.robot_initialized == 1):
+            self.robot_initalized += 1
+            self.now_goal = [self.xy[0], self.xy[1]]
         self.previous_type = self.type
-        for agent in self.model.agents:
-            if (agent.type == 0):
-                print(f"Type: {agent.type}, {agent.unique_id} ({self.model.return_agent_id(agent.unique_id).xy}) is following ROBOT ({self.model.robot.xy}), and now_goal: {agent.now_goal}")
+        # for agent in self.model.agents:
+            # if (agent.type == 0):
+                # print(f"Type: {agent.type}, {agent.unique_id} ({self.model.return_agent_id(agent.unique_id).xy}) is following ROBOT ({self.model.robot.xy}), and now_goal: {agent.now_goal}")
                 
         if(goal_d != 0):
           desired_force = [intend_force*(self.desired_speed_a*(goal_x/goal_d)), intend_force*(self.desired_speed_a*(goal_y/goal_d))] #desired_force : 사람이 탈출구쪽으로 향하려는 힘
@@ -1310,7 +1337,7 @@ class FightingAgent(Agent):
                 for agent in self.model.agents :
                     if not isinstance(agent.xy[0], int): # [0, 0] , [4, 60] 같이 없는 agent인데 agent.xy 찍으면 나오는 애들 있음; int인 애들 걸러버림
                         if agent.xy[0] >= space[0][0] and agent.xy[0] <= space[1][0] and agent.xy[1] >= space[0][1] and agent.xy[1] <= space[1][1] :
-                            if agent.type == 0 or agent.type == 1 :
+                            if agent.type == 0 or agent.type == 1 or agent.type == 2:
                                 danger += agent.danger
                 danger = danger / ((space[1][0] - space[0][0]) * (space[1][1] - space[0][1]))
                 if (index + 1) == 12 :
@@ -1330,7 +1357,7 @@ class FightingAgent(Agent):
                 for agent in self.model.agents :
                     if not isinstance(agent.xy[0], int): # [0, 0] , [4, 60] 같이 없는 agent인데 agent.xy 찍으면 나오는 애들 있음; int인 애들 걸러버림
                         if agent.xy[0] >= space[0][0] and agent.xy[0] <= space[1][0] and agent.xy[1] >= space[0][1] and agent.xy[1] <= space[1][1] :
-                            if agent.type == 0 or agent.type == 1 :
+                            if agent.type == 0 or agent.type == 1 or agent.type == 2:
                                 danger += agent.danger
                 danger = danger / ((space[1][0] - space[0][0]) * (space[1][1] - space[0][1]))
                 if danger > max_danger :
@@ -1346,7 +1373,7 @@ class FightingAgent(Agent):
                 for agent in self.model.agents :
                     if not isinstance(agent.xy[0], int): # [0, 0] , [4, 60] 같이 없는 agent인데 agent.xy 찍으면 나오는 애들 있음; int인 애들 걸러버림
                         if agent.xy[0] >= space[0][0] and agent.xy[0] <= space[1][0] and agent.xy[1] >= space[0][1] and agent.xy[1] <= space[1][1] :
-                            if agent.type == 0 or agent.type == 1 :
+                            if agent.type == 0 or agent.type == 1 or agent.type == 2:
                                 danger += agent.danger
                 if index + 1 == 2:
                     area = 108
@@ -1385,7 +1412,7 @@ class FightingAgent(Agent):
                 for agent in self.model.agents :
                     if not isinstance(agent.xy[0], int): # [0, 0] , [4, 60] 같이 없는 agent인데 agent.xy 찍으면 나오는 애들 있음; int인 애들 걸러버림
                         if agent.xy[0] >= space[0][0] and agent.xy[0] <= space[1][0] and agent.xy[1] >= space[0][1] and agent.xy[1] <= space[1][1] :
-                            if agent.type == 0 or agent.type == 1 :
+                            if agent.type == 0 or agent.type == 1 or agent.type == 2:
                                 danger += agent.danger
                 if index + 1 == 6:
                     area = 372
@@ -1402,9 +1429,10 @@ class FightingAgent(Agent):
         
 
         # 로봇 주변의 danger 밀도 계산. 로봇 반경 내 장애물 있으면 area에 그만큼 제외
+        robot_xy = [self.xy[0], self.xy[1]]
         robot_group_danger = 0
         for agent in self.model.agents:
-            if(agent.dead == False and (agent.type == 0 or agent.type == 1)): ##  agent가 살아있을 때 / 끌려가는 agent 일 때
+            if(agent.dead == False and (agent.type == 0 or agent.type == 1 or agent.type == 2)) : 
                 robot_xy = [self.xy[0], self.xy[1]]
                 if (pow(robot_xy[0]-agent.xy[0], 2) + pow(robot_xy[1]-agent.xy[1], 2)) <= pow(robot_radius, 2) : ## 로봇 반경 내에 agent가 있다면
                     robot_group_danger += agent.danger
@@ -1423,29 +1451,52 @@ class FightingAgent(Agent):
         area = math.pi * pow(robot_radius, 2)
         area -= overlap_count
         robot_group_danger = robot_group_danger / area
+        # print("overlap_count", overlap_count)
+        # print("robot_area", area)
+        # print("dangerous_space", dangerous_space+1)
+        # print("robot_group_danger", robot_group_danger)
+        # print("max_danger", max_danger)
 
-        print("robot_group_danger", robot_group_danger)
-        print("max_danger", max_danger)
+        # # danger 밀도 비교하여 로봇 모드 변경 여부 판단
+        # if self.model.robot_mode == "NOT_GUIDE":
+        #     print("not guide mode")
+        # else:
+        #     print("guide mode")
 
-        # danger 밀도 비교하여 로봇 모드 변경 여부 판단
-        if self.model.robot_mode == "NOT_GUIDE":
-            print("not guide mode")
-        else:
-            print("guide mode")
-        coeff_ng2g = 1.0
-        coeff_g2ng = 1.5       
+        if self.model.map_num == 1 or self.model.map_num == 2 or self.model.map_num == 5:
+            coeff_ng2g = 1
+            coeff_g2ng = 2       
+            agent_count = 0
+            for agent in self.model.agents:
+                if (agent.dead == False  and (agent.type == 0 or agent.type == 1 or agent.type == 2)) :
+                    agent_count += 1
+            # print("agent_count", agent_count)
+            if agent_count <= 5:
+                coeff_ng2g = 0.5
+
+        if self.model.map_num == 3 or self.model.map_num == 4:
+            coeff_ng2g = 0.8
+            coeff_g2ng = 3       
+            agent_count = 0
+            for agent in self.model.agents:
+                if (agent.dead == False  and (agent.type == 0 or agent.type == 1 or agent.type == 2)) :
+                    agent_count += 1
+            # print("agent_count", agent_count)
+            if agent_count <= 5:
+                coeff_ng2g = 0.5
+
         if self.model.robot_mode == "NOT_GUIDE": # not guide 상태일 때
             if robot_group_danger >= coeff_ng2g * max_danger:
                 self.model.robot_mode = "GUIDE"
                 self.drag = 1
-                print("not guide -> guide change. ")
-                print("robot_group_danger(", robot_group_danger, ") >= coeff_ng2g(", coeff_ng2g, ") * max_danger(", max_danger, ")")
+                # print("not guide -> guide change. ")
+                # print("robot_group_danger(", robot_group_danger, ") >= coeff_ng2g(", coeff_ng2g, ") * max_danger(", max_danger, ")")
         else: # guide 상태일 때
             if max_danger >= coeff_g2ng * robot_group_danger:  # guide 포기하고 not guide 하는 건 진짜 위험한 그룹이 있다고 판단될 때만.
                 self.model.robot_mode = "NOT_GUIDE"
                 self.drag = 0
-                print("guide -> not guide change. ")
-                print("max_danger(", max_danger, ") >= coeff_g2ng(", coeff_g2ng, ") * robot_group_danger(", robot_group_danger, ")")
+                # print("guide -> not guide change. ")
+                # print("max_danger(", max_danger, ") >= coeff_g2ng(", coeff_g2ng, ") * robot_group_danger(", robot_group_danger, ")")
 
 
     def F2_near_agents(self, state, action, mode):
