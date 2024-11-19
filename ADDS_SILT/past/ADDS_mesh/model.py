@@ -19,7 +19,7 @@ from sklearn.cluster import DBSCAN
 from matplotlib.path import Path
 import triangle as tr
 
-import cv2
+#import cv2
 
 def are_meshes_adjacent(mesh1, mesh2):
     # 두 mesh의 공통 꼭짓점의 개수를 센다
@@ -219,7 +219,7 @@ class FightingModel(Model):
 
         self.spaces_of_map = []
         self.obstacles_grid_points = []
-        self.map_num = 4 # 1 : 산학협력관 + 잔디밭 / 2 : 제2 공학관 + 정원 / 3 : 공학실습동 + 제2 연구동 / 4 : 벤젠고리관 / 5 : 경영관 + 퇴계 인문관
+        self.map_num = model_num # 1 : 산학협력관 + 잔디밭 / 2 : 제2 공학관 + 정원 / 3 : 공학실습동 + 제2 연구동 / 4 : 벤젠고리관 / 5 : 경영관 + 퇴계 인문관
 
         self.running = (
             True  # required by the MESA Model Class to start and stop the simulation
@@ -270,6 +270,27 @@ class FightingModel(Model):
         #self.visualize_danger()
         self.robot_xy = [0, 0]
         self.robot_mode = "NOT_GUIDE"
+        self.step_count = 0
+
+    def alived_agents(self):
+        alived_agents = 0
+        for i in self.schedule.agents:
+            if((i.type==0 or i.type==1 or i.type==2) and i.dead == 0):
+                alived_agents += 1
+        return alived_agents 
+
+    
+    def write_log(self):
+        
+        evacuated_agent_num = 0
+        for i in self.schedule.agents:
+            if((i.type==0 or i.type==1 or i.type==2) and i.dead == 1):
+                evacuated_agent_num += 1
+
+        with open("experiment.txt", "a") as f:
+            f.write(f"{self.step_count} {evacuated_agent_num}\n")
+        with open("experiment2.txt", "a") as f2:
+            f2.write(f"{evacuated_agent_num}\n")
 
 
 
@@ -324,7 +345,7 @@ class FightingModel(Model):
 
     def mesh_map(self):
 
-        D = 15
+        D = 20
         map_boundary = [[0, 0], [self.width, 0], [self.width, self.height], [0, self.height]]
         obstacle_hulls = []
 
@@ -574,6 +595,7 @@ class FightingModel(Model):
             self.grid.place_agent(a, self.walls[i])
         for i in range(len(self.obstacles)):
             for each_point in  get_points_within_polygon(self.obstacles[i], 1):
+                self.obstacles_grid_points.append(each_point)
                 a = FightingAgent(self.agent_num, self, each_point, 9)
                 self.agent_num+=1
                 self.schedule_e.add(a)
@@ -593,11 +615,11 @@ class FightingModel(Model):
 
         # for mesh in self.mesh:
         #     num +=1 
-            # for i in range(len(mesh)):
-            #     a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], num%11+1)
-            #     self.agent_num+=1
-            #     self.schedule_e.add(a)
-            #     self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
+        #     for i in range(len(mesh)):
+        #         a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], 102+num%5)
+        #         self.agent_num+=1
+        #         self.schedule_e.add(a)
+        #         self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
 
 
                                   
@@ -1111,9 +1133,10 @@ class FightingModel(Model):
             for agent in self.agents:
                 if(max_id == agent.unique_id):
                     agent.dead = True 
+        self.step_count += 1
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
-
+        self.write_log()
 
 
     def return_agent_id(self, agent_id):
@@ -1155,17 +1178,3 @@ class FightingModel(Model):
         """
         return sum([1 for agent in model.schedule_e.agents if agent.health == 0])
 
-    def num_remained_agents(self):
-        #from model import Model
-        self.num_remained_agent = 0
-        space_agent_num = {}
-        for i in self.space_list:
-            space_agent_num[((i[0][0],i[0][1]), (i[1][0], i[1][1]))] = 0
-        for i in self.agents:
-            space_xy = self.grid_to_space[int(round((i.xy)[0]))][int(round((i.xy)[1]))]
-            if(i.dead == False and (i.type==0 or i.type==1)):
-                space_agent_num[((space_xy[0][0], space_xy[0][1]), (space_xy[1][0], space_xy[1][1]))] +=1 
-        
-        for j in space_agent_num.keys():
-            self.num_remained_agent += space_agent_num[j]
-        return self.num_remained_agent
