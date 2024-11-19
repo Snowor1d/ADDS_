@@ -1595,64 +1595,54 @@ class FightingAgent(Agent):
         for i in del_object:
             action_list.remove(i)
 
-        Q_list = []
+        Q_list_guide = []
+        Q_list_not_guide = []
         #print("action_list : ", action_list)
         for i in range(len(action_list)):
-            Q_list.append(0)
+            Q_list_guide.append(0)
+            Q_list_not_guide.append(0)
         MAX_Q =-999999999
+
         ## 초기 selected 값 random 선택 ##
         values = ["UP", "DOWN", "LEFT", "RIGHT"]
         selected = random.choice(values)
 
-        # print("F1 : " , self.F1_distance(state, "UP", "GUIDE"))
-        # print("F2 : " , self.F2_near_agents(state, "LEFT", "GUIDE"))
-        self.robot_mode_switch()
-
-        if(self.model.robot_mode=="GUIDE"):
-            for j in range(len(action_list)):
-                f1 = self.F1_distance(state, action_list[j], "GUIDE")
-                
-                f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
-                
-                # guide 모드일때 weight는 feature_weights_guide
-                Q_list[j] = f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1]   
-                
-                if (Q_list[j]>MAX_Q):
-                    MAX_Q= Q_list[j]
-                    selected = action_list[j]
-                
-                exploration_rate = 0
-            
-                if random.random() <= exploration_rate:
-                    selected = random.choice(action_list)
-            
-                self.now_action = [selected, "GUIDE"]
-
-
-            return self.now_action
+        exploration_rate = 0.2
+        for j in range(len(action_list)):
+            f1 = self.F1_distance(state, action_list[j], "GUIDE") 
+            f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
+            f3_f4 = self.F3_F4_direction_agents_danger(state, action_list[j])
+            f3 = f3_f4[0]
+            f4 = f3_f4[1]
+            # guide 모드일때 weight는 feature_weights_guide
+            Q_list_guide[j] = f1 * self.feature_weights_guide[0] + f2 *self.feature_weights_guide[1] 
+            Q_list_not_guide[j] = f3 * self.feature_weights_not_guide[0] + f4 * self.feature_weights_not_guide[1]
         
+            if (Q_list_guide[j]>MAX_Q):
+                MAX_Q= Q_list_guide[j]
+                selected = action_list[j]
+                self.model.robot_mode = "GUIDE"
 
-        elif(self.model.robot_mode=="NOT_GUIDE"):
-            for j in range(len(action_list)):
-                f3_f4 = self.F3_F4_direction_agents_danger(state, action_list[j])
-                f3 = f3_f4[0]
-                f4 = f3_f4[1]
-                if True : # guide 모드일때 weight는 feature_weights_guide
-                    Q_list[j] = f3 * self.feature_weights_not_guide[0] + f4 * self.feature_weights_not_guide[1]
-                # if(action_list[j] == self.robot_previous_action):
-                #     Q_list[j] *= consistency_mul
-                if (Q_list[j]>MAX_Q):
-                    MAX_Q= Q_list[j]
-                    selected = action_list[j]
-                exploration_rate = 0.05
-            
-                if random.random() <= exploration_rate:
-                    selected = random.choice(action_list)
-            
-                self.now_action = [selected, "NOT_GUIDE"]
-                self.robot_previous_action = selected
-            # print("selected : ", self.now_action)
-            return self.now_action
+            if (Q_list_not_guide[j]>MAX_Q):
+                MAX_Q= Q_list_not_guide[j]
+                selected = action_list[j]
+                self.model.robot_mode = "NOT_GUIDE"
+
+        # print("Q_list_guide : ", Q_list_guide)
+        # print("Q_list_not_guide : ", Q_list_not_guide)
+        # print("self.now_action : ", self.now_action)
+        if random.random() <= exploration_rate:
+            print("exploration!")
+            selected = random.choice(action_list)
+            if self.model.robot_mode == "GUIDE":
+                self.model.robot_mode = "NOT_GUIDE"
+            else:
+                self.model.robot_mode = "GUIDE"
+            # print("self.now_action_exploration : ", self.now_action)
+
+        self.now_action = [selected, self.model.robot_mode]
+        return self.now_action
+        
         
     def how_urgent_another_space_is(self):
         global robot_xy 
