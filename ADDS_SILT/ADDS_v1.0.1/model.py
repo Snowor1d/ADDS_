@@ -475,7 +475,7 @@ class FightingModel(Model):
         
         boundary_coords = []
         boundary_coords = list(set(map(tuple, boundary_coords)))
-        
+
         for i in range(self.width):
             for j in range(self.height):
                 for mesh in self.pure_mesh:
@@ -485,10 +485,13 @@ class FightingModel(Model):
                         self.match_mesh_to_grid[mesh].append([i, j])
         for i in range(self.width):
             for j in range(self.height):
-                if (i, j) not in self.match_grid_to_mesh.keys():
-                    self.valid_space[(i, j)] = 0
-                else:
-                    self.valid_space[(i, j)] = 1
+                for mesh in self.pure_mesh:
+                    if [i, j] in self.match_mesh_to_grid[mesh]:
+                        self.valid_space[(i, j)] = 1
+                        break
+                    else:
+                        self.valid_space[(i, j)] = 0
+
         for i in range(self.width):
             self.valid_space[(i, 70)] = 0
             self.valid_space[(i, 71)] = 0
