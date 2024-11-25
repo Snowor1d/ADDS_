@@ -434,10 +434,13 @@ class FightingAgent(Agent):
             
             self.robot_step += 1
                    
+            if (self.model.robot_type == "Q"):
+                new_position_robot = self.robot_policy_Q()
+            elif (self.model.robot_type == "A"):
+                new_position_robot = self.robot_policy_A()
 
-            new_position_robot = self.robot_policy_Q()
             #new_position_robot = self.robot_policy_A()
-            print("self.model.robot_mode", self.model.robot_mode)
+            #print("self.model.robot_mode", self.model.robot_mode)
             #self.model.reward_distance_difficulty()
 
 
@@ -497,6 +500,9 @@ class FightingAgent(Agent):
                     if (danger > biggest_danger):
                         biggest_danger = danger
                         selected_agent = agent
+            if(selected_agent == None):
+                self.robot_goal_mesh = self.choice_safe_mesh(self.choice_near_exit())
+                return [50, 50]
             # self.model.robot_mode == "NOT_GUIDE"
             self.robot_goal_mesh = self.choice_safe_mesh(selected_agent.xy)
 
@@ -881,46 +887,14 @@ class FightingAgent(Agent):
     #                 reward += agent.danger
 
     #     return reward
-
-    def check_reward(self, mode):
-        reward = 0
-        target_agent_number = 10 # target_step 동안 target_agent_number만큼의 agent가 탈출하면 reward 10
-        target_step = 100
-        a, b = divmod(self.robot_step, target_step) ## a는 몫, b는 나머지
-
-        if b == 0:
-            self.previous_escaped_agents = self.escaped_agents
-            self.escaped_agents = 0
-            for agent in self.model.agents:
-                if (agent.type == 0 or agent.type == 1 or agent.type == 2) and agent.dead == True:
-                    self.escaped_agents += 1
-        
-        escaped_agents_in_target_step = self.escaped_agents - self.previous_escaped_agents
-
-        # step 이 커질 수록 탈출하는 agent수가 적어지는 것 반영해서 reward 설정
-        if a < 2 :
-            if escaped_agents_in_target_step > target_agent_number:
-                reward = 10 
-            else:
-                reward = -10
-        elif a >= 2 and a < 4:
-            if escaped_agents_in_target_step > target_agent_number/2:
-                reward = 10
-            else:
-                reward = -10
-        elif a >= 4 and a < 6:
-            if escaped_agents_in_target_step > target_agent_number/4:
-                reward = 10
-            else:
-                reward = -10
-        else :
-            if escaped_agents_in_target_step > target_agent_number/8:
-                reward = 10
-            else:
-                reward = -10
-
-        print("reward : ", reward, "escaped_agents_in_target_step : ", escaped_agents_in_target_step)
-        return reward
+    
+    #{
+    # 
+    #  1 : 20(step)
+    #  2 : 21 
+    # 
+    # 
+    # }
     
     def change_value(self, velocity_a, velocity_b, switch):
         self.velocity_a = velocity_a
@@ -939,10 +913,10 @@ class FightingAgent(Agent):
         next_action = self.select_Q(self.xy)
 
 
-        if (next_action[1] == "GUIDE"):
-            reward = self.check_reward("GUIDE")
-        else :
-            reward = self.check_reward("NOT_GUIDE")
+        # if (next_action[1] == "GUIDE"):
+        #     reward = self.check_reward("GUIDE")
+        # else :
+        #     reward = self.check_reward("NOT_GUIDE")
 
 
         # if(self.is_learning_state == 1):
@@ -1650,7 +1624,7 @@ class FightingAgent(Agent):
         values = ["UP", "DOWN", "LEFT", "RIGHT"]
         selected = random.choice(values)
 
-        exploration_rate = 0.2
+        exploration_rate = 0.1
         for j in range(len(action_list)):
             f1 = self.F1_distance(state, action_list[j], "GUIDE") 
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")
@@ -1675,7 +1649,7 @@ class FightingAgent(Agent):
         # print("Q_list_not_guide : ", Q_list_not_guide)
         # print("self.now_action : ", self.now_action)
         if random.random() <= exploration_rate:
-            print("exploration!")
+            # print("exploration!")
             selected = random.choice(action_list)
             if self.model.robot_mode == "GUIDE":
                 self.model.robot_mode = "NOT_GUIDE"
@@ -1931,13 +1905,12 @@ class FightingAgent(Agent):
 
     def update_weight(self,reward):  
         global weight_changing
-        global robot_xy
 
         alpha = 0.1
         discount_factor = 0.1
         next_robot_xy = [0,0]
-        next_robot_xy[0] = robot_xy[0]
-        next_robot_xy[1] = robot_xy[1]
+        next_robot_xy[0] = self.model.robot.xy[0]
+        next_robot_xy[1] = self.model.robot.xy[1]
         
         # select_Q에서 내주는 action에 따라 다음 state 계산
         if self.now_action[0] == 'UP':
@@ -1960,6 +1933,13 @@ class FightingAgent(Agent):
                 self.w1 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f1
             if(weight_changing[1]):
                 self.w2 += alpha * (reward + discount_factor * next_state_max_Q - present_state_Q) * f2
+
+            with open('weight.txt', 'w') as file:
+                file.write(f"{self.w1}\n")
+                file.write(f"{self.w2}\n")
+                file.write(f"{self.w3}\n")
+                file.write(f"{self.w4}\n")
+            
             self.feature_weights_guide[0] = self.w1
             self.feature_weights_guide[1] = self.w2 
             with open ('log_guide.txt', 'a') as f:

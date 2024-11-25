@@ -6,6 +6,9 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.space import ContinuousSpace
 from mesa.datacollection import DataCollector
+from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.ops import triangulate
+import matplotlib.tri as mtri
 
 import agent
 from agent import WallAgent
@@ -211,12 +214,12 @@ def generate_segments_with_points(vertices, segments, D):
 class FightingModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, number_agents: int, width: int, height: int, model_num = -1):
+    def __init__(self, number_agents: int, width: int, height: int, model_num = -1, robot = 'Q'):
 
         if (model_num == -1):
             model_num = random.randint(1,5)
 
-
+        self.robot_type = robot
         self.spaces_of_map = []
         self.obstacles_grid_points = []
         self.map_num = model_num # 1 : 산학협력관 + 잔디밭 / 2 : 제2 공학관 + 정원 / 3 : 공학실습동 + 제2 연구동 / 4 : 벤젠고리관 / 5 : 경영관 + 퇴계 인문관
@@ -232,7 +235,7 @@ class FightingModel(Model):
                 "Non Healthy Agents": FightingModel.current_non_healthy_agents,
             }
         )
-
+        self.total_agents = number_agents
         self.width = width
         self.height = height      
         self.obstacle_mesh = []
@@ -265,7 +268,7 @@ class FightingModel(Model):
         self.construct_map()
         self.calculate_mesh_danger()
         self.exit_list = []
-        self.random_agent_distribute_outdoor(30, 1)
+        self.random_agent_distribute_outdoor(number_agents, 1)
         self.make_robot()
         #self.visualize_danger()
         self.robot_xy = [0, 0]
@@ -273,11 +276,18 @@ class FightingModel(Model):
         self.step_count = 0
 
     def alived_agents(self):
-        alived_agents = 0
+        alived_agents = self.total_agents
         for i in self.schedule.agents:
-            if((i.type==0 or i.type==1 or i.type==2) and i.dead == 0):
-                alived_agents += 1
+            if((i.type==0 or i.type==1 or i.type==2) and i.dead == 1):
+                alived_agents -= 1
         return alived_agents 
+
+    def evacuated_agents(self):
+        evacuated_agents = 0
+        for i in self.schedule.agents:
+            if((i.type==0 or i.type==1 or i.type==2) and i.dead == 1):
+                evacuated_agents += 1
+        return evacuated_agents
 
     
     def write_log(self):
@@ -361,7 +371,6 @@ class FightingModel(Model):
         vertices = map_boundary.copy()
         for hull_points in obstacle_hulls:
             vertices.extend(hull_points.tolist())
-
         segments = [[i, (i + 1) % 4] for i in range(4)]  # 맵의 경계
         offset = 4  # 맵 경계 포인트를 위한 오프셋
 
@@ -390,8 +399,6 @@ class FightingModel(Model):
             internal_coords = calculate_internal_coordinates_in_triangle(self.width, self.height, v0, v1, v2, D)
             # 내부 좌표 저장
             self.mesh.append(internal_coords)
-            
-
         for mesh in self.mesh_list:
             internal_coords = calculate_internal_coordinates_in_triangle(self.width, self.height, mesh[0], mesh[1], mesh[2], D)
             for i in internal_coords:
@@ -408,8 +415,7 @@ class FightingModel(Model):
                         self.obstacle_mesh.append(mesh)
                 elif len(obstacle) == 3:
                     if is_point_in_triangle(middle_point, obstacle[0], obstacle[1], obstacle[2]):
-                        self.obstacle_mesh.append(mesh)
-
+                        self.obstacle_mesh.append(mesh)            
 
         path = {}
         
@@ -461,9 +467,12 @@ class FightingModel(Model):
         for mesh in self.mesh_list:
             if mesh not in self.obstacle_mesh:
                 self.pure_mesh.append(mesh)
+        # print("pure mesh 개수 : ", len(self.pure_mesh))
+        # print("obstacle mesh 개수 : ", len(self.obstacle_mesh))
+        # print("첫번쨰 pure mesh : ", self.pure_mesh[0])
 
         
-
+        boundary_coords = []
         boundary_coords = list(set(map(tuple, boundary_coords)))
         
         for i in range(self.width):
@@ -1138,6 +1147,11 @@ class FightingModel(Model):
         self.datacollector_currents.collect(self)  # passing the model
         #self.write_log()
 
+    def check_reward(self, reference_reward):
+        if self.step_count >= len(reference_reward*100):
+            return self.evacuated_agents()-reference_reward[self.step_count]
+        else :
+            return self.evacuated_agents()-self.total_agents
 
     def return_agent_id(self, agent_id):
         for agent in self.agents:
