@@ -38,20 +38,20 @@ reference_reward = [[30]*20, [30]*20, [30]*20, [30]*20, [30]*20]
 #[[0]]
 #reference_reward dict list 만들기
 
-for i in range(5):
-    model_o1 = model.FightingModel(number_of_agents, 70, 70, i+1, 'A')
-    step = 0
-    while(True):
-        step += 1
-        model_o1.step()
-        reference_reward[i][int(step/100)] = model_o1.evacuated_agents()-3
-        if (model_o1.alived_agents() <= 1 or step>=max_step_num):
-            break
-    del model_o1
-    print(f"{i+1}번째 모델의 reference_reward 생성함")
+# for i in range(5):
+#     model_o1 = model.FightingModel(number_of_agents, 70, 70, i+1, 'A')
+#     step = 0
+#     while(True):
+#         step += 1
+#         model_o1.step()
+#         reference_reward[i][int(step/100)] = model_o1.evacuated_agents()-3
+#         if (model_o1.alived_agents() <= 1 or step>=max_step_num):
+#             break
+#     del model_o1
+#     print(f"{i+1}번째 모델의 reference_reward 생성함")
 
-print("reference_reward 생성 완료")
-print(reference_reward)
+# print("reference_reward 생성 완료")
+# print(reference_reward)
 
 for j in range(run_iteration):
     print(f"{j} 번째 학습 ")
@@ -84,13 +84,16 @@ for j in range(run_iteration):
                 try:
                     step_num += 1
                     model_o.step()
-                    reward = (model_o.check_reward(reference_reward[model_num])+1.5)/100
+                    #reward = (model_o.check_reward(reference_reward[model_num])+1.5)/100
+                    reward = 0
+                    reward += (model_o.check_reward_danger()-1) / 1000
                     print("reward : ", reward)
                     if(step_num%300 == 0):
                         model_o.robot.update_weight(reward)
+                        reward = 0
                     #reference_reward 업데이트
-                    if (model_o.evacuated_agents() > reference_reward[model_num][int(step_num/100)]):
-                        reference_reward[model_num][int(step_num/100)] = (model_o.evacuated_agents()+reference_reward[model_num][int(step_num/100)])/2
+                    # if (model_o.evacuated_agents() > reference_reward[model_num][int(step_num/100)]):
+                    #     reference_reward[model_num][int(step_num/100)] = (model_o.evacuated_agents()+reference_reward[model_num][int(step_num/100)])/2
 
                     if step_num >= max_step_num:
                         break

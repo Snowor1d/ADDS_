@@ -1165,12 +1165,19 @@ class FightingModel(Model):
         self.schedule.step()
         self.datacollector_currents.collect(self)  # passing the model
         #self.write_log()
+        print("reward: ", self.check_reward_danger())
 
     def check_reward(self, reference_reward):
         if self.step_count <= len(reference_reward*100):
             return self.evacuated_agents()-reference_reward[int(self.step_count/100)]
         else :
             return self.evacuated_agents()-self.total_agents
+    def check_reward_danger(self):
+        reward = 0
+        for agent in self.agents:
+            if(agent.type == 0 or agent.type == 1 or agent.type== 2) and (agent.dead == False) and (agent.robot_tracked>0):
+                reward += agent.gain
+        return reward
 
     def return_agent_id(self, agent_id):
         for agent in self.agents:

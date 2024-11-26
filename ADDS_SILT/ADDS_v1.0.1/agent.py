@@ -181,6 +181,7 @@ class CrowdAgent(Agent):
         self.behavior_probability = [random.gauss(0.9, 0.1), random.gauss(0.2, 0.1), random.gauss(0.1, 0.1)] #robot #동조 #myway
         self.is_learning_state = 1
         self.robot_step = 0
+        self.gain = 0
         self.goal_init = 0
         self.type = type
         self.robot_previous_action = "UP"
@@ -537,11 +538,10 @@ class CrowdAgent(Agent):
         # desired_speed = 2 # agent가 갈 수 있는 최대 속도, 나중에는 정규분포화 시킬 것
         repulsive_force = [0, 0]
         self.previous_danger = self.danger
-        self.danger = 999999
-        # for each_goal in self.model.exit_goal_list:
-        #     danger = self.agent_to_agent_distance_real(each_goal, self.xy)
-        #     if(danger<self.danger):
-        #         self.danger = danger
+        self.danger = 99999
+        for i in self.model.exit_point:
+            self.danger = min(self.danger, self.point_to_point_distance([self.xy[0], self.xy[1]], i))
+        self.gain = self.previous_danger - self.danger
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -671,6 +671,7 @@ class CrowdAgent(Agent):
         if self.not_tracking > 0:
             self.not_tracking -= 1
         if(robot_d < robot_radius and self.model.robot_mode == "GUIDE" and self.not_tracking == 0):
+            self.robot_tracked = 7
             self.type = 0
             if self.previous_type != 0:
                 if random.choices([0, 1], weights=[0.1, 0.9], k=1)[0] == 0:
@@ -725,6 +726,8 @@ class CrowdAgent(Agent):
         
         if self.type == 2:
             self.now_goal =  self.model.return_agent_id(self.follow_agent_id).xy
+        if (self.robot_tracked>0):
+            self.robot_tracked -= 1
 
 
   
@@ -1175,7 +1178,7 @@ class RobotAgent(CrowdAgent):
     def update_weight(self,reward):  
         global weight_changing
         global robot_xy
-        print("self.buffer : ", self.buffer)
+        #print("self.buffer : ", self.buffer)
         alpha = 0.1
         discount_factor = 0.1
         next_robot_xy = [0,0]
@@ -1186,14 +1189,14 @@ class RobotAgent(CrowdAgent):
     
         for index, i in enumerate(range(len(self.buffer))):
             
-            discounted_reward = reward * pow( gamma, 10 - (index+ 1) ) # 감쇠된 reward 계산
-
+            # discounted_reward = reward * pow( gamma, 10 - (index+ 1) ) # 감쇠된 reward 계산
+            discounted_reward = reward
             robot_xy = self.buffer[i][0]
             next_robot_xy[0] = robot_xy[0]
             next_robot_xy[1] = robot_xy[1]
             robot_action = self.buffer[i][1]
-            print("robot_xy : ", robot_xy)
-            print("robot_action : ", robot_action)
+            #print("robot_xy : ", robot_xy)
+            #print("robot_action : ", robot_action)
             if robot_action[0] == 'UP':
                 next_robot_xy[1] += 1
             elif robot_action[0] == 'DOWN':
