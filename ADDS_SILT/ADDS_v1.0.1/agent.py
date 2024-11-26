@@ -188,6 +188,7 @@ class CrowdAgent(Agent):
         self.attack_damage = ATTACK_DAMAGE
         self.attacked = False
         self.dead = False
+        self.robot_tracked = 0
         self.danger = 0
         self.previous_danger = 0
         self.robot_guide = 0
@@ -443,6 +444,7 @@ class CrowdAgent(Agent):
                    
             if (self.model.robot_type == "Q"):
                 new_position_robot = self.robot_policy_Q()
+                
             elif (self.model.robot_type == "A"):
                 new_position_robot = self.robot_policy_A()
 
@@ -991,14 +993,13 @@ class RobotAgent(CrowdAgent):
                     repulsive_force[0] += 0
                     repulsive_force[1] += 0
     
-                elif(near_agent.type == 1): ## agents   
+                elif(near_agent.type == 1 or near_agent.type ==0 or near_agent.type == 2): ## agents   
                     repulsive_force[0] += 0/4*np.exp(-(d/2))*(d_x/d) #반발력.. 지수함수 -> 완전 밀착되기 직전에만 힘이 강하게 작용하는게 맞다고 생각해서
                     repulsive_force[1] += 0/4*np.exp(-(d/2))*(d_y/d) 
 
                 elif(near_agent.type == 11 or near_agent.type == 9):## 검정벽 
-                    #print("짠!")
-                    repulsive_force[0] += 8 *np.exp(-(d/2))*(d_x/d)
-                    repulsive_force[1] += 8 *np.exp(-(d/2))*(d_y/d)
+                    repulsive_force[0] += 13 *np.exp(-(d/2))*(d_x/d)
+                    repulsive_force[1] += 13 *np.exp(-(d/2))*(d_y/d)
 
         F_x = 0
         F_y = 0
@@ -1430,7 +1431,7 @@ class RobotAgent(CrowdAgent):
         values = ["UP", "DOWN", "LEFT", "RIGHT"]
         selected = random.choice(values)
 
-        exploration_rate = 0.1
+        exploration_rate = 0
         for j in range(len(action_list)):
             f1 = self.F1_distance(state, action_list[j], "GUIDE") 
             f2 = self.F2_near_agents(state, action_list[j], "GUIDE")

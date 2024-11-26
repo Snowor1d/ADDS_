@@ -44,7 +44,7 @@ for i in range(5):
     while(True):
         step += 1
         model_o1.step()
-        reference_reward[i][int(step/100)] = model_o1.evacuated_agents()
+        reference_reward[i][int(step/100)] = model_o1.evacuated_agents()-3
         if (model_o1.alived_agents() <= 1 or step>=max_step_num):
             break
     del model_o1
@@ -84,9 +84,10 @@ for j in range(run_iteration):
                 try:
                     step_num += 1
                     model_o.step()
-                    reward = model_o.check_reward(reference_reward[model_num])/100
+                    reward = (model_o.check_reward(reference_reward[model_num])+1.5)/100
                     print("reward : ", reward)
-                    model_o.robot.update_weight(reward)
+                    if(step_num%300 == 0):
+                        model_o.robot.update_weight(reward)
                     #reference_reward 업데이트
                     if (model_o.evacuated_agents() > reference_reward[model_num][int(step_num/100)]):
                         reference_reward[model_num][int(step_num/100)] = (model_o.evacuated_agents()+reference_reward[model_num][int(step_num/100)])/2

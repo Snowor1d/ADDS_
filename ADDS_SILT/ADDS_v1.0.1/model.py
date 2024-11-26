@@ -276,6 +276,9 @@ class FightingModel(Model):
         self.robot_mode = "NOT_GUIDE"
         self.step_count = 0
 
+        # for i in range(50):
+        #     for j in range(50):
+        #         print("(", i, j, ")", self.valid_space[(i, j)])
     def alived_agents(self):
         alived_agents = self.total_agents
         for i in self.schedule.agents:
@@ -483,15 +486,17 @@ class FightingModel(Model):
                         if mesh not in self.match_mesh_to_grid.keys():
                             self.match_mesh_to_grid[mesh] = []
                         self.match_mesh_to_grid[mesh].append([i, j])
+        # for i in range(self.width):
+        #     for j in range(self.height):
+        #         for mesh in self.pure_mesh:
+        #             if [i, j] in self.match_mesh_to_grid[mesh]:
+        #                 self.valid_space[(i, j)] = 1
+        #                 break
+        #             else:
+        #                 self.valid_space[(i, j)] = 0
         for i in range(self.width):
             for j in range(self.height):
-                for mesh in self.pure_mesh:
-                    if [i, j] in self.match_mesh_to_grid[mesh]:
-                        self.valid_space[(i, j)] = 1
-                        break
-                    else:
-                        self.valid_space[(i, j)] = 0
-
+                self.valid_space[(i, j)] = 1
         for i in range(self.width):
             self.valid_space[(i, 70)] = 0
             self.valid_space[(i, 71)] = 0
@@ -612,13 +617,17 @@ class FightingModel(Model):
             self.agent_num+=1
             #self.schedule_e.add(a)
             self.grid.place_agent(a, self.walls[i])
+            self.valid_space[(self.walls[i][0], self.walls[i][1])] = 0
         for i in range(len(self.obstacles)):
             for each_point in  get_points_within_polygon(self.obstacles[i], 1):
                 self.obstacles_grid_points.append(each_point)
                 a = WallAgent(self.agent_num, self, each_point, 9)
                 self.agent_num+=1
                 #self.schedule_e.add(a)
+                self.valid_space[(each_point[0], each_point[1]-1)] = 0
+                self.valid_space[(each_point[0], each_point[1])] = 0
                 self.grid.place_agent(a, each_point)
+
         num = 0
         exit_grid = []
         for e in self.exit_list:
@@ -635,7 +644,7 @@ class FightingModel(Model):
         # for mesh in self.mesh:
         #     num +=1 
         #     for i in range(len(mesh)):
-        #         a = FightingAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], 102+num%5)
+        #         a = CrowdAgent(self.agent_num, self, [mesh[i][0], mesh[i][1]], 102+num%5)
         #         self.agent_num+=1
         #         self.schedule_e.add(a)
         #         self.grid.place_agent(a, [mesh[i][0], mesh[i][1]])
