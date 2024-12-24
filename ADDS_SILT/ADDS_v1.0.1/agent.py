@@ -334,7 +334,7 @@ class CrowdAgent(Agent):
         y = point_grid[1]
         while_checking = 0
 
-        candidates = [(x+1,y+1), (x+1, y), (x, y+1), (x-1, y-1), (x-1, y), (x, y-1)]
+        candidates = [(x+1,y+1), (x+1, y), (x, y+1), (x-1, y-1), (x-1, y), (x, y-1), (x+1, y-1), (x-1, y+1)]
         while (point_grid not in self.model.match_grid_to_mesh.keys()) or (self.model.match_grid_to_mesh[point_grid] not in self.model.pure_mesh):
             while_checking += 1
             if(while_checking == 50):
@@ -359,12 +359,12 @@ class CrowdAgent(Agent):
         distance = 0
         now_mesh = point1_mesh
 
-        if (self.model.next_vertex_matrix[now_mesh][point2_mesh] == point2_mesh):
+        if (self.model.next_vertex_matrix[now_mesh][point2_mesh] == point2_mesh): ## 인접한 두 mesh면 point 간 거리 직접 구함
             return math.sqrt(pow(point1[0]-point2[0],2)+pow(point1[1]-point2[1],2))
 
         now_mesh = self.model.next_vertex_matrix[now_mesh][point2_mesh]
         now_mesh_middle = ((now_mesh[0][0]+now_mesh[1][0]+now_mesh[2][0])/3, (now_mesh[0][1]+now_mesh[1][1]+now_mesh[2][1])/3)
-        distance += math.sqrt(pow(now_mesh_middle[0]-point1[0],2)+pow(point1[1]-now_mesh_middle[1],2))
+        distance += math.sqrt(pow(now_mesh_middle[0]-point1[0],2)+pow(now_mesh_middle[1]-point1[1],2))
 
         while(self.model.next_vertex_matrix[now_mesh][point2_mesh] != point2_mesh):
             distance += self.model.distance[now_mesh][self.model.next_vertex_matrix[now_mesh][point2_mesh]]
@@ -471,7 +471,7 @@ class CrowdAgent(Agent):
             if (self.mesh_to_mesh_distance(i, pos) < distance):
                 near_goal = i
                 distance = self.mesh_to_mesh_distance(i, pos)
-                if (distnace < shortest_distance):
+                if (distance < shortest_distance):
                     shortest_distance = distance
                     near_goal = i
         return near_goal  
@@ -539,9 +539,16 @@ class CrowdAgent(Agent):
         repulsive_force = [0, 0]
         self.previous_danger = self.danger
         self.danger = 99999
+        exit_point = self.model.exit_point
         for i in self.model.exit_point:
             self.danger = min(self.danger, self.point_to_point_distance([self.xy[0], self.xy[1]], i))
+            if self.danger >= self.point_to_point_distance([self.xy[0], self.xy[1]], i):
+                exit_point = i
         self.gain = self.previous_danger - self.danger
+
+        if(self.type == 0 or self.type == 1 or self.type== 2) and (self.dead == False) and (self.robot_tracked>0):
+            print(f'final {self.unique_id} : {self.previous_danger}-{self.danger} = {self.gain}, exit_point : {exit_point}')
+
         for near_agent in near_agents_list:
             n_x = near_agent.xy[0]
             n_y = near_agent.xy[1]
@@ -647,7 +654,7 @@ class CrowdAgent(Agent):
                     to_follow_agents.append(agent)
 
         now_mesh = self.choice_safe_mesh(self.xy) ## agent가 있는 mesh
-        self.danger = self.model.mesh_danger[now_mesh]
+        # self.danger = self.model.mesh_danger[now_mesh]
         shortest_distance = math.sqrt(pow(self.xy[0]-self.model.exit_point[0][0],2)+pow(self.xy[1]-self.model.exit_point[0][1],2)) ## agent와 가장 가까운 탈출구 사이의 거리
         shortest_goal = self.model.exit_point[0]
 
@@ -661,7 +668,7 @@ class CrowdAgent(Agent):
         
         if (shortest_distance < exit_confirm_radius): ## agent가 탈출구에 도착했을 때
             self.now_goal = self.model.exit_point[exit_point_index]
-            self.danger = 0
+            # self.danger = 0
             return
 
         

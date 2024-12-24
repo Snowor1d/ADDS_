@@ -1176,6 +1176,7 @@ class FightingModel(Model):
         reward = 0
         for agent in self.agents:
             if(agent.type == 0 or agent.type == 1 or agent.type== 2) and (agent.dead == False) and (agent.robot_tracked>0):
+                # print(f'{agent.unique_id} : {agent.danger}')
                 reward += agent.gain
         return reward
 

@@ -85,8 +85,8 @@ for j in range(run_iteration):
                     step_num += 1
                     model_o.step()
                     #reward = (model_o.check_reward(reference_reward[model_num])+1.5)/100
-                    reward = 0
-                    reward += (model_o.check_reward_danger()-1) / 1000
+                    reward += (model_o.check_reward_danger()) / 1000
+
                     print("reward : ", reward)
                     if(step_num%300 == 0):
                         model_o.robot.update_weight(reward)
